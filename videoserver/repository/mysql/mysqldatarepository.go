@@ -97,25 +97,11 @@ func (r *DataRepository) GetPageCount(countVideoOnPage int) (int, bool) {
 	return countPage, true
 }
 
-func (r *DataRepository) AddVideoQuality(id string, quality string) {
+func (r *DataRepository) AddVideoQuality(id string, quality string) bool {
 	rows, err := r.connector.Database.Query("UPDATE video SET `quality` = concat(quality, ?)  WHERE id = ?;", quality, id)
 	if err != nil {
-		return 0, false
+		return false
 	}
 	defer rows.Close()
-
-	var countVideo int
-	for rows.Next() {
-		err := rows.Scan(
-			&countVideo,
-		)
-		if err != nil {
-			return 0, false
-		}
-	}
-	countPage := countVideo / countVideoOnPage
-	if countVideo%countVideoOnPage > 0 {
-		countPage += 1
-	}
-	return countPage, true
+	return true
 }
