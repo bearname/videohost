@@ -8,4 +8,5 @@ type Video struct {
 	Thumbnail   string `json:"thumbnail"`
 	Url         string `json:"url"`
 	Uploaded    string `json:"uploaded"`
+	Quality     string `json:"quality"`
 }

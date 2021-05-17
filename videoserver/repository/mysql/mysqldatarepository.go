@@ -17,7 +17,7 @@ func NewMysqlDataRepository(connector Connector) *DataRepository {
 func (r *DataRepository) GetVideo(id string) (*model.Video, error) {
 	var video model.Video
 
-	row := r.connector.Database.QueryRow("SELECT id_video, title, description, duration, thumbnail_url, url, uploaded FROM video WHERE id_video=? ORDER BY uploaded DESC", id)
+	row := r.connector.Database.QueryRow("SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality FROM video WHERE id_video=? ORDER BY uploaded DESC", id)
 	//i := len("C:\\Users\\mikha\\go\\src\\videoserver\\videoserver\\content\\")
 
 	err := row.Scan(
@@ -28,6 +28,7 @@ func (r *DataRepository) GetVideo(id string) (*model.Video, error) {
 		&video.Thumbnail,
 		&video.Url,
 		&video.Uploaded,
+		&video.Quality,
 	)
 	//thumbnail := video.Thumbnail[i:len(video.Thumbnail)]
 	//video.Thumbnail = thumbnail
@@ -98,7 +99,7 @@ func (r *DataRepository) GetPageCount(countVideoOnPage int) (int, bool) {
 }
 
 func (r *DataRepository) AddVideoQuality(id string, quality string) bool {
-	rows, err := r.connector.Database.Query("UPDATE video SET `quality` = concat(quality, ?)  WHERE id = ?;", quality, id)
+	rows, err := r.connector.Database.Query("UPDATE video SET `quality` = concat(quality,  ',' + ?)  WHERE id = ?;", quality, id)
 	if err != nil {
 		return false
 	}
