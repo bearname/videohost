@@ -18,7 +18,7 @@ func (r *DataRepository) GetVideo(id string) (*model.Video, error) {
 	var video model.Video
 
 	row := r.connector.Database.QueryRow("SELECT id_video, title, description, duration, thumbnail_url, url, uploaded FROM video WHERE id_video=? ORDER BY uploaded DESC", id)
-	i := len("C:\\Users\\mikha\\go\\src\\videoserver\\videoserver\\content\\")
+	//i := len("C:\\Users\\mikha\\go\\src\\videoserver\\videoserver\\content\\")
 
 	err := row.Scan(
 		&video.Id,
@@ -29,8 +29,8 @@ func (r *DataRepository) GetVideo(id string) (*model.Video, error) {
 		&video.Url,
 		&video.Uploaded,
 	)
-	thumbnail := video.Thumbnail[i:len(video.Thumbnail)]
-	video.Thumbnail = thumbnail
+	//thumbnail := video.Thumbnail[i:len(video.Thumbnail)]
+	//video.Thumbnail = thumbnail
 	return &video, err
 }
 
@@ -45,15 +45,15 @@ func (r *DataRepository) GetVideoList(page int, count int) ([]model.VideoListIte
 	videos := make([]model.VideoListItem, 0)
 	for rows.Next() {
 		var videoListItem model.VideoListItem
-		i := len("C:\\Users\\mikha\\go\\src\\videoserver\\videoserver\\content\\")
+		//i := len("C:\\Users\\mikha\\go\\src\\videoserver\\videoserver\\content\\")
 		err := rows.Scan(
 			&videoListItem.Id,
 			&videoListItem.Name,
 			&videoListItem.Duration,
 			&videoListItem.Thumbnail,
 		)
-		thumbnail := videoListItem.Thumbnail[i:len(videoListItem.Thumbnail)]
-		videoListItem.Thumbnail = "http://localhost:8000/content/" + thumbnail
+		//thumbnail := videoListItem.Thumbnail[i:len(videoListItem.Thumbnail)]
+		//videoListItem.Thumbnail = "http://localhost:8000/content/" + thumbnail
 		if err != nil {
 			return nil, err
 		}

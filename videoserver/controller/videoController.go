@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/bearname/videohost/videoserver/repository"
 	"github.com/bearname/videohost/videoserver/service"
 	"github.com/bearname/videohost/videoserver/util"
@@ -10,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -150,12 +153,31 @@ func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) 
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
-
+		output, err := cmdExec(`ffprobe`, `-v`, `error`, `-select_streams`, `v:0`, `-show_entries`, `stream=width,height`, `-of`, `csv=s=x:p=0`, util.VideoFileName)
+		log.Info("resolution of file " + util.VideoFileName + " equal " + output)
 		c.messageBroker.Publish("events_topic", "events.upload-video", id.String())
 
 		writer.WriteHeader(http.StatusOK)
 		c.BaseController.JsonResponse(writer, id)
 	}
+}
+
+func cmdExec(args ...string) (string, error) {
+	baseCmd := args[0]
+	cmdArgs := args[1:]
+
+	cmd := exec.Command(baseCmd, cmdArgs...)
+	var outputBuffer, errorBuffer bytes.Buffer
+	cmd.Stdout = &outputBuffer
+	cmd.Stderr = &errorBuffer
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	fmt.Println("out:", outputBuffer.String(), "err:", errorBuffer.String())
+
+	return outputBuffer.String(), nil
 }
 
 func (c VideoController) getIntRouteParameter(writer http.ResponseWriter, request *http.Request, key string) (int, bool) {
