@@ -7,4 +7,5 @@ type VideoRepository interface {
 	GetVideoList(page int, count int) ([]model.VideoListItem, error)
 	NewVideo(id string, fileName string, description string, url string) error
 	GetPageCount(countVideoOnPage int) (int, bool)
+	AddVideoQuality(id string, quality string)
 }
