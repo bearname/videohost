@@ -9,7 +9,7 @@ import (
 
 func GenerateTask(db *sql.DB) *model.Task {
 	var task model.Task
-	err := db.QueryRow("SELECT id_video, url FROM video WHERE status=?", model.NotProcessed).Scan(
+	err := db.QueryRow("SELECT id_video, url FROM video WHERE status=?;", model.NotProcessed).Scan(
 		&task.Id,
 		&task.Url,
 	)

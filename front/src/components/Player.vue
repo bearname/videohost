@@ -18,6 +18,7 @@ export default {
   updated() {
     this.initPlayer()
   },
+
   methods: {
     initPlayer() {
       let video = document.getElementById('video');

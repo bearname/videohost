@@ -20,7 +20,7 @@ func NewStreamController(videoRepository repository.VideoRepository) *StreamCont
 }
 
 func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *http.Request) {
-	c.BaseController.SetupCors(&writer, request)
+	c.BaseController.AllowCorsRequest(&writer, request)
 	vars := mux.Vars(request)
 
 	var id string
@@ -52,9 +52,7 @@ func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *ht
 }
 
 func (_ *StreamController) getMediaBase(id string) string {
-	mediaRoot := "content\\" + id
-	return mediaRoot
-	//return fmt.Sprintf("%s/%d", mediaRoot, id)
+	return "content\\" + id
 }
 
 func (_ *StreamController) serveHlsM3u8(w http.ResponseWriter, r *http.Request, mediaBase, m3u8Name string) {

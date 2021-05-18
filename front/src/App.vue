@@ -2,23 +2,26 @@
   <layout>
     <div>
       <Navigation/>
+      <Search/>
       <h1>Pretty player</h1>
-      <VideoList/>
+      <Pagination/>
     </div>
   </layout>
 </template>
 
 <script>
-import VideoList from './components/VideoList.vue'
+import Pagination from './components/Pagination.vue'
 import Navigation from './components/Navigation.vue'
 import Layout from './layouts/LayoutDefault.vue'
+import Search from "./components/Search";
 
 export default {
   name: 'App',
   components: {
+    Search,
     Layout,
-    Navigation: Navigation,
-    VideoList: VideoList
+    Navigation,
+    Pagination
   }
 }
 </script>

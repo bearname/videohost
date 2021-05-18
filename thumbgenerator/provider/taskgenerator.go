@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TaskProvider(stopChan chan struct{}, db *sql.DB) <-chan *model.Task {
+func TaskGenerator(stopChan chan struct{}, db *sql.DB) <-chan *model.Task {
 	tasksChan := make(chan *model.Task)
 	go func() {
 		for {
@@ -33,7 +33,7 @@ func TaskProvider(stopChan chan struct{}, db *sql.DB) <-chan *model.Task {
 func RunTaskProvider(stopChan chan struct{}, db *sql.DB) <-chan *model.Task {
 	resultChan := make(chan *model.Task)
 	stopTaskProviderChan := make(chan struct{})
-	taskProviderChan := TaskProvider(stopTaskProviderChan, db)
+	taskProviderChan := TaskGenerator(stopTaskProviderChan, db)
 	onStop := func() {
 		stopTaskProviderChan <- struct{}{}
 		close(resultChan)

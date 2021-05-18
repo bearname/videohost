@@ -1,17 +1,17 @@
 <template>
   <div>
     <h2>Home</h2>
-    <VideoList/>
+    <Pagination/>
   </div>
 </template>
 
 <script>
-import VideoList from '../components/VideoList.vue'
+import Pagination from '../components/Pagination.vue'
 
 export default {
   name: "Home",
   components: {
-    VideoList: VideoList
+    Pagination
   }
 }
 </script>

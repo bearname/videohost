@@ -1,5 +1,5 @@
 import VueRouter from 'vue-router'
-import HomePage from '../views/HomePage.vue'
+import HomePage from '../views/CatalogPage.vue'
 import StreamPage from '../views/VideoPage.vue'
 import UploadVideo from "../views/UploadVideoPage";
 

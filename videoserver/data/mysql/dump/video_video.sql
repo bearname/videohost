@@ -5,7 +5,7 @@ create table video
     title         varchar(255) not null,
     duration      int          default -1 null,
     status        int          default 1 null,
-    thumbnail_url varchar(255) default 'content\\default.jpg' null,
+    thumbnail_url varchar(255) default 'content\\default.png' null,
     url           varchar(255) not null
 ) charset = utf8;
 

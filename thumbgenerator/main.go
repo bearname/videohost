@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	log.Info("Started")
 	log.SetFormatter(&log.JSONFormatter{})
 	file, err := os.OpenFile("thumbgenerator.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err == nil {
@@ -35,6 +36,7 @@ func main() {
 	waitForKillSignal(killChan)
 	stopChan <- struct{}{}
 	wg.Wait()
+	log.Info("Stopped")
 }
 
 func getKillSignalChan() chan os.Signal {

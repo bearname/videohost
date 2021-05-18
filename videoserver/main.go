@@ -2,17 +2,30 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/bearname/videohost/videoserver/repository/mysql"
 	"github.com/bearname/videohost/videoserver/router"
+	"github.com/bearname/videohost/videoserver/util"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 )
 
 func main() {
+	port := 8000
+	if len(os.Args) > 1 {
+		toInt, ok := util.StrToInt(os.Args[1])
+		if !ok {
+			fmt.Println("Invalid port")
+			return
+		}
+		port = toInt
+	}
+
 	log.SetFormatter(&log.JSONFormatter{})
 	file, err := os.OpenFile("videoserver.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err == nil {
@@ -29,7 +42,7 @@ func main() {
 
 	killSignalChan := getKillSignalChan()
 
-	serverUrl := ":8000"
+	serverUrl := ":" + strconv.Itoa(port)
 	log.WithFields(log.Fields{"url": serverUrl}).Info("starting the server")
 	srv := startServer(serverUrl, connector)
 

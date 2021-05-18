@@ -1,25 +1,34 @@
 <template>
   <div>
-    <!--    <h2>Watch video {{ $route.params.videoId }}</h2>-->
-    <div v-if="videoId !== null">
+    Video page
+
+    <div class="text-align-left" v-if="video !== null">
       <Player :videoId="videoId" :key="key"/>
-    </div>
-    <div v-if="video !== null">
       <h3>{{ video.name }}</h3>
-      <p>Watch video {{ video.description }}</p>
-      <p>Watch video {{ video.uploaded }}</p>
+      <p class="subtitle-1">Watch video {{ video.description }}</p>
+      <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
+      <p class="subtitle-2">{{ video.views }} views</p>
     </div>
-    <VideoList/>
+    <div v-else>
+      Video not exist
+    </div>
+    <v-spacer></v-spacer>
+
+    <Pagination/>
   </div>
 </template>
 
 <script>
-import VideoList from '../components/VideoList.vue'
+import Pagination from '../components/Pagination.vue'
 import Player from '../components/Player.vue'
 import axios from 'axios'
 
 export default {
   name: "StreamPage",
+  components: {
+    Player,
+    Pagination
+  },
   data() {
     return {
       videoId: null,
@@ -27,18 +36,23 @@ export default {
       video: null
     }
   },
+  mounted() {
+    console.log("router")
+    this.setVideoId()
+    this.key = Date.now()
+
+    console.log(this.videoId)
+  },
   watch: {
     '$route'() {
+      console.log("router")
       this.setVideoId()
       this.key = Date.now()
 
       console.log(this.videoId)
     }
   },
-  components: {
-    Player: Player,
-    VideoList: VideoList
-  },
+
   methods: {
     async setVideoId() {
       this.videoId = this.$route.params.videoId
@@ -52,7 +66,6 @@ export default {
             console.log(response.data)
             this.video = response.data
             this.video.uploaded = this.getElapsedString(this.video.uploaded)
-
           })
           .catch(function (error) {
             if (error.response) {
@@ -102,5 +115,7 @@ export default {
 </script>
 
 <style scoped>
-
+.text-align-left {
+  text-align: left;
+}
 </style>

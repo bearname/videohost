@@ -8,7 +8,7 @@ import (
 type BaseController struct {
 }
 
-func (c *BaseController) SetupCors(w *http.ResponseWriter, _ *http.Request) {
+func (c *BaseController) AllowCorsRequest(w *http.ResponseWriter, _ *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
