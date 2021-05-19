@@ -1,13 +1,12 @@
 <template>
   <div>
     <v-btn
-        icon
         class="hidden-xs-only"
         v-on:click="toggleDisplay"
     >
       <span v-if="isNeedDisplay">close </span>
       <span v-else>open </span>
-      search
+      <span> search </span>
     </v-btn>
     <div v-if="isNeedDisplay">
       <div class="search-wrapper">

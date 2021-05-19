@@ -35,9 +35,8 @@
 </template>
 
 <script>
-import {mapActions} from "vuex";
-// const apiUrl = "http://localhost:8000/api/v1";
-// let apiUploadVideo = apiUrl + "/video/";
+import {mapActions, mapGetters} from "vuex";
+
 export default {
   name: "UploadVideoPage",
   data() {
@@ -53,6 +52,10 @@ export default {
     ...mapActions({
       uploadVideo: "video/uploadVideo"
     }),
+    ...mapGetters({
+      getVideoId: "video/getVideoId",
+      getIsProcessing: "video/getIsProcessing"
+    }),
     onChangeFile() {
       this.file = this.$refs.file.files[0]
     },
@@ -63,42 +66,13 @@ export default {
       console.log(this.$refs.title)
       this.title = this.$refs.title.value
     },
-    submitFile() {
+    async submitFile() {
       console.log("submit file")
 
-      this.uploadVideo({file: this.file, title: this.title, description: this.description})
-      // const formData = new FormData();
-      // formData.append("file", this.file)
-      // formData.append("title", this.title)
-      // formData.append("description", this.description)
-      // const config = {
-      //   headers: {
-      //     'Content-Type': 'application/x-www-form-urlencoded',
-      //     // 'Content-Type': 'video/mp4',
-      //     Authorization: context.rootGetters["auth/getTokenHeader"]
-      //     // 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2MjEzMjg4MzgsInVzZXJuYW1lIjoibWlraGEifQ.xbHVE_z8l_MLFXogE9jkIfEnFOd_FmjtFoYfu3r-xss'
-      //   }
-      // }
-      // const onSuccess = response => {
-      //   console.log(response);
-      //   const status = response.status
-      //   if (status !== 200) {
-      //     this.processing = false
-      //   } else {
-      //     console.log('SUCCESS!!')
-      //     this.processing = true
-      //     this.videoId = response.data
-      //   }
-      // };
-      // const onFail = error => {
-      //   this.processing = false
-      //   console.error(error)
-      //   console.log('FAILURE!!')
-      // };
-      //
-      // return axios.post("http://localhost:8000/api/v1/video", formData, config).then(onSuccess).catch(onFail)
-
-      // this.uploadVideo({file: this.file, title: this.title, description: this.description})
+      const promise = await this.uploadVideo({file: this.file, title: this.title, description: this.description});
+      await promise;
+      this.processing = true;
+      this.videoId = this.getVideoId()
     },
   }
 }

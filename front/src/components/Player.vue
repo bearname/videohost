@@ -9,7 +9,7 @@ let Hls = require('hls.js');
 
 export default {
   name: "Player",
-  props: ['key',
+  props: [
     'videoId'
   ],
   mounted() {

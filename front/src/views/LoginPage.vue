@@ -1,6 +1,5 @@
 <template>
   <div>
-<!--    <h2></h2>-->
     <div class="margin-bottom-20">
       <form @submit.prevent>
         <div>

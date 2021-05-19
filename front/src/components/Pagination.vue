@@ -37,16 +37,8 @@ export default {
       error: false,
       pageNumber: 1,
       videos: null,
-      countVideoOnPage: {
-        type: Number,
-        required: false,
-        default: 12
-      },
-      countPage: {
-        type: Number,
-        required: false,
-        default: 0
-      },
+      countVideoOnPage: 12,
+      countPage: 0,
       url: {
         type: String,
         required: false,

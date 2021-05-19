@@ -82,7 +82,6 @@ func (c VideoController) GetVideoList() func(http.ResponseWriter, *http.Request)
 		log.Info("page ", page, " count video ", countVideoOnPage)
 		pageCount, ok := c.videoRepository.GetPageCount(countVideoOnPage)
 		if !ok {
-
 			http.Error(writer, "Failed get page countVideoOnPage", http.StatusInternalServerError)
 			return
 		}
@@ -285,7 +284,7 @@ func (c VideoController) getIntRouteParameter(writer http.ResponseWriter, reques
 
 	page, b := c.validate(writer, pageStr)
 	if b {
-		http.Error(writer, "400 invalid page parameter", http.StatusBadRequest)
+		http.Error(writer, "400 invalid "+key+" parameter", http.StatusBadRequest)
 		return 0, false
 	}
 	return page, true

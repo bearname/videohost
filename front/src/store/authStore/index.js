@@ -27,28 +27,18 @@ const actions = {
         })
     },
     async logout(context) {
+        console.log("logout")
+
         return dbUtils.removeUser({
             username: context.getters.currentUser.username
         }).then(() => {
+            console.log("logout")
             context.commit("SET_AUTHORIZATION", "");
+            context.commit("LOGOUT")
+            router.push({name: "login"})
+        }).catch(error => {
+            console.log(error)
         })
-        // return dbUtils.removeUser({
-        //     username: context.getters.currentUser.username
-        // }).then(() => {
-        //     return fetch(process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/auth/logout", {
-        //         method: "POST",
-        //         mode: 'no-cors',
-        //         headers: {
-        //             Authorization:
-        //                 "Bearer " + context.getters.getTokenAuthorization
-        //         }
-        //     }).then(() => {
-        //         context.commit("LOGOUT")
-        //     }).then(() => {
-        //         context.commit("LOGOUT")
-        //         router.push({name: "login"})
-        //     })
-        // })
     },
     async signup(context, {username, password}) {
         return await fetch(
@@ -157,6 +147,7 @@ const mutations = {
         state.user.token = "";
     },
     SET_AUTHORIZATION(state, token) {
+        console.log("SET_AUTHORIZATION")
         state.user.token = token
     }
 };
