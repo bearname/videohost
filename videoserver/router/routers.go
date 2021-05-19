@@ -27,14 +27,17 @@ func Router(connector mysql.Connector) http.Handler {
 	subRouter.HandleFunc("/list", videoController.GetVideoList()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/video/search", videoController.SearchVideo()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/video/{ID}", videoController.GetVideo()).Methods(http.MethodGet)
-	subRouter.HandleFunc("/video", authController.CheckTokenHandler(videoController.UploadVideo())).Methods(http.MethodPost)
-	subRouter.HandleFunc("/video/{id}/increment", videoController.IncrementViews()).Methods(http.MethodPost)
+	//subRouter.HandleFunc("/video", authController.CheckTokenHandler(videoController.UploadVideo())).Methods(http.MethodPost)
+	subRouter.HandleFunc("/video", authController.CheckTokenHandler(videoController.UploadVideo())).Methods(http.MethodPost, http.MethodOptions)
+	subRouter.HandleFunc("/video/{id}/increment", videoController.IncrementViews()).Methods(http.MethodPost, http.MethodOptions)
 
-	subRouter.HandleFunc("/auth/create-user", authController.CreateUser).Methods(http.MethodPost)
-	subRouter.HandleFunc("/auth/login", authController.GetTokenUserPassword).Methods(http.MethodPost)
-	subRouter.HandleFunc("/auth/token", authController.CheckTokenHandler(authController.GetTokenByToken)).Methods(http.MethodGet)
+	subRouter.HandleFunc("/auth/create-user", authController.CreateUser).Methods(http.MethodPost, http.MethodOptions)
+	subRouter.HandleFunc("/auth/login", authController.GetTokenUserPassword).Methods(http.MethodPost, http.MethodOptions)
+	//subRouter.HandleFunc("/auth/logout",authController.CheckTokenAuthHandler(logout)).Methods("POST")
 
-	subRouter.HandleFunc("/users/{USERNAME}", authController.CheckTokenHandler(userController.GetUser)).Methods(http.MethodGet)
+	subRouter.HandleFunc("/auth/token", authController.CheckTokenHandler(authController.GetTokenByToken)).Methods(http.MethodGet, http.MethodOptions)
+
+	subRouter.HandleFunc("/users/{USERNAME}", authController.CheckTokenHandler(userController.GetUser)).Methods(http.MethodGet, http.MethodOptions)
 
 	streamController := controller.NewStreamController(videoRepository)
 	subRouter.HandleFunc("/media/{id}/stream/", streamController.StreamHandler).Methods(http.MethodGet)

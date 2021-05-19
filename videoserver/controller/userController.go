@@ -19,21 +19,26 @@ func NewUserController(userRepository *repository.UserRepository) *UserControlle
 	return v
 }
 
-func (c *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
+func (c *UserController) GetUser(writer http.ResponseWriter, request *http.Request) {
+	writer = *c.BaseController.AllowCorsRequest(&writer)
+	if (*request).Method == "OPTIONS" {
+		writer.WriteHeader(http.StatusNoContent)
+		return
+	}
 	log.Println("get user called")
-	vars := mux.Vars(r)
+	vars := mux.Vars(request)
 	user, ok := vars["USERNAME"]
 	if !ok {
-		http.Error(w, "Cannot find username in request", http.StatusBadRequest)
+		http.Error(writer, "Cannot find username in request", http.StatusBadRequest)
 		return
 	}
 	if _, ok := c.userRepository.Users[user]; !ok {
-		http.Error(w, "Cannot find user", http.StatusNotFound)
+		http.Error(writer, "Cannot find user", http.StatusNotFound)
 
 		return
 	}
 
-	c.JsonResponse(w,
+	c.JsonResponse(writer,
 		struct {
 			Username    string `json:"username"`
 			Description string `json:"description"`

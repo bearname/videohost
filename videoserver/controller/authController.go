@@ -25,15 +25,15 @@ func NewAuthController(userRepository *repository.UserRepository) *AuthControlle
 	return v
 }
 
-func (u *AuthController) GetTokenUserPassword(writer http.ResponseWriter, request *http.Request) {
-	u.BaseController.AllowCorsRequest(&writer, request)
+func (c *AuthController) GetTokenUserPassword(writer http.ResponseWriter, request *http.Request) {
+	writer = *c.BaseController.AllowCorsRequest(&writer)
 	var user model.User
 	err := json.NewDecoder(request.Body).Decode(&user)
 	if err != nil {
 		http.Error(writer, "cannot decode username/password struct", http.StatusBadRequest)
 		return
 	}
-	passwordHash, found := u.userRepository.Users[user.Username]
+	passwordHash, found := c.userRepository.Users[user.Username]
 	if !found {
 		http.Error(writer, "Cannot find the username", http.StatusNotFound)
 	}
@@ -47,36 +47,49 @@ func (u *AuthController) GetTokenUserPassword(writer http.ResponseWriter, reques
 		http.Error(writer, "Cannot create token", http.StatusInternalServerError)
 		return
 	}
-	u.JsonResponse(writer, struct {
+	c.JsonResponse(writer, struct {
 		Token string `json:"token"`
 	}{token})
 }
-func (u *AuthController) CreateUser(writer http.ResponseWriter, request *http.Request) {
+func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Request) {
+	writer = *c.BaseController.AllowCorsRequest(&writer)
+	if (*request).Method == "OPTIONS" {
+		writer.WriteHeader(http.StatusNoContent)
+		return
+	}
 	var user model.User
 	err := json.NewDecoder(request.Body).Decode(&user)
 	if err != nil {
 		http.Error(writer, "Cannot decode request", http.StatusBadRequest)
 		return
 	}
-	if _, found := u.userRepository.Users[user.Username]; found {
+	if _, found := c.userRepository.Users[user.Username]; found {
 		http.Error(writer, "User already exists", http.StatusBadRequest)
 		return
 	}
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	u.userRepository.Users[user.Username] = password
+	c.userRepository.Users[user.Username] = password
 	token, err := util.CreateToken(user.Username)
 	if err != nil {
 		http.Error(writer, "Cannot create token", http.StatusInternalServerError)
 		return
 	}
 
-	u.JsonResponse(writer, struct {
+	c.JsonResponse(writer, struct {
 		Token string `json:"token"`
 	}{token})
 }
 
-func (u *AuthController) CheckTokenHandler(next http.HandlerFunc) http.HandlerFunc {
+func (c *AuthController) CheckTokenHandler(next http.HandlerFunc) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		//writer = *c.BaseController.AllowCorsRequest(&writer)
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
 		log.Println("check token handler")
 		header := request.Header.Get("Authorization")
 		bearerToken := strings.Split(header, " ")
@@ -104,28 +117,38 @@ func (u *AuthController) CheckTokenHandler(next http.HandlerFunc) http.HandlerFu
 				http.Error(writer, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			if _, ok := u.userRepository.Users[username]; !ok {
+			if _, ok := c.userRepository.Users[username]; !ok {
 				http.Error(writer, "Unauthorized, user not exists", http.StatusUnauthorized)
 				return
 			}
 			//Set the username in the request, so I will use it in check after!
 			context.Set(request, "username", username)
 		}
+
+		log.Println("success")
+
 		next(writer, request)
 	}
 }
 
-func (u *AuthController) GetTokenByToken(w http.ResponseWriter, r *http.Request) {
+func (c *AuthController) GetTokenByToken(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	if (*request).Method == "OPTIONS" {
+		writer.WriteHeader(http.StatusNoContent)
+		return
+	}
 	//Here I already have the token checked... Just get the username from Request context
-	username, ok := context.Get(r, "username").(string)
+	username, ok := context.Get(request, "username").(string)
 	if !ok {
-		http.Error(w, "Cannot check username", http.StatusInternalServerError)
+		http.Error(writer, "Cannot check username", http.StatusInternalServerError)
 		return
 	}
 	token, err := util.CreateToken(username)
 	if err != nil {
-		http.Error(w, "Cannot create token", http.StatusInternalServerError)
+		http.Error(writer, "Cannot create token", http.StatusInternalServerError)
 		return
 	}
-	u.JsonResponse(w, struct{ Token string }{token})
+	c.JsonResponse(writer, struct{ Token string }{token})
 }

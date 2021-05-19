@@ -36,7 +36,11 @@ func NewVideoController(videoRepository repository.VideoRepository) *VideoContro
 
 func (c VideoController) GetVideo() func(w http.ResponseWriter, r *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		c.BaseController.AllowCorsRequest(&writer, request)
+		writer = *c.BaseController.AllowCorsRequest(&writer)
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
 		vars := mux.Vars(request)
 		var id string
 		var ok bool
@@ -59,8 +63,11 @@ func (c VideoController) GetVideo() func(w http.ResponseWriter, r *http.Request)
 
 func (c VideoController) GetVideoList() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		c.BaseController.AllowCorsRequest(&writer, request)
-
+		writer = *c.BaseController.AllowCorsRequest(&writer)
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
 		var page int
 		page, success := c.getIntRouteParameter(writer, request, "page")
 		if !success {
@@ -97,11 +104,16 @@ func (c VideoController) GetVideoList() func(http.ResponseWriter, *http.Request)
 
 func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		//writer = *c.BaseController.AllowCorsRequest(&writer)
 
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
 		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-		c.BaseController.AllowCorsRequest(&writer, request)
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		title := request.FormValue("title")
 		description := request.FormValue("description")
 		//request.ParseForm()
@@ -172,7 +184,11 @@ func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) 
 
 func (c *VideoController) SearchVideo() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		c.BaseController.AllowCorsRequest(&writer, request)
+		writer = *c.BaseController.AllowCorsRequest(&writer)
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
 
 		var page int
 		page, success := c.getIntRouteParameter(writer, request, "page")
@@ -211,18 +227,13 @@ func (c *VideoController) SearchVideo() func(http.ResponseWriter, *http.Request)
 	}
 }
 
-func (c *VideoController) responseVideoListItems(writer http.ResponseWriter, pageCount int, videos []model.VideoListItem) {
-	responseData := make(map[string]interface{})
-	responseData["pageCount"] = pageCount
-	responseData["videos"] = videos
-
-	c.writeResponseData(writer, responseData)
-}
-
 func (c *VideoController) IncrementViews() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		c.BaseController.AllowCorsRequest(&writer, request)
-
+		writer = *c.BaseController.AllowCorsRequest(&writer)
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
 		vars := mux.Vars(request)
 		var id string
 		var ok bool
@@ -237,6 +248,14 @@ func (c *VideoController) IncrementViews() func(http.ResponseWriter, *http.Reque
 
 		c.JsonResponse(writer, responseData)
 	}
+}
+
+func (c *VideoController) responseVideoListItems(writer http.ResponseWriter, pageCount int, videos []model.VideoListItem) {
+	responseData := make(map[string]interface{})
+	responseData["pageCount"] = pageCount
+	responseData["videos"] = videos
+
+	c.writeResponseData(writer, responseData)
 }
 
 func cmdExec(args ...string) (string, error) {

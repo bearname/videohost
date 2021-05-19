@@ -22,7 +22,7 @@
 <script>
 export default {
   name: "VideoItem",
-  props: ['key',
+  props: [
     'video'
   ],
   data() {

@@ -4,8 +4,10 @@
         icon
         class="hidden-xs-only"
         v-on:click="toggleDisplay"
-    >s
-      <v-icon>mdi-magnify</v-icon>
+    >
+      <span v-if="isNeedDisplay">close </span>
+      <span v-else>open </span>
+      search
     </v-btn>
     <div v-if="isNeedDisplay">
       <div class="search-wrapper">

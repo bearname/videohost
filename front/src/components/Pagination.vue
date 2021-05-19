@@ -31,28 +31,27 @@ export default {
   components: {
     VideoList
   },
-  props: {
-    countVideoOnPage: {
-      type: Number,
-      required: false,
-      default: 12
-    },
-    countPage: {
-      type: Number,
-      required: false,
-      default: 0
-    },
-    url: {
-      type: String,
-      required: false,
-      default: "list"
-    }
-  },
+
   data() {
     return {
       error: false,
       pageNumber: 1,
-      videos: null
+      videos: null,
+      countVideoOnPage: {
+        type: Number,
+        required: false,
+        default: 12
+      },
+      countPage: {
+        type: Number,
+        required: false,
+        default: 0
+      },
+      url: {
+        type: String,
+        required: false,
+        default: "list"
+      }
     }
   },
   methods: {

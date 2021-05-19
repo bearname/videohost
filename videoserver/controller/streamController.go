@@ -20,7 +20,7 @@ func NewStreamController(videoRepository repository.VideoRepository) *StreamCont
 }
 
 func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *http.Request) {
-	c.BaseController.AllowCorsRequest(&writer, request)
+	writer = *c.BaseController.AllowCorsRequest(&writer)
 	vars := mux.Vars(request)
 
 	var id string

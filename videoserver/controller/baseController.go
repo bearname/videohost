@@ -8,10 +8,12 @@ import (
 type BaseController struct {
 }
 
-func (c *BaseController) AllowCorsRequest(w *http.ResponseWriter, _ *http.Request) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+func (c *BaseController) AllowCorsRequest(writer *http.ResponseWriter) *http.ResponseWriter {
+	(*writer).Header().Set("Access-Control-Allow-Origin", "*")
+	(*writer).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*writer).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+	return writer
 }
 
 func (c *BaseController) JsonResponse(writer http.ResponseWriter, data interface{}) {
