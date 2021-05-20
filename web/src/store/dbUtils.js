@@ -32,7 +32,6 @@ export default {
         });
     },
     async addUser(user) {
-        //I ONLY want to have 1 user in this db... I delete all other before
         let db = await this.getDb();
 
         return new Promise(resolve => {
@@ -45,7 +44,7 @@ export default {
             store.openCursor().onsuccess = e => {
                 let cursor = e.target.result;
                 if (cursor) {
-                    if (cursor.value.username != user.username) {
+                    if (cursor.value.username !== user.username) {
                         store.delete(cursor.value.username);
                     }
                     cursor.continue();
