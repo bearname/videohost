@@ -12,7 +12,7 @@ build-videoprocessor:
 
 build-video-scaler:
 	xcopy .\cmd\video-scaler\scale.bat .\bin\video-scaler\scale.bat  /Y
-	xcopy /f .\cmd\video-scaler\resolution.bat .\bin\video-scaler\resolution.bat /Y
+	xcopy .\cmd\video-scaler\resolution.bat .\bin\video-scaler\resolution.bat /Y
 	go build  -o .\bin\video-scaler\video-scaler.exe .\cmd\video-scaler\main.go
 
 run:
