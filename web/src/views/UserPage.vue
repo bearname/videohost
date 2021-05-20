@@ -2,6 +2,7 @@
   <div>
     <h2>{{ currentUsername }}</h2>
     <h4>my video</h4>
+    <h5>Count you video {{countAllVideos}}</h5>
     <VideoList v-if="videos!== null" :videos="videos" :key="page"/>
   </div>
 
@@ -20,7 +21,8 @@ export default {
     return {
       videos: null,
       countVideoOnPage: 10,
-      page: 0
+      page: 0,
+      countAllVideos: 0
     }
   },
   mounted() {
