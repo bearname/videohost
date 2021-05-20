@@ -3,14 +3,14 @@
 vendor
 */content
 content
-*/bin
+bin
 */*.exe
 */*.log
 *.exe
 *.log
 frontend
 */node_modules
-*.log
+*/**.log
 video-scaler/subscriber.go
 video-scaler/publisher.go
 video-scaler/topic
