@@ -7,4 +7,5 @@ type VideoListItem struct {
 	Thumbnail string `json:"thumbnail"`
 	Uploaded  string `json:"uploaded"`
 	Views     string `json:"views"`
+	Status    int    `json:"status"`
 }

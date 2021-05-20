@@ -3,6 +3,7 @@ import HomePage from '../views/CatalogPage.vue'
 import StreamPage from '../views/VideoPage.vue'
 import UploadVideo from "../views/UploadVideoPage";
 import LoginPage from "../views/LoginPage";
+import UserPage from "../views/UserPage";
 import store from "../store/index.js";
 
 const routes = {
@@ -10,6 +11,18 @@ const routes = {
         name: 'home',
         path: '/catalog',
         component: HomePage
+    },
+    user: {
+        name: 'user',
+        path: '/user/',
+        component: UserPage,
+        beforeEnter: (to, from, next) => {
+            if (store.getters["auth/isLoggedIn"]) {
+                next();
+            } else {
+                next({name: "login"});
+            }
+        }
     },
     uploadVideo: {
         name: 'uploadVideo',
@@ -27,7 +40,7 @@ const routes = {
         component: LoginPage,
         beforeEnter: (to, from, next) => {
             if (store.getters["auth/isLoggedIn"]) {
-                next({ name: "uploadVideo" });
+                next({name: "uploadVideo"});
             } else {
                 next();
             }
@@ -39,8 +52,9 @@ export {routes}
 const router = new VueRouter({
     mode: 'history',
     routes: [
-        routes.videoStream,
         routes.home,
+        routes.user,
+        routes.videoStream,
         routes.uploadVideo,
         routes.login,
     ],

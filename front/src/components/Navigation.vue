@@ -13,8 +13,10 @@
       <v-toolbar-title>
         <router-link :to="{ name: 'uploadVideo'}">Загрузить видео</router-link>
       </v-toolbar-title>
-
-      <v-toolbar-title >
+      <v-toolbar-title>
+        <router-link :to="{ name: 'user'}">User</router-link>
+      </v-toolbar-title>
+      <v-toolbar-title>
         <div v-if="isLoggedUser === false">
           <router-link :to="{ name: 'login'}">login</router-link>
         </div>
@@ -31,22 +33,37 @@ import {mapActions, mapGetters} from "vuex";
 
 export default {
   name: "Navigation",
+  data() {
+    return {
+      // user: null,
+      userid: {type: String, default: ""}
+    }
+  },
   methods: {
     ...mapActions({
-      logout: "auth/logout"
+      logout: "auth/logout",
     }),
     ...mapGetters({
-      isLoggedIn: "auth/isLoggedIn"
+      isLoggedIn: "auth/isLoggedIn",
+      getUser: "user/getUser",
+      getCurrentUser: "auth/getCurrentUser"
     }),
     logoutUser() {
       this.logout()
       this.isLoggedUser()
     },
-
+  },
+  computed: {
+    user() {
+      return this.getUser(this.userid);
+    },
+    currentUsername() {
+      return this.getCurrentUser().username;
+    },
     isLoggedUser() {
       return this.isLoggedIn()
     }
-  }
+  },
 }
 </script>
 

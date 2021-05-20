@@ -23,8 +23,8 @@
 </template>
 
 <script>
-import axios from 'axios'
 import VideoList from "./VideoList";
+import {mapActions, mapGetters} from "vuex";
 
 export default {
   name: "Pagination",
@@ -47,54 +47,36 @@ export default {
     }
   },
   methods: {
-    previousPage() {
+    ...mapActions({
+      getVideoOnPage: "video/getVideoOnPage"
+    }),
+    ...mapGetters({
+      getVideos: "video/getVideos"
+    }),
+    async previousPage() {
       if (this.pageNumber > 0) {
         this.pageNumber--;
-        this.fetchVideos(this.pageNumber, this.countVideoOnPage)
+        await this.fetchVideosByPage(this.pageNumber, this.countVideoOnPage)
       }
     },
 
-    nextPage() {
+    async nextPage() {
       if (this.pageNumber < this.countPage) {
         this.pageNumber++;
-        this.fetchVideos(this.pageNumber, this.countVideoOnPage)
+        await this.fetchVideosByPage(this.pageNumber, this.countVideoOnPage)
       }
     },
 
-    fetchVideos(page = '1', countVideoOnPage = '10') {
-      let url = 'http://localhost:8000/api/v1/list?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
-      console.log(url)
-      axios.get(url)
-          .then(response => {
-            console.log(response.data)
-            if (Object.keys(response.data).includes("pageCount")) {
-              this.countPage = response.data.pageCount
-            }
-            if (Object.keys(response.data).includes("videos")) {
-              this.videos = response.data.videos
-              this.videos.forEach(function (part, index) {
-                this[index].thumbnail = "http://localhost:8000/" + this[index].thumbnail
-              }, this.videos)
-              console.log("vidoes", this.videos)
-            }
+    async fetchVideosByPage(page = '1', countVideoOnPage = '10') {
+      await this.getVideoOnPage(page, countVideoOnPage)
+          .then(() => {
+            this.videos = this.getVideos()
           })
-          .catch(function (error) {
-            if (error.response) {
-              console.log(error.response.data);
-              console.log(error.response.status);
-              console.log(error.response.headers);
-            } else if (error.request) {
-              console.log(error.request);
-            } else {
-              console.log('Error', error.message);
-            }
-            this.error = true
-          });
     }
   },
   mounted() {
     console.log("axios")
-    this.fetchVideos()
+    this.fetchVideosByPage()
   }
 }
 </script>

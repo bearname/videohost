@@ -2,7 +2,6 @@ package router
 
 import (
 	"github.com/bearname/videohost/videoserver/controller"
-	"github.com/bearname/videohost/videoserver/repository"
 	"github.com/bearname/videohost/videoserver/repository/mysql"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -13,21 +12,20 @@ func Router(connector mysql.Connector) http.Handler {
 	router := mux.NewRouter()
 	subRouter := router.PathPrefix("/api/v1").Subrouter()
 
-	videoRepository := mysql.NewMysqlDataRepository(connector)
+	videoRepository := mysql.NewMysqlVideoRepository(connector)
 	videoController := controller.NewVideoController(videoRepository)
 	if videoController == nil {
 		log.Fatal("Failed")
 		panic("failed build videocontroller")
 	}
 
-	userRepository := repository.NewUserRepository()
+	userRepository := mysql.NewMysqlUserRepository(connector)
 	authController := controller.NewAuthController(userRepository)
-	userController := controller.NewUserController(userRepository)
+	userController := controller.NewUserController(userRepository, videoRepository)
 
 	subRouter.HandleFunc("/list", videoController.GetVideoList()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/video/search", videoController.SearchVideo()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/video/{ID}", videoController.GetVideo()).Methods(http.MethodGet)
-	//subRouter.HandleFunc("/video", authController.CheckTokenHandler(videoController.UploadVideo())).Methods(http.MethodPost)
 	subRouter.HandleFunc("/video", authController.CheckTokenHandler(videoController.UploadVideo())).Methods(http.MethodPost, http.MethodOptions)
 	subRouter.HandleFunc("/video/{id}/increment", videoController.IncrementViews()).Methods(http.MethodPost, http.MethodOptions)
 
@@ -37,7 +35,9 @@ func Router(connector mysql.Connector) http.Handler {
 
 	subRouter.HandleFunc("/auth/token", authController.CheckTokenHandler(authController.GetTokenByToken)).Methods(http.MethodGet, http.MethodOptions)
 
+	subRouter.HandleFunc("/users/updatePassword", authController.CheckTokenHandler(userController.UpdatePassword)).Methods(http.MethodPut, http.MethodOptions)
 	subRouter.HandleFunc("/users/{USERNAME}", authController.CheckTokenHandler(userController.GetUser)).Methods(http.MethodGet, http.MethodOptions)
+	subRouter.HandleFunc("/users/{USERNAME}/videos", authController.CheckTokenHandler(userController.GetUserVideos)).Methods(http.MethodGet, http.MethodOptions)
 
 	streamController := controller.NewStreamController(videoRepository)
 	subRouter.HandleFunc("/media/{id}/stream/", streamController.StreamHandler).Methods(http.MethodGet)

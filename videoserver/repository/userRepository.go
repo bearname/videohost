@@ -1,15 +1,14 @@
 package repository
 
-type UserRepository struct {
-	Users    map[string][]byte
-	idxUsers int
-}
+import (
+	"github.com/bearname/videohost/videoserver/model"
+)
 
-func NewUserRepository() *UserRepository {
-	v := new(UserRepository)
-
-	v.Users = make(map[string][]byte)
-	v.idxUsers = 0
-
-	return v
+type UserRepository interface {
+	FindByUserName(username string) (*model.User, error)
+	CreateUser(key string, username string, password []byte, role model.Role, accessToken string, refreshToken string) error
+	UpdatePassword(username string, password []byte) bool
+	UpdateAccessToken(username string, token string) bool
+	UpdateRefreshToken(username string, token string) bool
+	GetCountVideos(userId string) (int, bool)
 }

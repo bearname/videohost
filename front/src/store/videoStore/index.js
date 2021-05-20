@@ -1,10 +1,12 @@
 import axios from "axios";
+import parseCookie from "../util";
 
 const actions = {
     async uploadVideo(context, {file, title, description}) {
         console.log("Upload file")
-        context
-            .dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true})
+        const promise = context
+            .dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
+        promise
             .then(async () => {
                 console.log("Upload file")
                 const formData = new FormData();
@@ -34,22 +36,105 @@ const actions = {
                 const config = {
                     headers: {
                         'Content-Type': 'video/mp4',
-                        Authorization: context.rootGetters["auth/getTokenHeader"]
+                        'Authorization': context.rootGetters["auth/getTokenHeader"]
                     }
                 }
 
-                return await axios.post("http://localhost:8000/api/v1/video", formData, config).then(onSuccess).catch(onFail)
+                return await axios.post(process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/video", formData, config)
+                    .then(onSuccess)
+                    .catch(onFail)
             })
+
+        return promise
     },
+    async getVideoOnPage(context, page = '1', countVideoOnPage = '10') {
+        let url = process.env.VUE_APP_SERVER_ADDRESS + '/api/v1/list?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
+        console.log(url)
+        return await axios.get(url)
+            .then(response => {
+                console.log(response.data)
+                if (Object.keys(response.data).includes("pageCount")) {
+                    context.state.countPage = response.data.pageCount
+                }
+                if (Object.keys(response.data).includes("videos")) {
+                    context.commit("SET_VIDEOS", {videos: response.data.videos});
+                }
+            })
+            .catch(function (error) {
+                if (error.response) {
+                    console.log(error.response.data);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                } else if (error.request) {
+                    console.log(error.request);
+                } else {
+                    console.log('Error', error.message);
+                }
+                context.state.error = true
+            });
+    },
+    async fetchUserVideos(context, {page, countVideoOnPage}) {
+        const cookie = parseCookie(document.cookie);
+        const promise = context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
+
+        promise.then(async () => {
+            const url = process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/users/" + cookie.username + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
+            console.log(url)
+            return await fetch(
+                url,
+                {
+                    headers: {
+                        'Authorization': context.rootGetters["auth/getTokenHeader"]
+                    }
+                }
+            ).then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true})
+                    } else {
+                        throw new Error("Cannot update")
+                    }
+                }
+                return response.json()
+            }).then(data => {
+                console.log(data)
+                context.state.userVideos = data.videos
+                context.state.userVideos.forEach(updateThumbnail, context.state.userVideos)
+                context.state.countUserVideos = data.countAllVideos
+            }).catch(error => {
+                console.log(error)
+                throw error
+            })
+        })
+        return promise
+    },
+};
+
+const updateThumbnail = function (part, index) {
+    this[index].thumbnail = process.env.VUE_APP_SERVER_ADDRESS + "/" + this[index].thumbnail
 };
 
 export default {
     namespaced: true,
     state: {
         videoId: null,
-        isProcessing: false
+        isProcessing: false,
+        error: false,
+        videos: null,
+        userVideos: null,
+        countUserVideos: 0,
+        url: {
+            type: String,
+            required: false,
+            default: "list"
+        },
     },
     mutations: {
+        SET_VIDEOS(state, {videos}) {
+            state.videos = videos
+            state.videos.forEach(updateThumbnail, state.videos)
+            console.log("videos", state.videos)
+        },
     },
     actions: actions,
     getters: {
@@ -58,6 +143,15 @@ export default {
         },
         getIsProcessing(state) {
             return state.isProcessing
-        }
+        },
+        getVideos(state) {
+            return state.videos
+        },
+        getUserVideos(state) {
+            return {
+                videos: state.userVideos,
+                countAllVideos: state.countUserVideos
+            }
+        },
     }
 }

@@ -2,6 +2,9 @@ package controller
 
 import (
 	"encoding/json"
+	"github.com/bearname/videohost/videoserver/util"
+	log "github.com/sirupsen/logrus"
+	"io"
 	"net/http"
 )
 
@@ -26,5 +29,56 @@ func (c *BaseController) JsonResponse(writer http.ResponseWriter, data interface
 	_, err = writer.Write(jsonData)
 	if err != nil {
 		return
+	}
+}
+
+func (c *BaseController) getIntRouteParameter(writer http.ResponseWriter, request *http.Request, key string) (int, bool) {
+	pageStr, done := c.parseRouteParameter(request, key)
+	if !done {
+		http.Error(writer, "400 "+key+" parameter not found", http.StatusBadRequest)
+		return 0, false
+	}
+
+	page, b := c.validate(writer, pageStr)
+	if b {
+		http.Error(writer, "400 invalid "+key+" parameter", http.StatusBadRequest)
+		return 0, false
+	}
+	return page, true
+}
+
+func (c *BaseController) parseRouteParameter(request *http.Request, key string) (string, bool) {
+	query := request.URL.Query()
+	keys, ok := query[key]
+
+	if !ok || len(keys) != 1 {
+		return "", false
+	}
+
+	return keys[0], true
+}
+
+func (c *BaseController) validate(writer http.ResponseWriter, pageStr string) (int, bool) {
+	page, b := util.StrToInt(pageStr)
+	if !b || page < 0 {
+		http.Error(writer, "400 Invalid page parameter", http.StatusBadRequest)
+		return 0, true
+	}
+	return page, false
+}
+
+func (c *BaseController) writeResponseData(w http.ResponseWriter, data interface{}) {
+	b, err := json.Marshal(data)
+	if err != nil {
+		log.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if _, err = io.WriteString(w, string(b)); err != nil {
+		log.WithField("err", err).Error("write response error")
 	}
 }

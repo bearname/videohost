@@ -3,10 +3,12 @@
     <div class="margin-bottom-20">
       <form @submit.prevent>
         <div>
-          <label for="username"><span>Username</span> <input id="username" type="text" v-model="username" placeholder="Username"/></label>
+          <label for="username"><span>Username</span> <input id="username" type="text" v-model="username"
+                                                             placeholder="Username"/></label>
         </div>
         <div>
-          <label for="password"><span>Password</span> <input id="password" type="password" v-model="password" placeholder="Password"/></label>
+          <label for="password"><span>Password</span> <input id="password" type="password" v-model="password"
+                                                             placeholder="Password"/></label>
         </div>
         <v-btn @click="onLoginButtonClick">{{ buttonString }}</v-btn>
       </form>
@@ -72,7 +74,7 @@ export default {
 </script>
 
 <style scoped>
-.margin-bottom-20{
+.margin-bottom-20 {
   margin-bottom: 20px;
 }
 </style>

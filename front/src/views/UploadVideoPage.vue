@@ -69,10 +69,13 @@ export default {
     async submitFile() {
       console.log("submit file")
 
-      const promise = await this.uploadVideo({file: this.file, title: this.title, description: this.description});
-      await promise;
-      this.processing = true;
-      this.videoId = this.getVideoId()
+      await this.uploadVideo({file: this.file, title: this.title, description: this.description})
+          .then(() => {
+            console.log('uploaded')
+            this.processing = this.getIsProcessing();
+            this.videoId = this.getVideoId()
+          });
+
     },
   }
 }

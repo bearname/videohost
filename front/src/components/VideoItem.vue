@@ -14,7 +14,7 @@
       </router-link>
     </v-card-title>
     <v-card-text class="caption text-lg-left">
-      {{ videoItem.duration }} s. {{ videoItem.uploaded }}  {{videoItem.views}} views
+      {{ videoItem.duration }} s. {{ videoItem.uploaded }} {{ videoItem.views }} views
     </v-card-text>
   </div>
 </template>

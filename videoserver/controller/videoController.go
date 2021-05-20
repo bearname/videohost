@@ -2,16 +2,15 @@ package controller
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/bearname/videohost/videoserver/model"
 	"github.com/bearname/videohost/videoserver/repository"
 	"github.com/bearname/videohost/videoserver/service"
 	"github.com/bearname/videohost/videoserver/util"
 	"github.com/google/uuid"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"io"
 	"net/http"
 	"os/exec"
 	"path/filepath"
@@ -113,26 +112,16 @@ func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
+		userId, ok := context.Get(request, "userId").(string)
+		if !ok {
+			http.Error(writer, "Cannot check userId", http.StatusInternalServerError)
+			return
+		}
+
 		title := request.FormValue("title")
 		description := request.FormValue("description")
-		//request.ParseForm()
-		//
-		//form := request.Form
-		//encode := form.Encode()
-		//log.Info(encode)
-		//videoName := form.Get("name")
-		//if len(videoName) == 0 {
-		//	http.Error(writer, "`name` not present", http.StatusBadRequest)
-		//	return
-		//}
-		//
-		//description := request.Form.Get("description")
-		//if len(description) == 0 {
-		//	http.Error(writer, "`description` not present", http.StatusBadRequest)
-		//	return
-		//}
-
 		fileReader, header, err := request.FormFile("file")
+
 		if err != nil {
 			log.Error(err.Error())
 			http.Error(writer, err.Error(), http.StatusBadRequest)
@@ -162,6 +151,7 @@ func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) 
 		}
 
 		err = c.videoRepository.NewVideo(
+			userId,
 			videoId,
 			title,
 			description,
@@ -273,55 +263,4 @@ func cmdExec(args ...string) (string, error) {
 	fmt.Println("out:", outputBuffer.String(), "err:", errorBuffer.String())
 
 	return outputBuffer.String(), nil
-}
-
-func (c VideoController) getIntRouteParameter(writer http.ResponseWriter, request *http.Request, key string) (int, bool) {
-	pageStr, done := c.parseRouteParameter(request, key)
-	if !done {
-		http.Error(writer, "400 "+key+" parameter not found", http.StatusBadRequest)
-		return 0, false
-	}
-
-	page, b := c.validate(writer, pageStr)
-	if b {
-		http.Error(writer, "400 invalid "+key+" parameter", http.StatusBadRequest)
-		return 0, false
-	}
-	return page, true
-}
-
-func (c VideoController) parseRouteParameter(request *http.Request, key string) (string, bool) {
-	query := request.URL.Query()
-	keys, ok := query[key]
-
-	if !ok || len(keys) != 1 {
-		return "", false
-	}
-
-	return keys[0], true
-}
-
-func (c VideoController) validate(writer http.ResponseWriter, pageStr string) (int, bool) {
-	page, b := util.StrToInt(pageStr)
-	if !b || page < 0 {
-		http.Error(writer, "400 Invalid page parameter", http.StatusBadRequest)
-		return 0, true
-	}
-	return page, false
-}
-
-func (c VideoController) writeResponseData(w http.ResponseWriter, data interface{}) {
-	b, err := json.Marshal(data)
-	if err != nil {
-		log.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-
-	if _, err = io.WriteString(w, string(b)); err != nil {
-		log.WithField("err", err).Error("write response error")
-	}
 }
