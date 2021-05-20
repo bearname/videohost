@@ -32,8 +32,8 @@ func (c *BaseController) JsonResponse(writer http.ResponseWriter, data interface
 	}
 }
 
-func (c *BaseController) getIntRouteParameter(writer http.ResponseWriter, request *http.Request, key string) (int, bool) {
-	pageStr, done := c.parseRouteParameter(request, key)
+func (c *BaseController) GetIntRouteParameter(writer http.ResponseWriter, request *http.Request, key string) (int, bool) {
+	pageStr, done := c.ParseRouteParameter(request, key)
 	if !done {
 		http.Error(writer, "400 "+key+" parameter not found", http.StatusBadRequest)
 		return 0, false
@@ -47,7 +47,7 @@ func (c *BaseController) getIntRouteParameter(writer http.ResponseWriter, reques
 	return page, true
 }
 
-func (c *BaseController) parseRouteParameter(request *http.Request, key string) (string, bool) {
+func (c *BaseController) ParseRouteParameter(request *http.Request, key string) (string, bool) {
 	query := request.URL.Query()
 	keys, ok := query[key]
 
@@ -67,7 +67,7 @@ func (c *BaseController) validate(writer http.ResponseWriter, pageStr string) (i
 	return page, false
 }
 
-func (c *BaseController) writeResponseData(w http.ResponseWriter, data interface{}) {
+func (c *BaseController) WriteResponseData(w http.ResponseWriter, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
 		log.Error(err.Error())

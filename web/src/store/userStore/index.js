@@ -1,7 +1,7 @@
 const actions = {
     async addUser(context, {username}) {
         return await fetch(
-            process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/users/" + username,
+            process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/users/" + username,
             {
                 headers: {
                     Authorization: context.rootGetters["auth/getTokenHeader"]
@@ -28,7 +28,7 @@ const actions = {
     async updateDescription(context, {username, description}) {
         const onfulfilled = async () => {
             return await fetch(
-                process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/users/" + username,
+                process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/users/" + username,
                 {
                     method: "PATCH",
                     headers: {

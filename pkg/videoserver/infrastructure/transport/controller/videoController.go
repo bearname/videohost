@@ -1,32 +1,30 @@
 package controller
 
 import (
-	"bytes"
-	"fmt"
-	service2 "github.com/bearname/videohost/pkg/common/amqp"
-	util2 "github.com/bearname/videohost/pkg/common/util"
-	model2 "github.com/bearname/videohost/pkg/videoserver/domain/model"
-	repository2 "github.com/bearname/videohost/pkg/videoserver/domain/repository"
+	"github.com/bearname/videohost/pkg/common/amqp"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
+	"github.com/bearname/videohost/pkg/common/util"
+	"github.com/bearname/videohost/pkg/videoserver/domain/model"
+	"github.com/bearname/videohost/pkg/videoserver/domain/repository"
+	"github.com/bearname/videohost/pkg/videoserver/infrastructure/ftp"
 	"github.com/google/uuid"
-	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"os/exec"
 	"path/filepath"
 )
 
 type VideoController struct {
-	BaseController
-	videoRepository repository2.VideoRepository
-	messageBroker   service2.MessageBroker
+	controller.BaseController
+	videoRepository repository.VideoRepository
+	messageBroker   amqp.MessageBroker
 }
 
-func NewVideoController(videoRepository repository2.VideoRepository) *VideoController {
+func NewVideoController(videoRepository repository.VideoRepository) *VideoController {
 	v := new(VideoController)
 
 	v.videoRepository = videoRepository
-	v.messageBroker = service2.NewRabbitMqService("guest", "guest", "localhost", 5672)
+	v.messageBroker = amqp.NewRabbitMqService("guest", "guest", "localhost", 5672)
 	if v.messageBroker == nil {
 		return nil
 	}
@@ -56,7 +54,7 @@ func (c VideoController) GetVideo() func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		c.writeResponseData(writer, video)
+		c.WriteResponseData(writer, video)
 	}
 }
 
@@ -68,12 +66,12 @@ func (c VideoController) GetVideoList() func(http.ResponseWriter, *http.Request)
 			return
 		}
 		var page int
-		page, success := c.getIntRouteParameter(writer, request, "page")
+		page, success := c.GetIntRouteParameter(writer, request, "page")
 		if !success {
 			return
 		}
 		var countVideoOnPage int
-		countVideoOnPage, success = c.getIntRouteParameter(writer, request, "countVideoOnPage")
+		countVideoOnPage, success = c.GetIntRouteParameter(writer, request, "countVideoOnPage")
 		if !success {
 			return
 		}
@@ -96,14 +94,12 @@ func (c VideoController) GetVideoList() func(http.ResponseWriter, *http.Request)
 		responseData["pageCount"] = pageCount
 		responseData["videos"] = videos
 
-		c.writeResponseData(writer, responseData)
+		c.WriteResponseData(writer, responseData)
 	}
 }
 
 func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		//writer = *c.BaseController.AllowCorsRequest(&writer)
-
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
 		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
@@ -112,9 +108,10 @@ func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		userId, ok := context.Get(request, "userId").(string)
+		authorization := request.Header.Get("Authorization")
+		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
 		if !ok {
-			http.Error(writer, "Cannot check userId", http.StatusInternalServerError)
+			http.Error(writer, "Not grant permission", http.StatusUnauthorized)
 			return
 		}
 
@@ -129,7 +126,7 @@ func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) 
 		}
 
 		contentType := header.Header.Get("Content-Type")
-		if contentType != util2.VideoContentType {
+		if contentType != util.VideoContentType {
 			log.Error("Unexpected content type", contentType)
 			http.Error(writer, "Unexpected content type", http.StatusBadRequest)
 			return
@@ -142,29 +139,33 @@ func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) 
 			return
 		}
 		videoId := id.String()
-
-		err = util2.CopyFile(fileReader, videoId)
-		if err != nil {
-			log.Error(err.Error())
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
+		go func() {
+			connection := ftp.NewFtpConnection("localhost:21", "user", "123")
+			err = connection.CopyFile(videoId, fileReader)
+			//	err = util.CopyFile(fileReader, videoId)
+			if err != nil {
+				log.Error(err.Error())
+				http.Error(writer, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}()
 
 		err = c.videoRepository.NewVideo(
 			userId,
 			videoId,
 			title,
 			description,
-			filepath.Join(util2.ContentDir, videoId, util2.VideoFileName),
+			filepath.Join(util.ContentDir, videoId, util.VideoFileName),
 		)
 		if err != nil {
 			log.Error(err.Error())
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
+
 		//output, err := cmdExec(`ffprobe`, `-v`, `error`, `-select_streams`, `v:0`, `-show_entries`, `stream=width,height`, `-of`, `csv=s=x:p=0`, util.VideoFileName)
 		//log.Info("resolution of file " + util.VideoFileName + " equal " + output)
-		c.messageBroker.Publish("events_topic", "events.upload-video", id.String())
+		//c.messageBroker.Publish("events_topic", "events.upload-video", id.String())
 
 		writer.WriteHeader(http.StatusOK)
 		c.BaseController.JsonResponse(writer, id)
@@ -180,19 +181,19 @@ func (c *VideoController) SearchVideo() func(http.ResponseWriter, *http.Request)
 		}
 
 		var page int
-		page, success := c.getIntRouteParameter(writer, request, "page")
+		page, success := c.GetIntRouteParameter(writer, request, "page")
 		if !success {
 			http.Error(writer, "page parameter not present", http.StatusInternalServerError)
 			return
 		}
 		var countVideoOnPage int
-		countVideoOnPage, success = c.getIntRouteParameter(writer, request, "limit")
+		countVideoOnPage, success = c.GetIntRouteParameter(writer, request, "limit")
 		if !success {
 			http.Error(writer, "limit parameter not present", http.StatusInternalServerError)
 			return
 		}
 		var search string
-		search, success = c.parseRouteParameter(request, "search")
+		search, success = c.ParseRouteParameter(request, "search")
 		if !success {
 			http.Error(writer, "countVideoOnPage parameter not present", http.StatusInternalServerError)
 			return
@@ -239,28 +240,10 @@ func (c *VideoController) IncrementViews() func(http.ResponseWriter, *http.Reque
 	}
 }
 
-func (c *VideoController) responseVideoListItems(writer http.ResponseWriter, pageCount int, videos []model2.VideoListItem) {
+func (c *VideoController) responseVideoListItems(writer http.ResponseWriter, pageCount int, videos []model.VideoListItem) {
 	responseData := make(map[string]interface{})
 	responseData["pageCount"] = pageCount
 	responseData["videos"] = videos
 
-	c.writeResponseData(writer, responseData)
-}
-
-func cmdExec(args ...string) (string, error) {
-	baseCmd := args[0]
-	cmdArgs := args[1:]
-
-	cmd := exec.Command(baseCmd, cmdArgs...)
-	var outputBuffer, errorBuffer bytes.Buffer
-	cmd.Stdout = &outputBuffer
-	cmd.Stderr = &errorBuffer
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err)
-		return "", err
-	}
-	fmt.Println("out:", outputBuffer.String(), "err:", errorBuffer.String())
-
-	return outputBuffer.String(), nil
+	c.WriteResponseData(writer, responseData)
 }

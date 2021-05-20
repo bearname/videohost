@@ -40,7 +40,9 @@ const actions = {
                     }
                 }
 
-                return await axios.post(process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/video", formData, config)
+                const url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + "/api/v1/video";
+                console.log('upload video' + url)
+                return await axios.post(url, formData, config)
                     .then(onSuccess)
                     .catch(onFail)
             })
@@ -48,7 +50,7 @@ const actions = {
         return promise
     },
     async getVideoOnPage(context, page = '1', countVideoOnPage = '10') {
-        let url = process.env.VUE_APP_SERVER_ADDRESS + '/api/v1/list?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
+        let url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/api/v1/list?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
         console.log(url)
         return await axios.get(url)
             .then(response => {
@@ -78,7 +80,7 @@ const actions = {
         const promise = context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
 
         promise.then(async () => {
-            const url = process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/users/" + cookie.username + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
+            const url = process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/users/" + cookie.username + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
             console.log(url)
             return await fetch(
                 url,
@@ -111,7 +113,7 @@ const actions = {
 };
 
 const updateThumbnail = function (part, index) {
-    this[index].thumbnail = process.env.VUE_APP_SERVER_ADDRESS + "/" + this[index].thumbnail
+    this[index].thumbnail = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + "/" + this[index].thumbnail
 };
 
 export default {

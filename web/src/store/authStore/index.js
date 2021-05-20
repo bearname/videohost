@@ -4,7 +4,7 @@ import router from "../../router/index.js";
 
 const actions = {
     async login(context, {username, password}) {
-        return await fetch(process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/auth/login", {
+        return await fetch(process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/auth/login", {
             method: "POST",
             body: JSON.stringify({username: username, password: password})
         }).then(response => {
@@ -44,7 +44,7 @@ const actions = {
     },
     async signup(context, {username, password}) {
         return await fetch(
-            process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/auth/create-user",
+            process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/auth/create-user",
             {
                 method: "POST",
                 body: JSON.stringify({username: username, password: password})
@@ -97,7 +97,7 @@ const actions = {
         console.log(getters1.getCurrentUser)
         if (getters1.getAccessToken === "" || Date.now() > expiration) {
             const refreshToken = context.getters.getRefreshToken;
-            return await fetch(process.env.VUE_APP_SERVER_ADDRESS + "/api/v1/auth/token", {
+            return await fetch(process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/auth/token", {
                 headers: {
                     'Authorization': "Bearer " + refreshToken
                 }

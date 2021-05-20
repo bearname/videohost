@@ -2,15 +2,16 @@ package service
 
 import (
 	"fmt"
-	model2 "github.com/bearname/videohost/pkg/videoserver/domain/model"
+	"github.com/bearname/videohost/pkg/user/domain/model"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
-func CreateTokenWithDuration(userKey string, username string, role model2.Role, duration time.Duration) (string, error) {
+func CreateTokenWithDuration(userKey string, username string, role model.Role, duration time.Duration) (string, error) {
 	var err error
 	claims := jwt.MapClaims{}
 	claims["userId"] = userKey
@@ -27,7 +28,7 @@ func CreateTokenWithDuration(userKey string, username string, role model2.Role, 
 	return token, nil
 }
 
-func CreateToken(userKey string, username string, role model2.Role) (string, error) {
+func CreateToken(userKey string, username string, role model.Role) (string, error) {
 	return CreateTokenWithDuration(userKey, username, role, time.Minute*2)
 }
 
@@ -57,6 +58,21 @@ func IsUsernameContextOk(username string, r *http.Request) bool {
 		return false
 	}
 	return true
+}
+
+func ParseToken(header string) (string, bool) {
+	if header == "" {
+		return "Authorization header not set", false
+	}
+	bearerToken := strings.Split(header, " ")
+	if len(bearerToken) != 2 {
+		return "Cannot read token", false
+	}
+	if bearerToken[0] != "Bearer" {
+		return "Error in authorization token. it needs to be in form of 'Bearer <token>'", false
+	}
+
+	return bearerToken[1], true
 }
 
 func getSecret() string {

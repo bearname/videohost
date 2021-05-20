@@ -29,7 +29,7 @@
           <input id="file" type="file" name="file" ref="file" v-on:change="onChangeFile()"/>
         </label>
       </div>
-      <v-btn v-on:click="submitFile()" type="submit" value="upload">Upload</v-btn>
+      <v-btn v-on:click="submitFile" type="submit" value="upload">Upload</v-btn>
     </div>
   </div>
 </template>

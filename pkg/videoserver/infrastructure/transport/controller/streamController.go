@@ -2,18 +2,19 @@ package controller
 
 import (
 	"fmt"
-	repository2 "github.com/bearname/videohost/pkg/videoserver/domain/repository"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
+	"github.com/bearname/videohost/pkg/videoserver/domain/repository"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
 type StreamController struct {
-	BaseController
-	videoRepository repository2.VideoRepository
+	controller.BaseController
+	videoRepository repository.VideoRepository
 }
 
-func NewStreamController(videoRepository repository2.VideoRepository) *StreamController {
+func NewStreamController(videoRepository repository.VideoRepository) *StreamController {
 	v := new(StreamController)
 	v.videoRepository = videoRepository
 	return v
@@ -27,7 +28,7 @@ func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *ht
 	var ok bool
 
 	if id, ok = vars["id"]; !ok {
-		http.Error(writer, "404 video not found not found", http.StatusNotFound)
+		http.Error(writer, "404 video not found", http.StatusNotFound)
 		return
 	}
 

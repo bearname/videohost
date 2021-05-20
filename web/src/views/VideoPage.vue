@@ -59,7 +59,7 @@ export default {
       this.fetchVideo(this.videoId)
     },
     fetchVideo(videoId) {
-      let url = 'http://localhost:8000/api/v1/video/' + videoId;
+      let url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/api/v1/video/' + videoId;
       console.log(url)
       axios.get(url)
           .then(response => {

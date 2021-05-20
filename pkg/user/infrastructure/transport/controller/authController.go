@@ -2,26 +2,26 @@ package controller
 
 import (
 	"encoding/json"
-	dto2 "github.com/bearname/videohost/pkg/videoserver/app/dto"
-	"github.com/bearname/videohost/pkg/videoserver/app/service"
-	model2 "github.com/bearname/videohost/pkg/videoserver/domain/model"
-	repository2 "github.com/bearname/videohost/pkg/videoserver/domain/repository"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
+	"github.com/bearname/videohost/pkg/user/app/service"
+	"github.com/bearname/videohost/pkg/user/domain/model"
+	"github.com/bearname/videohost/pkg/user/domain/repository"
+	"github.com/bearname/videohost/pkg/videoserver/app/dto"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
-	"strings"
 	"time"
 )
 
 type AuthController struct {
-	BaseController
-	userRepository repository2.UserRepository
+	controller.BaseController
+	userRepository repository.UserRepository
 }
 
-func NewAuthController(userRepository repository2.UserRepository) *AuthController {
+func NewAuthController(userRepository repository.UserRepository) *AuthController {
 	v := new(AuthController)
 
 	v.userRepository = userRepository
@@ -34,7 +34,7 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 		writer.WriteHeader(http.StatusNoContent)
 		return
 	}
-	var newUser dto2.UserDto
+	var newUser dto.UserDto
 	err := json.NewDecoder(request.Body).Decode(&newUser)
 	if err != nil {
 		http.Error(writer, "Cannot decode request", http.StatusBadRequest)
@@ -55,19 +55,19 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 
-	accessToken, err := service.CreateToken(userKey.String(), newUser.Username, model2.General)
+	accessToken, err := service.CreateToken(userKey.String(), newUser.Username, model.General)
 	if err != nil {
 		http.Error(writer, "Cannot create accessToken", http.StatusInternalServerError)
 		return
 	}
 
-	refreshToken, err := service.CreateTokenWithDuration(userKey.String(), newUser.Username, model2.General, time.Hour*24*365*10)
+	refreshToken, err := service.CreateTokenWithDuration(userKey.String(), newUser.Username, model.General, time.Hour*24*365*10)
 	if err != nil {
 		http.Error(writer, "Cannot create refreshToken", http.StatusInternalServerError)
 		return
 	}
 
-	err = c.userRepository.CreateUser(userKey.String(), newUser.Username, passwordHash, model2.General, accessToken, refreshToken)
+	err = c.userRepository.CreateUser(userKey.String(), newUser.Username, passwordHash, model.General, accessToken, refreshToken)
 	if err != nil {
 		http.Error(writer, "User"+err.Error(), http.StatusInternalServerError)
 		return
@@ -82,7 +82,7 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 
 func (c *AuthController) GetTokenUserPassword(writer http.ResponseWriter, request *http.Request) {
 	writer = *c.BaseController.AllowCorsRequest(&writer)
-	var userDto dto2.UserDto
+	var userDto dto.UserDto
 	err := json.NewDecoder(request.Body).Decode(&userDto)
 	if err != nil {
 		http.Error(writer, "cannot decode username/password struct", http.StatusBadRequest)
@@ -143,7 +143,7 @@ func (c *AuthController) GetTokenByToken(writer http.ResponseWriter, request *ht
 		return
 	}
 
-	accessToken, err := service.CreateToken(userKey, username, model2.General)
+	accessToken, err := service.CreateToken(userKey, username, model.General)
 	if err != nil {
 		http.Error(writer, "Cannot create accessToken", http.StatusInternalServerError)
 		return
@@ -173,8 +173,9 @@ func (c *AuthController) CheckTokenHandler(next http.HandlerFunc) http.HandlerFu
 		}
 		log.Println("check token handler")
 		header := request.Header.Get("Authorization")
-		tokenString, ok := c.parseToken(writer, header)
+		tokenString, ok := service.ParseToken(header)
 		if !ok {
+			http.Error(writer, tokenString, http.StatusBadRequest)
 			return
 		}
 		token, ok := service.CheckToken(tokenString)
@@ -215,16 +216,64 @@ func (c *AuthController) CheckTokenHandler(next http.HandlerFunc) http.HandlerFu
 	}
 }
 
-func (c *AuthController) parseToken(writer http.ResponseWriter, header string) (string, bool) {
-	bearerToken := strings.Split(header, " ")
-	if len(bearerToken) != 2 {
-		http.Error(writer, "Cannot read token", http.StatusBadRequest)
-		return "", false
-	}
-	if bearerToken[0] != "Bearer" {
-		http.Error(writer, "Error in authorization token. it needs to be in form of 'Bearer <token>'", http.StatusBadRequest)
-		return "", false
+func (c *AuthController) CheckToken(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	if (*request).Method == "OPTIONS" {
+		writer.WriteHeader(http.StatusNoContent)
+		return
 	}
 
-	return bearerToken[1], true
+	log.Println("check token handler")
+	header := request.Header.Get("Authorization")
+	tokenString, ok := service.ParseToken(header)
+	if !ok {
+		http.Error(writer, tokenString, http.StatusBadRequest)
+		return
+	}
+
+	token, ok := service.CheckToken(tokenString)
+	log.Println("bearerToken " + tokenString)
+
+	if !ok {
+		http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	username, userId, ok := c.parsePayload(ok, token)
+	if !ok {
+		http.Error(writer, username, http.StatusUnauthorized)
+		return
+	}
+
+	log.Println("success")
+
+	c.JsonResponse(writer, struct {
+		Username string `json:"username"`
+		UserId   string `json:"user_id"`
+		ok       bool
+	}{Username: username, UserId: userId, ok: true})
+}
+
+func (c *AuthController) parsePayload(ok bool, token *jwt.Token) (string, string, bool) {
+	var username string
+	var userId string
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		username, ok = claims["username"].(string)
+		if !ok {
+			return "Unauthorized, username not exist", "", false
+		}
+		userId, ok = claims["userId"].(string)
+		if !ok {
+			return "Unauthorized, userId not exist", "", false
+		}
+
+		_, err := c.userRepository.FindByUserName(username)
+		if err != nil {
+			return "Unauthorized, user not exists", "", false
+		}
+	}
+	return username, userId, true
 }

@@ -2,8 +2,10 @@ package controller
 
 import (
 	"encoding/json"
-	dto2 "github.com/bearname/videohost/pkg/videoserver/app/dto"
-	"github.com/bearname/videohost/pkg/videoserver/app/service"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
+	service2 "github.com/bearname/videohost/pkg/user/app/service"
+	"github.com/bearname/videohost/pkg/user/domain/repository"
+	"github.com/bearname/videohost/pkg/videoserver/app/dto"
 	repository2 "github.com/bearname/videohost/pkg/videoserver/domain/repository"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -13,12 +15,12 @@ import (
 )
 
 type UserController struct {
-	BaseController
-	userRepository  repository2.UserRepository
+	controller.BaseController
+	userRepository  repository.UserRepository
 	videoRepository repository2.VideoRepository
 }
 
-func NewUserController(userRepository repository2.UserRepository, videoRepository repository2.VideoRepository) *UserController {
+func NewUserController(userRepository repository.UserRepository, videoRepository repository2.VideoRepository) *UserController {
 	v := new(UserController)
 	v.userRepository = userRepository
 	v.videoRepository = videoRepository
@@ -53,13 +55,13 @@ func (c *UserController) GetUser(writer http.ResponseWriter, request *http.Reque
 
 func (c *UserController) UpdatePassword(writer http.ResponseWriter, request *http.Request) {
 	writer = *c.BaseController.AllowCorsRequest(&writer)
-	var userDto dto2.ChangePasswordUserDto
+	var userDto dto.ChangePasswordUserDto
 	err := json.NewDecoder(request.Body).Decode(&userDto)
 	if err != nil {
 		http.Error(writer, "cannot decode username/password struct", http.StatusBadRequest)
 		return
 	}
-	if !service.IsUsernameContextOk(userDto.Username, request) {
+	if !service2.IsUsernameContextOk(userDto.Username, request) {
 		http.Error(writer, "Is username context invalid", http.StatusBadRequest)
 		return
 	}
@@ -115,12 +117,12 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 	}
 
 	var page int
-	page, success := c.getIntRouteParameter(writer, request, "page")
+	page, success := c.GetIntRouteParameter(writer, request, "page")
 	if !success {
 		return
 	}
 	var countVideoOnPage int
-	countVideoOnPage, success = c.getIntRouteParameter(writer, request, "countVideoOnPage")
+	countVideoOnPage, success = c.GetIntRouteParameter(writer, request, "countVideoOnPage")
 	if !success {
 		return
 	}
@@ -143,5 +145,5 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 	responseData["countAllVideos"] = countAllVideos
 	responseData["videos"] = videos
 
-	c.writeResponseData(writer, responseData)
+	c.WriteResponseData(writer, responseData)
 }

@@ -2,7 +2,7 @@ package mysql
 
 import (
 	"github.com/bearname/videohost/pkg/common/database"
-	model2 "github.com/bearname/videohost/pkg/videoserver/domain/model"
+	"github.com/bearname/videohost/pkg/user/domain/model"
 )
 
 type UserRepository struct {
@@ -15,7 +15,7 @@ func NewMysqlUserRepository(connector database.Connector) *UserRepository {
 	return m
 }
 
-func (r *UserRepository) CreateUser(key string, username string, password []byte, role model2.Role, accessToken string, refreshToken string) error {
+func (r *UserRepository) CreateUser(key string, username string, password []byte, role model.Role, accessToken string, refreshToken string) error {
 	query, err := r.connector.Database.Query("INSERT INTO users (key_user, username, password, role, access_token, refresh_token) VALUES (?, ?, ?, ?, ?, ?);", key, username, password, role, accessToken, refreshToken)
 	if err != nil {
 		return err
@@ -26,8 +26,8 @@ func (r *UserRepository) CreateUser(key string, username string, password []byte
 	return nil
 }
 
-func (r *UserRepository) FindByUserName(username string) (*model2.User, error) {
-	var user model2.User
+func (r *UserRepository) FindByUserName(username string) (*model.User, error) {
+	var user model.User
 
 	row := r.connector.Database.QueryRow("SELECT key_user, username, password, created, role, secret, access_token, refresh_token FROM users WHERE username = ?;", username)
 

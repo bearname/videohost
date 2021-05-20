@@ -5,13 +5,13 @@ import (
 	"github.com/bearname/videohost/pkg/common/database"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
 	"github.com/bearname/videohost/pkg/common/util"
-	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport/router"
+	"github.com/bearname/videohost/pkg/user/infrastructure/transport/router"
 	_ "github.com/go-sql-driver/mysql"
 	"os"
 )
 
 func main() {
-	port := 8000
+	port := 8001
 	if len(os.Args) > 1 {
 		toInt, ok := util.StrToInt(os.Args[1])
 		if !ok {
@@ -28,5 +28,5 @@ func main() {
 	}
 	defer connector.Close()
 
-	server.ExecuteServer("videoserver", port, router.Router(connector))
+	server.ExecuteServer("userserver", port, router.Router(connector))
 }

@@ -50,7 +50,8 @@ export default {
       this.searchVideos(this.search)
     },
     searchVideos(searchString, page = '1', countVideoOnPage = '10') {
-      let url = 'http://localhost:8000/api/v1/video/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
+      const videoServerAddress = process.env.VUE_APP_VIDEO_SERVER_ADDRESS;
+      let url = videoServerAddress + '/api/v1/video/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
       console.log(url)
       axios.get(url)
           .then(response => {
@@ -61,7 +62,7 @@ export default {
             if (Object.keys(response.data).includes("videos")) {
               this.videos = response.data.videos
               this.videos.forEach(function (part, index) {
-                this[index].thumbnail = "http://localhost:8000/" + this[index].thumbnail
+                this[index].thumbnail = videoServerAddress + this[index].thumbnail
               }, this.videos)
               console.log("videos", this.videos)
             }
