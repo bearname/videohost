@@ -2,16 +2,18 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
 
 func ValidateToken(authorization string, authServerUrl string) (string, bool) {
 	client := &http.Client{}
-	validateAccessTokenRequest, err := http.NewRequest("GET", "/api/v1/auth/token/validate", nil)
+	validateAccessTokenRequest, err := http.NewRequest("GET", authServerUrl+"/api/v1/auth/token/validate", nil)
 	validateAccessTokenRequest.Header.Add("Authorization", authorization)
 	response, err := client.Do(validateAccessTokenRequest)
 	if err != nil {
+		fmt.Println(err.Error())
 		return "", false
 	}
 	defer response.Body.Close()
@@ -23,6 +25,7 @@ func ValidateToken(authorization string, authServerUrl string) (string, bool) {
 	}{}
 	err = json.Unmarshal(body, &s)
 	if err != nil {
+		fmt.Println(err.Error())
 		return "", false
 	}
 	return s.UserId, true

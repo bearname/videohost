@@ -3,8 +3,6 @@ package router
 import (
 	"github.com/bearname/videohost/pkg/common/database"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/middleware"
-	mysql2 "github.com/bearname/videohost/pkg/user/infrastructure/mysql"
-	authHandler "github.com/bearname/videohost/pkg/user/infrastructure/transport/controller"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/mysql"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport/controller"
 	"github.com/gorilla/mux"
@@ -23,13 +21,10 @@ func Router(connector database.Connector) http.Handler {
 		panic("failed build videocontroller")
 	}
 
-	userRepository := mysql2.NewMysqlUserRepository(connector)
-	authController := authHandler.NewAuthController(userRepository)
-
 	subRouter.HandleFunc("/list", videoController.GetVideoList()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/video/search", videoController.SearchVideo()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/video/{ID}", videoController.GetVideo()).Methods(http.MethodGet)
-	subRouter.HandleFunc("/video", authController.CheckTokenHandler(videoController.UploadVideo())).Methods(http.MethodPost, http.MethodOptions)
+	subRouter.HandleFunc("/video", videoController.UploadVideo()).Methods(http.MethodPost, http.MethodOptions)
 	subRouter.HandleFunc("/video/{id}/increment", videoController.IncrementViews()).Methods(http.MethodPost, http.MethodOptions)
 
 	streamController := controller.NewStreamController(videoRepository)
