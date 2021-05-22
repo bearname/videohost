@@ -111,8 +111,10 @@ const actions = {
                 })
                 .catch(error => {
                     console.log(error)
-                    if (error.message === 'Invalid res')
+                    if (error.message === 'Invalid res') {
                         context.dispatch("logout");
+                        alert("logout")
+                    }
                     throw error;
                 });
         } else {

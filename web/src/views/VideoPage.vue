@@ -5,19 +5,18 @@
       <div v-if="video.status === '3'">
         <Player :videoId="videoId" :key="key"/>
       </div>
-      <div v-else> status {{video.status}}{{ videoStatus }}</div>
+      <div v-else> status {{ video.status }}{{ videoStatus }}</div>
       <h3>{{ video.name }}</h3>
       <p class="subtitle-1">Watch video {{ video.description }}</p>
       <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
       <p class="subtitle-2">{{ video.views }} views</p>
-      <div v-if="currentUserId !== null && video.ownerId === currentUserId">
+      <div v-if="isCurrentUserOwner">
         <v-btn v-on:click="deleteItemPermanent(video.id)" :data-id="video.id">delete</v-btn>
       </div>
     </div>
     <div v-else>
       Video not exist
     </div>
-
     <v-spacer></v-spacer>
     <div>
       <h4>Also see</h4>
@@ -47,15 +46,16 @@ export default {
       video: null,
       currentUserId: null,
       error: false,
-      videoStatus: null
+      videoStatus: null,
+      userVideos: null,
     }
   },
   created() {
     this.setVideoId()
     this.key = Date.now()
-    // this.currentUserId =
-        Cookie.getCookie("userId");
+    this.currentUserId = Cookie.getCookie("userId");
     console.log(this.videoId)
+    this.getAsyncVideos()
   },
   watch: {
     '$route'() {
@@ -68,11 +68,14 @@ export default {
   },
   methods: {
     ...mapActions({
-      deleteVideoPermanent: "video/deleteVideoPermanent"
+      deleteVideoPermanent: "video/deleteVideoPermanent",
     }),
     ...mapGetters({
-      getStatus: "video/getStatus"
+      getStatus: "video/getStatus",
     }),
+    isCurrentUserOwner() {
+      return this.currentUserId !== null && this.video.ownerId === this.currentUserId
+    },
     async setVideoId() {
       this.videoId = this.$route.params.videoId
       this.fetchVideo(this.videoId)
@@ -135,6 +138,7 @@ export default {
         return years + " лет назад"
       }
     },
+
 
   }
 }

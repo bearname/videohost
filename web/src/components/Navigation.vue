@@ -9,12 +9,11 @@
       <v-toolbar-title class="mr-16">
         <router-link :to="{ name: 'home'}">Каталог</router-link>
       </v-toolbar-title>
-
       <v-toolbar-title>
         <router-link :to="{ name: 'uploadVideo'}">Загрузить видео</router-link>
       </v-toolbar-title>
       <v-toolbar-title>
-        <router-link :to="{ name: 'user'}">User</router-link>
+        <router-link :to="{ name: 'user'}">User {{ currentUsername }}</router-link>
       </v-toolbar-title>
       <v-toolbar-title>
         <div v-if="isLoggedUser === false">
@@ -43,7 +42,7 @@ export default {
       logout: "auth/logout",
     }),
     ...mapGetters({
-      isLoggedIn: "auth/isLoggedIn",
+      isLogged: "auth/isLoggedIn",
       getUser: "user/getUser",
       getCurrentUser: "auth/getCurrentUser"
     }),
@@ -56,11 +55,13 @@ export default {
     user() {
       return this.getUser(this.userid);
     },
-    currentUsername() {
-      return this.getCurrentUser().username;
+    currentUsername: function () {
+      const currentUser = this.getCurrentUser();
+      console.log(currentUser)
+      return currentUser.username;
     },
     isLoggedUser() {
-      return this.isLoggedIn()
+      return this.isLogged()
     }
   },
 }
