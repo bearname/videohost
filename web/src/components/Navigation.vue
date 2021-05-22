@@ -57,7 +57,6 @@ export default {
     },
     currentUsername: function () {
       const currentUser = this.getCurrentUser();
-      console.log(currentUser)
       return currentUser.username;
     },
     isLoggedUser() {

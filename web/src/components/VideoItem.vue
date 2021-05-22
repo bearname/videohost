@@ -21,6 +21,9 @@
           videoStatus
         }}</span>
     </v-card-text>
+
+    <p>ownerId id {{ videoItem.ownerId }}</p>
+    <p>User id {{ userId }}</p>
     <div v-if="isCurrentUserOwner">
       <v-btn v-on:click="deleteItemPermanent(videoItem.id)" :data-id="videoItem.id">delete</v-btn>
     </div>
@@ -37,7 +40,7 @@
 
 import {mapActions, mapGetters} from "vuex";
 import VideoStatus from "../store/videoStore/videoStatus";
-import Cookie from "@/util/cookie";
+// import Cookie from "@/util/cookie";
 
 export default {
   name: "VideoItem",
@@ -45,9 +48,9 @@ export default {
     'video',
     'showStatus',
     'userPage',
+    'currentUserId',
   ],
   created() {
-    this.currentUserId = Cookie.getCookie("userId");
     this.videoStatus = VideoStatus.intToStatus(this.videoItem.status)
   },
   data() {
@@ -56,7 +59,7 @@ export default {
       videoStatus: null,
       isUserPage: this.userPage,
       status: null,
-      currentUserId: null,
+      userId: this.currentUserId,
     }
   },
   methods: {
@@ -67,13 +70,11 @@ export default {
       getStatus: "video/getStatus"
     }),
     isCurrentUserOwner() {
-      return this.currentUserId !== null && this.videoItem.ownerId === this.currentUserId
+      return this.userId !== null && this.videoItem.ownerId === this.userId
     },
-    deleteItemPermanent(videoId) {
-      const promise = this.deleteVideoPermanent({videoId: videoId});
-      promise.then(() => {
-        this.status = this.getStatus();
-      })
+    async deleteItemPermanent(videoId) {
+      await this.deleteVideoPermanent({videoId: videoId});
+      this.status = this.getStatus();
     },
   }
 }

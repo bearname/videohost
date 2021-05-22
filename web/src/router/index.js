@@ -4,6 +4,7 @@ import StreamPage from '../views/VideoPage.vue'
 import UploadVideo from "../views/UploadVideoPage";
 import LoginPage from "../views/LoginPage";
 import UserPage from "../views/UserPage";
+// import VideoEditPage from "../views/VideoEditPage";
 import store from "../store/index.js";
 
 const routes = {
@@ -41,6 +42,18 @@ const routes = {
         path: '/videos/:videoId?',
         component: StreamPage
     },
+    // editVideo: {
+    //     name: 'videoStream',
+    //     path: '/videos/:videoId/edit',
+    //     component: VideoEditPage,
+    //     beforeEnter: (to, from, next) => {
+    //         if (store.getters["auth/isLoggedIn"]) {
+    //             next();
+    //         } else {
+    //             next({name: "login"});
+    //         }
+    //     }
+    // },
     login: {
         name: "login",
         path: "/login",
@@ -64,6 +77,7 @@ const router = new VueRouter({
         routes.videoStream,
         routes.uploadVideo,
         routes.login,
+        // routes.editVideo,
     ],
 });
 

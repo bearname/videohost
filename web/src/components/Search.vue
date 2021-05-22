@@ -49,7 +49,6 @@ export default {
     searchVideos(searchString, page = '1', countVideoOnPage = '10') {
       const videoServerAddress = process.env.VUE_APP_VIDEO_SERVER_ADDRESS;
       let url = videoServerAddress + '/api/v1/videos/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
-      console.log(url)
       axios.get(url)
           .then(response => {
             console.log(response.data)
@@ -61,7 +60,6 @@ export default {
               this.videos.forEach(function (part, index) {
                 this[index].thumbnail = videoServerAddress + this[index].thumbnail
               }, this.videos)
-              console.log("videos", this.videos)
             }
           })
           .catch(function (error) {

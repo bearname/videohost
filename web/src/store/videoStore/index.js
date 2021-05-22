@@ -3,12 +3,10 @@ import Cookie from "../../util/cookie.js";
 
 const actions = {
     async uploadVideo(context, {file, title, description}) {
-        console.log("Upload file")
         const promise = context
             .dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
         promise
             .then(async () => {
-                console.log("Upload file")
                 const formData = new FormData();
                 formData.append("file", file)
                 formData.append("title", title)
@@ -107,6 +105,37 @@ const actions = {
         })
         return promise
     },
+    updateTitleAndDescription(context, {videoId, name, description}) {
+        const promise = context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
+
+        promise.then(() => {
+            const url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + "/api/v1/videos/" + videoId;
+            return fetch(url, {
+                method: "PUT",
+                headers: {
+                    'Authorization': context.rootGetters["auth/getTokenHeader"]
+                },
+                body: JSON.stringify({"title": name, "description": description})
+            }).then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true})
+                    } else {
+                        throw new Error("Cannot update")
+                    }
+                }
+                return response.json()
+            }).then(data => {
+                context.state.success = data.success
+                context.state.message = data.message
+                console.log(data)
+            }).catch(error => {
+                console.log(error)
+                context.state.success = false
+                throw error
+            })
+        })
+    },
     deleteVideoPermanent(context, {videoId}) {
         const promise = context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
 
@@ -165,7 +194,6 @@ export default {
         SET_VIDEOS(state, {videos}) {
             state.videos = videos
             state.videos.forEach(updateThumbnail, state.videos)
-            console.log("videos", state.videos)
         },
     },
     actions: actions,

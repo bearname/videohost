@@ -21,13 +21,11 @@ export default {
             };
 
             request.onupgradeneeded = e => {
-                console.log("onupgradeneeded called");
                 let db = e.target.result;
-                let objectStore = db.createObjectStore("userAuth", {
+                db.createObjectStore("userAuth", {
                     autoIncrement: true,
                     keyPath: "username"
                 });
-                console.log(objectStore)
             };
         });
     },

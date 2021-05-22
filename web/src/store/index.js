@@ -14,8 +14,8 @@ export default new Vuex.Store({
     mutations: {},
     actions: {},
     modules: {
-        auth: authModule,
         video: videoModule,
+        auth: authModule,
         user: userModule
     },
     plugins: [

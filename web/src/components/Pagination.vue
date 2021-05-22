@@ -4,7 +4,7 @@
       max-width="1000"
   >
     <div v-if="videos !== null">
-      <VideoList :videos="videos" :show-status="showStatus" :user-page="userPage"  :key="pageNumber"/>
+      <VideoList :videos="videos" :current-user-id="currentUserId" :show-status="showStatus" :user-page="userPage"  :key="pageNumber"/>
       <v-btn class="v-btn"
              :disabled="pageNumber === 0"
              @click="previousPage">
@@ -34,6 +34,10 @@ export default {
     'showStatus',
     'userPage',
   ],
+  created() {
+    const getter = this.$store.getters["auth/getCurrentUser"];
+    this.currentUserId = getter.id;
+  },
   data() {
     return {
       error: false,
@@ -41,6 +45,7 @@ export default {
       videos: null,
       countVideoOnPage: 16,
       countPage: null,
+      currentUserId: null,
       url: {
         type: String,
         required: false,

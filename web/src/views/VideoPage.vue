@@ -11,7 +11,21 @@
       <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
       <p class="subtitle-2">{{ video.views }} views</p>
       <div v-if="isCurrentUserOwner">
-        <v-btn v-on:click="deleteItemPermanent(video.id)" :data-id="video.id">delete</v-btn>
+        <v-btn v-on:click="toggleEdit" :data-id="video.id">edit</v-btn>
+        <div v-if="showEdit">
+          <div>
+            <label for="name">Name: <input id="name" type="text" v-model="video.name"></label>
+          </div>
+          <div>
+            <label for="description">Description: <input id="description" type="text"
+                                                         v-model="video.description"></label>
+          </div>
+          <v-btn type="submit" v-on:click="updateTitleAndDescription">update</v-btn>
+          <div v-if="error !== null"><span v-if="!error">Success</span><span v-else>Failed</span> updated video title
+            and description
+          </div>
+        </div>
+        <v-btn v-on:click="deleteItemPermanent(video.id)">delete</v-btn>
       </div>
     </div>
     <div v-else>
@@ -32,12 +46,13 @@ import axios from 'axios'
 import {mapActions, mapGetters} from "vuex";
 import Cookie from "../util/cookie";
 import VideoStatus from "../store/videoStore/videoStatus";
+import getElapsedString from "../store/videoStore/video"
 
 export default {
   name: "StreamPage",
   components: {
     Player,
-    Pagination
+    Pagination,
   },
   data() {
     return {
@@ -45,26 +60,28 @@ export default {
       key: 0,
       video: null,
       currentUserId: null,
-      error: false,
+      error: null,
       videoStatus: null,
       userVideos: null,
+      showEdit: false,
     }
   },
   created() {
     this.setVideoId()
     this.key = Date.now()
     this.currentUserId = Cookie.getCookie("userId");
-    console.log(this.videoId)
     this.getAsyncVideos()
   },
   watch: {
     '$route'() {
-      console.log("router")
       this.setVideoId()
       this.key = Date.now()
-
-      console.log(this.videoId)
     }
+  },
+  computed: {
+    isCurrentUserOwner() {
+      return this.currentUserId !== null && this.video.ownerId === this.currentUserId
+    },
   },
   methods: {
     ...mapActions({
@@ -73,22 +90,18 @@ export default {
     ...mapGetters({
       getStatus: "video/getStatus",
     }),
-    isCurrentUserOwner() {
-      return this.currentUserId !== null && this.video.ownerId === this.currentUserId
-    },
-    async setVideoId() {
+    setVideoId() {
       this.videoId = this.$route.params.videoId
       this.fetchVideo(this.videoId)
     },
     fetchVideo(videoId) {
       let url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/api/v1/videos/' + videoId;
-      console.log(url)
       axios.get(url)
           .then(response => {
             console.log(response.data)
             this.video = response.data
             this.videoStatus = VideoStatus.intToStatus(this.video.status)
-            this.video.uploaded = this.getElapsedString(this.video.uploaded)
+            this.video.uploaded = getElapsedString(this.video.uploaded)
           })
           .catch(function (error) {
             if (error.response) {
@@ -103,44 +116,26 @@ export default {
             this.error = true
           });
     },
-    deleteItemPermanent(videoId) {
+    async updateTitleAndDescription() {
+      const video = {
+        videoId: this.video.id,
+        name: this.video.name,
+        description: this.video.description,
+      };
+      await this.$store.dispatch("video/updateTitleAndDescription", video);
+      console.log("update status")
+      this.error = this.getStatus();
+    },
+    async deleteItemPermanent(videoId) {
       const promise = this.deleteVideoPermanent({videoId: videoId});
-      promise.then(() => {
-        this.status = this.getStatus();
-      })
+      const newVar = await promise;
+      console.log(newVar)
+      this.error = this.getStatus();
     },
-    getElapsedString(uploadedDate) {
-      let elapsed = (Date.now() - Date.parse(uploadedDate)) / 1000;
-
-      elapsed = Math.round(elapsed);
-
-      if (elapsed / 60 < 1) {
-        return elapsed + " секунд назад"
-      }
-      elapsed = Math.round(elapsed / 60);
-      if (elapsed / 60 < 1) {
-        return elapsed + " минут назад"
-      }
-      elapsed = Math.round(elapsed / 24);
-      if (elapsed / 24 < 1) {
-        return elapsed + " часов назад"
-      }
-      let weeks = Math.round(elapsed / 7);
-      if (weeks / 7 < 1) {
-        return weeks + " недель назад"
-      }
-      let months = Math.round(elapsed / 30);
-      if (months / 30 < 1) {
-        return months + " месяцев назад"
-      }
-      let years = Math.round(elapsed / 365);
-      if (years / 365 < 1) {
-        return years + " лет назад"
-      }
+    toggleEdit() {
+      this.showEdit = !this.showEdit
     },
-
-
-  }
+  },
 }
 </script>
 

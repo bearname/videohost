@@ -151,9 +151,11 @@ const mutations = {
         state.user.loggedIn = true
         state.user.username = username
         state.user.accessToken = accessToken
+        state.user.id = jwt_decode(accessToken).userId
     },
     LOGOUT(state) {
         state.user.loggedIn = false
+        state.user.id = ""
         state.user.username = ""
         state.user.accessToken = ""
     },
@@ -168,7 +170,6 @@ const mutations = {
     SET_COOKIE(state, {username, accessToken}) {
         if (accessToken !== "") {
             const jwtDecode = jwt_decode(accessToken);
-            console.log(jwtDecode)
             Cookie.setCookie("userId", jwtDecode.userId, 2)
         }
         Cookie.setCookie("username", username, 2)
@@ -176,7 +177,6 @@ const mutations = {
     },
     SET_REFRESH_TOKEN_COOKIE(state, {refreshToken}) {
         Cookie.setCookie("refreshToken", refreshToken, 1100)
-        // document.cookie = "refreshToken=" + refreshToken
     },
     ERASE_COOKIE(state, {cookies}) {
         for (let cookie in cookies) {
@@ -187,6 +187,7 @@ const mutations = {
 
 const state1 = {
     user: {
+        id: "",
         username: "",
         loggedIn: false,
         accessToken: "",

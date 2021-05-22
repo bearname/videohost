@@ -67,8 +67,6 @@ export default {
       this.title = this.$refs.title.value
     },
     async submitFile() {
-      console.log("submit file")
-
       await this.uploadVideo({file: this.file, title: this.title, description: this.description})
           .then(() => {
             console.log('uploaded')
