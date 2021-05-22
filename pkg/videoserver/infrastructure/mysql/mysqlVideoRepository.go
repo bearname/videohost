@@ -17,10 +17,45 @@ func NewMysqlVideoRepository(connector database.Connector) *VideoRepository {
 	return m
 }
 
-func (r *VideoRepository) GetVideo(id string) (*model.Video, error) {
+func (r *VideoRepository) Create(userId string, videoId string, title string, description string, url string) error {
+	_, err := r.connector.Database.Query("INSERT INTO video (id_video, title, description, url, owner_id) VALUE (?, ?, ?, ?, ?);", videoId,
+		title,
+		description,
+		url,
+		userId)
+	if err != nil {
+		log.Info(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (r *VideoRepository) Save(video *model.Video) error {
+	query := "INSERT INTO video (id_video, title, description, duration, status, thumbnail_url, url, uploaded, quality, owner_id)  VALUE (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	_, err := r.connector.Database.Query(query, video.Id,
+		video.Name,
+		video.Description,
+		video.Duration,
+		video.Status,
+		video.Thumbnail,
+		video.Url,
+		video.Uploaded,
+		video.Quality,
+		video.OwnerId)
+
+	if err != nil {
+		log.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (r *VideoRepository) Find(videoId string) (*model.Video, error) {
 	var video model.Video
 
-	row := r.connector.Database.QueryRow("SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views FROM video WHERE id_video=? AND status = 3 ORDER BY uploaded DESC", id)
+	row := r.connector.Database.QueryRow("SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views, owner_id, status FROM video WHERE id_video=? ORDER BY uploaded DESC", videoId)
 
 	err := row.Scan(
 		&video.Id,
@@ -32,34 +67,37 @@ func (r *VideoRepository) GetVideo(id string) (*model.Video, error) {
 		&video.Uploaded,
 		&video.Quality,
 		&video.Views,
+		&video.OwnerId,
+		&video.Status,
 	)
-	r.IncrementViews(id)
+
 	return &video, err
 }
 
-func (r *VideoRepository) GetVideoList(page int, count int) ([]model.VideoListItem, error) {
+func (r *VideoRepository) Update(videoId string, title string, description string) error {
+	rows, err := r.connector.Database.Query("UPDATE video SET title=?, description=? WHERE id_video=?;", title, description, videoId)
+	if err != nil {
+		log.Error(err.Error())
+		return err
+	}
+	defer rows.Close()
+	return nil
+}
+
+func (r *VideoRepository) Delete(videoId string) error {
+	rows, err := r.connector.Database.Query("DELETE FROM video  WHERE id_video=?;", videoId)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return nil
+}
+
+func (r *VideoRepository) FindVideosByPage(page int, count int) ([]model.VideoListItem, error) {
 	offset := (page) * count
 	rows, err := r.connector.Database.Query("SELECT id_video, title, duration, thumbnail_url, uploaded, views, status FROM video WHERE status=3 LIMIT ?, ?;", offset, count)
 
 	return r.getVideoListItem(rows, err)
-}
-
-func (r *VideoRepository) NewVideo(userId string, videoId string, title string, description string, url string) error {
-	_, err := r.connector.Database.Query("INSERT INTO video (id_video, title, description, url) VALUE (?, ?, ?, ?);", videoId,
-		title,
-		description,
-		url)
-	if err != nil {
-		log.Info(err.Error())
-		return err
-	}
-	_, err = r.connector.Database.Query("INSERT INTO user_videos (key_user, id_video) VALUE (?, ?);", userId, videoId)
-	if err != nil {
-		log.Info(err.Error())
-		return err
-	}
-
-	return nil
 }
 
 func (r *VideoRepository) GetPageCount(countVideoOnPage int) (int, bool) {
@@ -115,7 +153,7 @@ func (r *VideoRepository) IncrementViews(id string) bool {
 
 func (r *VideoRepository) FindUserVideos(userId string, page int, count int) ([]model.VideoListItem, error) {
 	offset := (page) * count
-	query := "SELECT video.id_video, title, duration, thumbnail_url, uploaded, views, status FROM video LEFT JOIN user_videos uv on video.id_video = uv.id_video WHERE uv.key_user=?  LIMIT ?, ?;"
+	query := "SELECT video.id_video, title, duration, thumbnail_url, uploaded, views, status FROM video  WHERE owner_id=?  LIMIT ?, ?;"
 	rows, err := r.connector.Database.Query(query, userId, offset, count)
 	return r.getVideoListItem(rows, err)
 }

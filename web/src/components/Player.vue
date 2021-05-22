@@ -21,17 +21,16 @@ export default {
 
   methods: {
     initPlayer() {
-      const mediaStreamServerAddress = 'http://localhost:8000';
       let video = document.getElementById('video');
       if (Hls.isSupported()) {
         let hls = new Hls();
-        hls.loadSource(mediaStreamServerAddress + '/api/v1/media/' + this.id + '/stream/');
+        hls.loadSource(process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/stream/');
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
           video.play();
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = mediaStreamServerAddress + '/api/v1/media/1/stream/';
+        video.src = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/stream/';
         video.addEventListener('loadedmetadata', function () {
           video.play();
         });

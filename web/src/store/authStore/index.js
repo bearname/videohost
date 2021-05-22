@@ -1,6 +1,7 @@
 import jwt_decode from "jwt-decode";
 import dbUtils from "../dbUtils";
 import router from "../../router/index.js";
+import Cookie from "../../util/cookie.js";
 
 const actions = {
     async login(context, {username, password}) {
@@ -35,7 +36,7 @@ const actions = {
             console.log("logout")
             context.commit("SET_ACCESS_TOKEN", {accessToken: ""});
             context.commit("LOGOUT")
-            context.commit("SET_COOKIE", {username: "", accessToken: ""});
+            context.commit("ERASE_COOKIE", {cookies: ["username", "accessToken"]});
             context.commit("SET_REFRESH_TOKEN", {refreshToken: ""})
             router.push({name: "login"})
         }).catch(error => {
@@ -69,10 +70,7 @@ const actions = {
                 context.commit("SET_COOKIE", {username: username, accessToken: data.accessToken});
                 context.commit("SET_REFRESH_TOKEN_COOKIE", {refreshToken: data.refreshToken});
 
-                // router.push({name: "home"})
                 router.push({name: "uploadVideo"})
-
-                // context.commit("SET_AUTHORIZATION", data.authorization_token);
             })
             .catch(error => {
                 console.log(error)
@@ -91,7 +89,6 @@ const actions = {
         const getters1 = context.getters;
         if (getters1.getAccessToken !== "") {
             let data = jwt_decode(getters1.getAccessToken);
-            //data.expiration expiration in seconds. Date.now is in milliseconds... So just *1000
             expiration = data.exp * 1000;
         }
         console.log(getters1.getCurrentUser)
@@ -134,7 +131,6 @@ const getters = {
         if (!state.user) {
             return false;
         }
-
         return state.user.loggedIn;
     },
     getAccessToken(state) {
@@ -168,12 +164,23 @@ const mutations = {
         state.user.refreshToken = refreshToken
     },
     SET_COOKIE(state, {username, accessToken}) {
-        document.cookie = "username=" + username
-        document.cookie = "accessToken=" + accessToken
+        if (accessToken !== "") {
+            const jwtDecode = jwt_decode(accessToken);
+            console.log(jwtDecode)
+            Cookie.setCookie("userId", jwtDecode.userId, 2)
+        }
+        Cookie.setCookie("username", username, 2)
+        Cookie.setCookie("accessToken", accessToken, 2)
     },
     SET_REFRESH_TOKEN_COOKIE(state, {refreshToken}) {
-        document.cookie = "refreshToken=" + refreshToken
+        Cookie.setCookie("refreshToken", refreshToken, 1100)
+        // document.cookie = "refreshToken=" + refreshToken
     },
+    ERASE_COOKIE(state, {cookies}) {
+        for (let cookie in cookies) {
+            Cookie.eraseCookie(cookie)
+        }
+    }
 };
 
 const state1 = {

@@ -1,29 +1,32 @@
 package controller
 
 import (
+	"encoding/json"
 	"github.com/bearname/videohost/pkg/common/amqp"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
 	"github.com/bearname/videohost/pkg/common/util"
+	"github.com/bearname/videohost/pkg/videoserver/app/dto"
+	"github.com/bearname/videohost/pkg/videoserver/app/service"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
 	"github.com/bearname/videohost/pkg/videoserver/domain/repository"
-	"github.com/bearname/videohost/pkg/videoserver/infrastructure/ftp"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"path/filepath"
+	//"path/filepath"
 )
 
 type VideoController struct {
 	controller.BaseController
 	videoRepository repository.VideoRepository
 	messageBroker   amqp.MessageBroker
+	videoService    service.VideoService
 }
 
-func NewVideoController(videoRepository repository.VideoRepository) *VideoController {
+func NewVideoController(videoRepository repository.VideoRepository, videoService *service.VideoService) *VideoController {
 	v := new(VideoController)
 
 	v.videoRepository = videoRepository
+	v.videoService = *videoService
 	v.messageBroker = amqp.NewRabbitMqService("guest", "guest", "localhost", 5672)
 	if v.messageBroker == nil {
 		return nil
@@ -33,60 +36,68 @@ func NewVideoController(videoRepository repository.VideoRepository) *VideoContro
 
 func (c VideoController) GetVideo() func(w http.ResponseWriter, r *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		writer = *c.BaseController.AllowCorsRequest(&writer)
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 		if (*request).Method == "OPTIONS" {
 			writer.WriteHeader(http.StatusNoContent)
 			return
 		}
+
 		vars := mux.Vars(request)
 		var id string
 		var ok bool
 
-		if id, ok = vars["ID"]; !ok {
-			http.Error(writer, "404 video not found not found", http.StatusNotFound)
+		if id, ok = vars["videoId"]; !ok {
+			c.BaseController.WriteResponse(writer, http.StatusNotFound, false, "401 id not present")
 			return
 		}
 
-		video, err := c.videoRepository.GetVideo(id)
+		video, err := c.videoRepository.Find(id)
 		if err != nil {
 			log.Error(err.Error())
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			c.BaseController.WriteResponse(writer, http.StatusNotFound, false, "401 id not present")
 			return
 		}
 
-		c.WriteResponseData(writer, video)
+		c.BaseController.WriteResponseData(writer, video)
 	}
 }
 
-func (c VideoController) GetVideoList() func(http.ResponseWriter, *http.Request) {
+func (c VideoController) GetVideos() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		writer = *c.BaseController.AllowCorsRequest(&writer)
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 		if (*request).Method == "OPTIONS" {
 			writer.WriteHeader(http.StatusNoContent)
 			return
 		}
 		var page int
-		page, success := c.GetIntRouteParameter(writer, request, "page")
-		if !success {
+		page, err := c.GetIntRouteParameter(request, "page")
+		if err != nil {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Failed get page parameter")
 			return
 		}
+
 		var countVideoOnPage int
-		countVideoOnPage, success = c.GetIntRouteParameter(writer, request, "countVideoOnPage")
-		if !success {
+		countVideoOnPage, err = c.GetIntRouteParameter(request, "countVideoOnPage")
+		if err != nil {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Failed get countVideoOnPage parameter")
 			return
 		}
 
 		log.Info("page ", page, " count video ", countVideoOnPage)
 		pageCount, ok := c.videoRepository.GetPageCount(countVideoOnPage)
 		if !ok {
-			http.Error(writer, "Failed get page countVideoOnPage", http.StatusInternalServerError)
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Failed get page countVideoOnPage")
 			return
 		}
 
-		videos, err := c.videoRepository.GetVideoList(page, countVideoOnPage)
+		videos, err := c.videoRepository.FindVideosByPage(page, countVideoOnPage)
 		if err != nil {
 			log.Error(err.Error())
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
 			return
 		}
 
@@ -94,11 +105,59 @@ func (c VideoController) GetVideoList() func(http.ResponseWriter, *http.Request)
 		responseData["pageCount"] = pageCount
 		responseData["videos"] = videos
 
-		c.WriteResponseData(writer, responseData)
+		c.BaseController.WriteResponseData(writer, responseData)
 	}
 }
 
-func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) {
+func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		authorization := request.Header.Get("Authorization")
+		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		if !ok {
+			c.BaseController.WriteResponse(writer, http.StatusUnauthorized, false, "Not grant permission")
+			return
+		}
+
+		title := request.FormValue("title")
+		if len(title) == 0 {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot get title")
+			return
+		}
+		description := request.FormValue("description")
+		if len(description) == 0 {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot get description")
+			return
+		}
+		fileReader, header, err := request.FormFile("file")
+		if err != nil {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot get file")
+			return
+		}
+
+		videoId, err := c.videoService.UploadVideo(userId, title, description, fileReader, header)
+		if err != nil {
+			log.Error(err.Error())
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Failed upload video")
+			return
+		}
+
+		writer.WriteHeader(http.StatusOK)
+		c.BaseController.JsonResponse(writer, videoId)
+	}
+}
+
+func (c *VideoController) UpdateTitleAndDescription() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Access-Control-Allow-Origin", "*")
 		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
@@ -111,105 +170,111 @@ func (c VideoController) UploadVideo() func(http.ResponseWriter, *http.Request) 
 		authorization := request.Header.Get("Authorization")
 		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
 		if !ok {
-			http.Error(writer, "Not grant permission", http.StatusUnauthorized)
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Not grant permission")
 			return
 		}
 
-		title := request.FormValue("title")
-		description := request.FormValue("description")
-		fileReader, header, err := request.FormFile("file")
+		vars := mux.Vars(request)
 
+		var videoId string
+		if videoId, ok = vars["videoId"]; !ok {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "videoId on path not found")
+			return
+		}
+
+		var videoDto dto.VideoMetadata
+		err := json.NewDecoder(request.Body).Decode(&videoDto)
 		if err != nil {
-			log.Error(err.Error())
-			http.Error(writer, err.Error(), http.StatusBadRequest)
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "cannot decode videoId|title|description struct")
 			return
 		}
 
-		contentType := header.Header.Get("Content-Type")
-		if contentType != util.VideoContentType {
-			log.Error("Unexpected content type", contentType)
-			http.Error(writer, "Unexpected content type", http.StatusBadRequest)
-			return
-		}
-
-		id, err := uuid.NewUUID()
+		err = c.videoService.UpdateTitleAndDescription(userId, videoId, videoDto)
 		if err != nil {
-			log.Error(err.Error())
-			http.Error(writer, err.Error(), http.StatusBadRequest)
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Failed update title and description")
 			return
 		}
-		videoId := id.String()
-		go func() {
-			connection := ftp.NewFtpConnection("localhost:21", "user", "123")
-			err = connection.CopyFile(videoId, fileReader)
-			//	err = util.CopyFile(fileReader, videoId)
-			if err != nil {
-				log.Error(err.Error())
-				http.Error(writer, err.Error(), http.StatusBadRequest)
-				return
-			}
-		}()
 
-		err = c.videoRepository.NewVideo(
-			userId,
-			videoId,
-			title,
-			description,
-			filepath.Join(util.ContentDir, videoId, util.VideoFileName),
-		)
+		c.BaseController.WriteResponse(writer, http.StatusOK, true, "success update title")
+	}
+}
+
+func (c *VideoController) DeleteVideo() func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		authorization := request.Header.Get("Authorization")
+		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		if !ok {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "401 id not present")
+			return
+		}
+
+		vars := mux.Vars(request)
+		var videoId string
+
+		if videoId, ok = vars["videoId"]; !ok {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "401 id not present")
+			return
+		}
+
+		err := c.videoService.DeleteVideo(userId, videoId)
 		if err != nil {
-			log.Error(err.Error())
-			http.Error(writer, err.Error(), http.StatusBadRequest)
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
 			return
 		}
-
-		//output, err := cmdExec(`ffprobe`, `-v`, `error`, `-select_streams`, `v:0`, `-show_entries`, `stream=width,height`, `-of`, `csv=s=x:p=0`, util.VideoFileName)
-		//log.Info("resolution of file " + util.VideoFileName + " equal " + output)
-		//c.messageBroker.Publish("events_topic", "events.upload-video", id.String())
 
 		writer.WriteHeader(http.StatusOK)
-		c.BaseController.JsonResponse(writer, id)
+		c.BaseController.WriteResponse(writer, http.StatusOK, true, "success delete video with id "+videoId)
 	}
 }
 
 func (c *VideoController) SearchVideo() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		writer = *c.BaseController.AllowCorsRequest(&writer)
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 		if (*request).Method == "OPTIONS" {
 			writer.WriteHeader(http.StatusNoContent)
 			return
 		}
 
 		var page int
-		page, success := c.GetIntRouteParameter(writer, request, "page")
-		if !success {
-			http.Error(writer, "page parameter not present", http.StatusInternalServerError)
+		page, err := c.GetIntRouteParameter(request, "page")
+		if err != nil {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "page parameter not present")
 			return
 		}
 		var countVideoOnPage int
-		countVideoOnPage, success = c.GetIntRouteParameter(writer, request, "limit")
-		if !success {
-			http.Error(writer, "limit parameter not present", http.StatusInternalServerError)
+		countVideoOnPage, err = c.GetIntRouteParameter(request, "limit")
+		if err != nil {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "limit parameter not present")
 			return
 		}
 		var search string
-		search, success = c.ParseRouteParameter(request, "search")
-		if !success {
-			http.Error(writer, "countVideoOnPage parameter not present", http.StatusInternalServerError)
+		search, ok := c.ParseRouteParameter(request, "search")
+		if !ok {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "countVideoOnPage parameter not present")
 			return
 		}
 
 		log.Info("page ", page, " count video ", countVideoOnPage)
 		pageCount, ok := c.videoRepository.GetPageCount(countVideoOnPage)
 		if !ok {
-			http.Error(writer, "Failed get page countVideoOnPage", http.StatusInternalServerError)
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Failed get page countVideoOnPage")
 			return
 		}
 
 		videos, err := c.videoRepository.SearchVideo(search, page, countVideoOnPage)
 		if err != nil {
 			log.Error(err.Error())
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			c.BaseController.WriteResponse(writer, http.StatusInternalServerError, false, "Video not found")
 			return
 		}
 
@@ -219,7 +284,9 @@ func (c *VideoController) SearchVideo() func(http.ResponseWriter, *http.Request)
 
 func (c *VideoController) IncrementViews() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		writer = *c.BaseController.AllowCorsRequest(&writer)
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 		if (*request).Method == "OPTIONS" {
 			writer.WriteHeader(http.StatusNoContent)
 			return
@@ -228,8 +295,8 @@ func (c *VideoController) IncrementViews() func(http.ResponseWriter, *http.Reque
 		var id string
 		var ok bool
 
-		if id, ok = vars["id"]; !ok {
-			http.Error(writer, "404 video not found not found", http.StatusNotFound)
+		if id, ok = vars["videoId"]; !ok {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Id route parameter not present")
 			return
 		}
 
@@ -245,5 +312,5 @@ func (c *VideoController) responseVideoListItems(writer http.ResponseWriter, pag
 	responseData["pageCount"] = pageCount
 	responseData["videos"] = videos
 
-	c.WriteResponseData(writer, responseData)
+	c.BaseController.WriteResponseData(writer, responseData)
 }

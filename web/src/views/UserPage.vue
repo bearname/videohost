@@ -2,20 +2,22 @@
   <div>
     <h2>{{ currentUsername }}</h2>
     <h4>my video</h4>
-    <h5>Count you video {{countAllVideos}}</h5>
-    <VideoList v-if="videos!== null" :videos="videos" :key="page"/>
+    <h5>Count you video {{ countAllVideos }}</h5>
+    <Pagination :show-status="false" :user-page="true"/>
+<!--    <VideoList v-if="videos!== null" :show-status="true" :user-page="true" :videos="videos" :key="page"/>-->
   </div>
-
 </template>
 
 <script>
 import {mapActions, mapGetters} from "vuex";
-import VideoList from "../components/VideoList";
+// import VideoList from "../components/VideoList";
+import Pagination from "@/components/Pagination";
 
 export default {
   name: "User",
   components: {
-    VideoList
+    Pagination,
+    // VideoList
   },
   data() {
     return {
@@ -25,7 +27,7 @@ export default {
       countAllVideos: 0
     }
   },
-  mounted() {
+  created() {
     this.getAsyncVideos()
   },
   computed: {
@@ -49,18 +51,13 @@ export default {
       isLoggedIn: "auth/isLoggedIn",
       getCurrentUser: "auth/getCurrentUser"
     }),
-    async getAsyncVideos() {
-      // if (this.videos === null) {
-        await this.fetchUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
-            .then(() => {
-              const videos = this.getUserVideos();
-              console.log("videos")
-              // console.log(videos)
-
-              this.videos = videos.videos
-              this.countAllVideos = videos.countAllVideos
-            })
-      // }
+    getAsyncVideos() {
+      this.fetchUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
+          .then(() => {
+            const result = this.getUserVideos()
+            this.videos = result.videos
+            this.countAllVideos = result.countAllVideos
+          })
     }
   },
 }

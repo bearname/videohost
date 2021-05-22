@@ -6,9 +6,11 @@ import Vuetify from 'vuetify'
 import 'vuetify/dist/vuetify.min.css'
 import router from './router'
 import store from "./store"
-// import vuetify from "./plugins/vuetify";
 import App from './App'
 
+import Cookie from "./util/cookie";
+Cookie.eraseCookie("userId")
+document.cookie = "userId=; Max-Age=-99999999;";
 Vue.use(Vuex)
 Vue.config.productionTip = false
 Vue.use(Vuetify)

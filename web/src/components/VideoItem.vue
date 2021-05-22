@@ -14,22 +14,62 @@
       </router-link>
     </v-card-title>
     <v-card-text class="caption text-lg-left">
-      {{ videoItem.duration }} s. {{ videoItem.uploaded }} {{ videoItem.views }} views
+      <span v-if="videoItem.status === 3">{{ videoItem.duration }}</span> s. {{ videoItem.uploaded }} {{
+        videoItem.views
+      }} views
+      <span v-if="showStatus"> {{
+          videoStatus
+        }}</span>
     </v-card-text>
+    <div v-if="isUserPage">
+      <v-btn v-on:click="deleteItemPermanent(videoItem.id)" :data-id="videoItem.id">delete</v-btn>
+    </div>
+    <div v-if="status !== null">
+      <span v-if="status">Success </span>
+      <span v-else>Failed</span>
+      <span>delete video
+      </span>
+    </div>
   </div>
 </template>
 
 <script>
+
+import {mapActions, mapGetters} from "vuex";
+import VideoStatus from "../store/videoStore/videoStatus";
+
 export default {
   name: "VideoItem",
   props: [
-    'video'
+    'video',
+    'showStatus',
+    'userPage',
   ],
+  created() {
+    this.videoStatus = VideoStatus.intToStatus(this.videoItem.status)
+  },
   data() {
     return {
-      videoItem: this.video
+      videoItem: this.video,
+      videoStatus: null,
+      isUserPage: this.userPage,
+      status: null
     }
   },
+  methods: {
+    ...mapActions({
+      deleteVideoPermanent: "video/deleteVideoPermanent"
+    }),
+    ...mapGetters({
+      getStatus: "video/getStatus"
+    }),
+    deleteItemPermanent(videoId) {
+      const promise = this.deleteVideoPermanent({videoId: videoId});
+      promise.then(() => {
+        this.status = this.getStatus();
+      })
+    }
+  }
 }
 </script>
 

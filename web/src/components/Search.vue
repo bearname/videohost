@@ -14,7 +14,7 @@
       </div>
       <v-btn v-on:click="onSearchSubmit">Search</v-btn>
       <div v-if="videos !== null && videos !== []">
-        <VideoList :videos="videos" :key="videos"/>
+        <VideoList :videos="videos" :show-status="false" :user-page="false" :key="videos"/>
       </div>
       <div v-else>
         Not Found
@@ -30,9 +30,6 @@ import VideoList from "./VideoList";
 export default {
   name: "Search",
   components: {VideoList},
-  mounted() {
-    console.log("axios")
-  },
   data() {
     return {
       search: null,
@@ -51,7 +48,7 @@ export default {
     },
     searchVideos(searchString, page = '1', countVideoOnPage = '10') {
       const videoServerAddress = process.env.VUE_APP_VIDEO_SERVER_ADDRESS;
-      let url = videoServerAddress + '/api/v1/video/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
+      let url = videoServerAddress + '/api/v1/videos/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
       console.log(url)
       axios.get(url)
           .then(response => {

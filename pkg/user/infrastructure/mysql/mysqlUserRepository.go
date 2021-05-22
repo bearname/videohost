@@ -68,10 +68,11 @@ func (r *UserRepository) UpdateRefreshToken(username string, token string) bool 
 }
 
 func (r *UserRepository) GetCountVideos(userId string) (int, bool) {
-	rows, err := r.connector.Database.Query("SELECT COUNT(key_user) AS countReadyVideo FROM user_videos WHERE key_user=?;", userId)
+	rows, err := r.connector.Database.Query("SELECT COUNT(owner_id) AS countReadyVideo FROM video WHERE owner_id=?;", userId)
 	if err != nil {
 		return 0, false
 	}
+
 	defer rows.Close()
 
 	var countVideo int

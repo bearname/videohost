@@ -75,12 +75,12 @@ func main() {
 	}
 	defer connector.Close()
 
-	repository := mysql.NewMysqlVideoRepository(connector)
+	videoRepository := mysql.NewMysqlVideoRepository(connector)
 	go func() {
 		for data := range messages {
 			videoId := data.Body
 			log.Printf("'%s'", videoId)
-			video, err2 := repository.GetVideo(string(videoId))
+			video, err2 := videoRepository.Find(string(videoId))
 			if err2 != nil {
 				log.Error(err2)
 			}
@@ -89,7 +89,7 @@ func main() {
 			inputVideoPath := "..\\cmd\\videoserver\\" + video.Url
 			videos := scaleVideos(inputVideoPath)
 			if videos {
-				quality := repository.AddVideoQuality(video.Id, "720, 480, 320, 144")
+				quality := videoRepository.AddVideoQuality(video.Id, "720, 480, 320, 144")
 				message := getResultMessage(quality)
 				log.Info(message)
 			}

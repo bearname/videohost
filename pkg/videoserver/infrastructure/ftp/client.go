@@ -6,11 +6,11 @@ import (
 	"io"
 )
 
-type FtpConnection struct {
+type FtpClient struct {
 	client *ftp.ServerConn
 }
 
-func NewFtpConnection(address string, username string, password string) *FtpConnection {
+func NewFtpConnection(address string, username string, password string) *FtpClient {
 	client, err := ftp.Dial(address)
 	if err != nil {
 		return nil
@@ -19,16 +19,17 @@ func NewFtpConnection(address string, username string, password string) *FtpConn
 	if err := client.Login(username, password); err != nil {
 		return nil
 	}
-	connection := new(FtpConnection)
+	connection := new(FtpClient)
 	connection.client = client
 	return connection
 }
 
-func (f *FtpConnection) CopyFile(videoId string, r io.Reader) error {
+func (f *FtpClient) CopyFile(videoId string, r io.Reader) error {
 	err := f.client.MakeDir(videoId)
 	if err != nil {
 		return err
 	}
+
 	filePath := videoId + "\\" + util.VideoFileName
 	err = f.client.Stor(filePath, r)
 	if err != nil {
@@ -40,4 +41,12 @@ func (f *FtpConnection) CopyFile(videoId string, r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (f *FtpClient) RemoveDirRecur(path string) error {
+	return f.client.RemoveDirRecur(path)
+}
+
+func (f *FtpClient) RemoveDir(path string) error {
+	return f.client.RemoveDir(path)
 }

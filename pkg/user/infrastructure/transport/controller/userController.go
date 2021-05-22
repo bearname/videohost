@@ -3,9 +3,9 @@ package controller
 import (
 	"encoding/json"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
+	dto2 "github.com/bearname/videohost/pkg/user/app/dto"
 	service2 "github.com/bearname/videohost/pkg/user/app/service"
 	"github.com/bearname/videohost/pkg/user/domain/repository"
-	"github.com/bearname/videohost/pkg/videoserver/app/dto"
 	repository2 "github.com/bearname/videohost/pkg/videoserver/domain/repository"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -28,7 +28,9 @@ func NewUserController(userRepository repository.UserRepository, videoRepository
 }
 
 func (c *UserController) GetUser(writer http.ResponseWriter, request *http.Request) {
-	writer = *c.BaseController.AllowCorsRequest(&writer)
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if (*request).Method == "OPTIONS" {
 		writer.WriteHeader(http.StatusNoContent)
 		return
@@ -36,7 +38,7 @@ func (c *UserController) GetUser(writer http.ResponseWriter, request *http.Reque
 
 	log.Println("get username called")
 	vars := mux.Vars(request)
-	username, ok := vars["USERNAME"]
+	username, ok := vars["username"]
 	if !ok {
 		http.Error(writer, "Cannot find username in request", http.StatusBadRequest)
 		return
@@ -54,8 +56,10 @@ func (c *UserController) GetUser(writer http.ResponseWriter, request *http.Reque
 }
 
 func (c *UserController) UpdatePassword(writer http.ResponseWriter, request *http.Request) {
-	writer = *c.BaseController.AllowCorsRequest(&writer)
-	var userDto dto.ChangePasswordUserDto
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	var userDto dto2.ChangePasswordUserDto
 	err := json.NewDecoder(request.Body).Decode(&userDto)
 	if err != nil {
 		http.Error(writer, "cannot decode username/password struct", http.StatusBadRequest)
@@ -100,44 +104,46 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 	}
 	log.Println("get user videos called")
 	vars := mux.Vars(request)
-	username, ok := vars["USERNAME"]
+	username, ok := vars["username"]
 	if !ok {
-		http.Error(writer, "Cannot find username in request", http.StatusBadRequest)
+		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot find username in request")
 		return
 	}
 	if _, err := c.userRepository.FindByUserName(username); err != nil {
-		http.Error(writer, "Cannot find username", http.StatusNotFound)
+		c.BaseController.WriteResponse(writer, http.StatusOK, false, "User not exist")
 		return
 	}
 
 	userId, ok := context.Get(request, "userId").(string)
 	if !ok {
-		http.Error(writer, "Cannot check userId", http.StatusInternalServerError)
+		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot check userId")
 		return
 	}
 
 	var page int
-	page, success := c.GetIntRouteParameter(writer, request, "page")
-	if !success {
+	page, err := c.GetIntRouteParameter(request, "page")
+	if err != nil {
+		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
 		return
 	}
 	var countVideoOnPage int
-	countVideoOnPage, success = c.GetIntRouteParameter(writer, request, "countVideoOnPage")
-	if !success {
+	countVideoOnPage, err = c.GetIntRouteParameter(request, "countVideoOnPage")
+	if err != nil {
+		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
 		return
 	}
 
 	log.Info("page ", page, " count video ", countVideoOnPage)
 	countAllVideos, ok := c.userRepository.GetCountVideos(userId)
 	if !ok {
-		http.Error(writer, "Failed get page countVideoOnPage", http.StatusInternalServerError)
+		c.BaseController.WriteResponse(writer, http.StatusOK, false, "Failed get page countVideoOnPage")
 		return
 	}
 
 	videos, err := c.videoRepository.FindUserVideos(userId, page, countVideoOnPage)
 	if err != nil {
 		log.Error(err.Error())
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		c.BaseController.WriteResponse(writer, http.StatusOK, false, err.Error())
 		return
 	}
 
@@ -145,5 +151,5 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 	responseData["countAllVideos"] = countAllVideos
 	responseData["videos"] = videos
 
-	c.WriteResponseData(writer, responseData)
+	c.BaseController.WriteResponseData(writer, responseData)
 }

@@ -21,27 +21,32 @@ func NewStreamController(videoRepository repository.VideoRepository) *StreamCont
 }
 
 func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *http.Request) {
-	writer = *c.BaseController.AllowCorsRequest(&writer)
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	if (*request).Method == "OPTIONS" {
+		writer.WriteHeader(http.StatusNoContent)
+		return
+	}
+	fmt.Println("readust", request.RequestURI)
 	vars := mux.Vars(request)
-
-	var id string
+	var videoId string
 	var ok bool
 
-	if id, ok = vars["id"]; !ok {
-		http.Error(writer, "404 video not found", http.StatusNotFound)
+	if videoId, ok = vars["videoId"]; !ok {
+		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Failed get videoId")
 		return
 	}
 
-	video, err := c.videoRepository.GetVideo(id)
+	video, err := c.videoRepository.Find(videoId)
 	if err != nil {
-		log.Error(err.Error())
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Video not found")
 		return
 	}
 
 	mediaBase := c.getMediaBase(video.Id)
 	segName, ok := vars["segName"]
-	log.Info("id: " + id + " segName " + segName)
+	log.Info("videoId: " + videoId + " segName " + segName)
 	if !ok {
 		m3u8Name := "index.m3u8"
 		log.Info("serveHlsM3u8")

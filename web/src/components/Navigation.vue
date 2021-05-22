@@ -35,7 +35,6 @@ export default {
   name: "Navigation",
   data() {
     return {
-      // user: null,
       userid: {type: String, default: ""}
     }
   },

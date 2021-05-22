@@ -1,16 +1,19 @@
 package repository
 
 import (
-	model2 "github.com/bearname/videohost/pkg/videoserver/domain/model"
+	"github.com/bearname/videohost/pkg/videoserver/domain/model"
 )
 
 type VideoRepository interface {
-	GetVideo(id string) (*model2.Video, error)
-	GetVideoList(page int, count int) ([]model2.VideoListItem, error)
-	NewVideo(userId string, videoId string, title string, description string, url string) error
+	Create(userId string, videoId string, title string, description string, url string) error
+	Save(video *model.Video) error
+	Find(videoId string) (*model.Video, error)
+	FindVideosByPage(page int, count int) ([]model.VideoListItem, error)
+	FindUserVideos(userId string, page int, count int) ([]model.VideoListItem, error)
+	Update(videoId string, title string, description string) error
+	Delete(videoId string) error
 	GetPageCount(countVideoOnPage int) (int, bool)
 	AddVideoQuality(id string, quality string) bool
-	SearchVideo(searchString string, page int, count int) ([]model2.VideoListItem, error)
 	IncrementViews(id string) bool
-	FindUserVideos(userId string, page int, count int) ([]model2.VideoListItem, error)
+	SearchVideo(searchString string, page int, count int) ([]model.VideoListItem, error)
 }

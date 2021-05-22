@@ -5,7 +5,7 @@
           v-for="video in videoList" :key="video.id"
           :cols="3"
       >
-        <VideoItem :video="video" :key="video.id"/>
+        <VideoItem :video="video" :show-status="showStatus" :user-page="isUserPage" :key="video.id"/>
       </v-col>
     </v-row>
   </v-container>
@@ -19,12 +19,15 @@ export default {
   components: {VideoItem},
   props: [
     'pageNumber',
-    'videos'
+    'videos',
+    'showStatus',
+    'userPage',
   ],
   data() {
     return {
       videoList: this.videos,
       currentPage: this.pageNumber,
+      isUserPage: this.userPage,
     }
   },
 

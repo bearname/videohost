@@ -3,10 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
+	"github.com/bearname/videohost/pkg/user/app/dto"
 	"github.com/bearname/videohost/pkg/user/app/service"
 	"github.com/bearname/videohost/pkg/user/domain/model"
 	"github.com/bearname/videohost/pkg/user/domain/repository"
-	"github.com/bearname/videohost/pkg/videoserver/app/dto"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
@@ -29,7 +29,9 @@ func NewAuthController(userRepository repository.UserRepository) *AuthController
 }
 
 func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Request) {
-	writer = *c.BaseController.AllowCorsRequest(&writer)
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	if (*request).Method == "OPTIONS" {
 		writer.WriteHeader(http.StatusNoContent)
 		return
@@ -81,7 +83,9 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 }
 
 func (c *AuthController) GetTokenUserPassword(writer http.ResponseWriter, request *http.Request) {
-	writer = *c.BaseController.AllowCorsRequest(&writer)
+	writer.Header().Set("Access-Control-Allow-Origin", "*")
+	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	var userDto dto.UserDto
 	err := json.NewDecoder(request.Body).Decode(&userDto)
 	if err != nil {

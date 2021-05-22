@@ -1,5 +1,5 @@
 import axios from "axios";
-import parseCookie from "../util";
+import Cookie from "../../util/cookie.js";
 
 const actions = {
     async uploadVideo(context, {file, title, description}) {
@@ -40,7 +40,7 @@ const actions = {
                     }
                 }
 
-                const url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + "/api/v1/video";
+                const url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + "/api/v1/videos/";
                 console.log('upload video' + url)
                 return await axios.post(url, formData, config)
                     .then(onSuccess)
@@ -50,13 +50,13 @@ const actions = {
         return promise
     },
     async getVideoOnPage(context, page = '1', countVideoOnPage = '10') {
-        let url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/api/v1/list?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
+        let url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/api/v1/videos/?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
         console.log(url)
         return await axios.get(url)
             .then(response => {
                 console.log(response.data)
                 if (Object.keys(response.data).includes("pageCount")) {
-                    context.state.countPage = response.data.pageCount
+                    context.state.pageCount = response.data.pageCount
                 }
                 if (Object.keys(response.data).includes("videos")) {
                     context.commit("SET_VIDEOS", {videos: response.data.videos});
@@ -75,21 +75,18 @@ const actions = {
                 context.state.error = true
             });
     },
-    async fetchUserVideos(context, {page, countVideoOnPage}) {
-        const cookie = parseCookie(document.cookie);
+    fetchUserVideos(context, {page, countVideoOnPage}) {
         const promise = context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
 
-        promise.then(async () => {
-            const url = process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/users/" + cookie.username + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
+        promise.then(() => {
+            const url = process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/users/" + Cookie.getCookie("username") + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
             console.log(url)
-            return await fetch(
-                url,
-                {
-                    headers: {
-                        'Authorization': context.rootGetters["auth/getTokenHeader"]
-                    }
+            const config = {
+                headers: {
+                    'Authorization': context.rootGetters["auth/getTokenHeader"]
                 }
-            ).then(response => {
+            };
+            return fetch(url, config).then(response => {
                 if (!response.ok) {
                     if (response.status === 401) {
                         context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true})
@@ -110,6 +107,37 @@ const actions = {
         })
         return promise
     },
+    deleteVideoPermanent(context, {videoId}) {
+        const promise = context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
+
+        promise.then(() => {
+            const url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + "/api/v1/videos/" + videoId;
+            return fetch(url, {
+                method: "DELETE",
+                headers: {
+                    'Authorization': context.rootGetters["auth/getTokenHeader"]
+                }
+            }).then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true})
+                    } else {
+                        throw new Error("Cannot delete")
+                    }
+                }
+                return response.json()
+            }).then(data => {
+                context.state.success = !data.success
+                context.state.message = data.message
+                console.log(data)
+            }).catch(error => {
+                console.log(error)
+                context.state.success = true
+                throw error
+            })
+        })
+        return promise
+    }
 };
 
 const updateThumbnail = function (part, index) {
@@ -121,9 +149,11 @@ export default {
     state: {
         videoId: null,
         isProcessing: false,
+        success: false,
         error: false,
         videos: null,
         userVideos: null,
+        pageCount: 0,
         countUserVideos: 0,
         url: {
             type: String,
@@ -155,5 +185,11 @@ export default {
                 countAllVideos: state.countUserVideos
             }
         },
+        getPageCount(state) {
+            return state.pageCount
+        },
+        getStatus(state) {
+            return state.success
+        }
     }
 }

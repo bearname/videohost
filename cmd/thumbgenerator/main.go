@@ -13,7 +13,6 @@ import (
 
 func main() {
 	logFile := "thumbgenerator.log"
-	//err := util.SetupLogger(logFile)
 	log.SetFormatter(&log.JSONFormatter{})
 	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err == nil {

@@ -4,7 +4,7 @@
       <Navigation/>
       <Search/>
       <h1>Pretty player</h1>
-      <Pagination/>
+      <Pagination :show-status="false" :user-page="false"/>
     </div>
   </layout>
 </template>

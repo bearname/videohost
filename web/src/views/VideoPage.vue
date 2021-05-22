@@ -1,20 +1,28 @@
 <template>
   <div>
     Video page
-
     <div class="text-align-left" v-if="video !== null">
-      <Player :videoId="videoId" :key="key"/>
+      <div v-if="video.status === '3'">
+        <Player :videoId="videoId" :key="key"/>
+      </div>
+      <div v-else> status {{video.status}}{{ videoStatus }}</div>
       <h3>{{ video.name }}</h3>
       <p class="subtitle-1">Watch video {{ video.description }}</p>
       <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
       <p class="subtitle-2">{{ video.views }} views</p>
+      <div v-if="currentUserId !== null && video.ownerId === currentUserId">
+        <v-btn v-on:click="deleteItemPermanent(video.id)" :data-id="video.id">delete</v-btn>
+      </div>
     </div>
     <div v-else>
       Video not exist
     </div>
-    <v-spacer></v-spacer>
 
-    <Pagination/>
+    <v-spacer></v-spacer>
+    <div>
+      <h4>Also see</h4>
+      <Pagination :show-status="false" :user-page="false"/>
+    </div>
   </div>
 </template>
 
@@ -22,6 +30,9 @@
 import Pagination from '../components/Pagination.vue'
 import Player from '../components/Player.vue'
 import axios from 'axios'
+import {mapActions, mapGetters} from "vuex";
+import Cookie from "../util/cookie";
+import VideoStatus from "../store/videoStore/videoStatus";
 
 export default {
   name: "StreamPage",
@@ -33,14 +44,17 @@ export default {
     return {
       videoId: null,
       key: 0,
-      video: null
+      video: null,
+      currentUserId: null,
+      error: false,
+      videoStatus: null
     }
   },
-  mounted() {
-    console.log("router")
+  created() {
     this.setVideoId()
     this.key = Date.now()
-
+    // this.currentUserId =
+        Cookie.getCookie("userId");
     console.log(this.videoId)
   },
   watch: {
@@ -52,19 +66,25 @@ export default {
       console.log(this.videoId)
     }
   },
-
   methods: {
+    ...mapActions({
+      deleteVideoPermanent: "video/deleteVideoPermanent"
+    }),
+    ...mapGetters({
+      getStatus: "video/getStatus"
+    }),
     async setVideoId() {
       this.videoId = this.$route.params.videoId
       this.fetchVideo(this.videoId)
     },
     fetchVideo(videoId) {
-      let url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/api/v1/video/' + videoId;
+      let url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/api/v1/videos/' + videoId;
       console.log(url)
       axios.get(url)
           .then(response => {
             console.log(response.data)
             this.video = response.data
+            this.videoStatus = VideoStatus.intToStatus(this.video.status)
             this.video.uploaded = this.getElapsedString(this.video.uploaded)
           })
           .catch(function (error) {
@@ -80,7 +100,12 @@ export default {
             this.error = true
           });
     },
-
+    deleteItemPermanent(videoId) {
+      const promise = this.deleteVideoPermanent({videoId: videoId});
+      promise.then(() => {
+        this.status = this.getStatus();
+      })
+    },
     getElapsedString(uploadedDate) {
       let elapsed = (Date.now() - Date.parse(uploadedDate)) / 1000;
 
@@ -109,7 +134,8 @@ export default {
       if (years / 365 < 1) {
         return years + " лет назад"
       }
-    }
+    },
+
   }
 }
 </script>

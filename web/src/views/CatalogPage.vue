@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>Home</h2>
-    <Pagination/>
+    <Pagination :show-status="false" :user-page="false"/>
   </div>
 </template>
 

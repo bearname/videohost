@@ -27,7 +27,14 @@ const routes = {
     uploadVideo: {
         name: 'uploadVideo',
         path: '/uploadVideo',
-        component: UploadVideo
+        component: UploadVideo,
+        beforeEnter: (to, from, next) => {
+            if (store.getters["auth/isLoggedIn"]) {
+                next();
+            } else {
+                next({name: "login"});
+            }
+        }
     },
     videoStream: {
         name: 'videoStream',
