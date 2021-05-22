@@ -55,7 +55,7 @@ func (r *VideoRepository) Save(video *model.Video) error {
 func (r *VideoRepository) Find(videoId string) (*model.Video, error) {
 	var video model.Video
 
-	row := r.connector.Database.QueryRow("SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views, owner_id, status FROM video WHERE id_video=? ORDER BY uploaded DESC", videoId)
+	row := r.connector.Database.QueryRow("SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views, owner_id, status FROM video WHERE id_video=?;", videoId)
 
 	err := row.Scan(
 		&video.Id,

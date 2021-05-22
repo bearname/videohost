@@ -2,7 +2,7 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 )
@@ -13,7 +13,7 @@ func ValidateToken(authorization string, authServerUrl string) (string, bool) {
 	validateAccessTokenRequest.Header.Add("Authorization", authorization)
 	response, err := client.Do(validateAccessTokenRequest)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error(err.Error())
 		return "", false
 	}
 	defer response.Body.Close()
@@ -25,7 +25,7 @@ func ValidateToken(authorization string, authServerUrl string) (string, bool) {
 	}{}
 	err = json.Unmarshal(body, &s)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error(err.Error())
 		return "", false
 	}
 	return s.UserId, true

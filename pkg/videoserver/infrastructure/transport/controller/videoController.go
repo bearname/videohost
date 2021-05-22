@@ -170,7 +170,7 @@ func (c *VideoController) UpdateTitleAndDescription() func(http.ResponseWriter, 
 		authorization := request.Header.Get("Authorization")
 		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
 		if !ok {
-			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Not grant permission")
+			c.BaseController.WriteResponse(writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
 		}
 
@@ -212,7 +212,7 @@ func (c *VideoController) DeleteVideo() func(http.ResponseWriter, *http.Request)
 		authorization := request.Header.Get("Authorization")
 		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
 		if !ok {
-			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "401 id not present")
+			c.BaseController.WriteResponse(writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
 		}
 
