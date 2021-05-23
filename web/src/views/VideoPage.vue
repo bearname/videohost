@@ -3,7 +3,7 @@
     Video page
     <div class="text-align-left" v-if="video !== null">
       <div v-if="video.status === '3'">
-        <Player :videoId="videoId" :key="key"/>
+        <Player :videoId="videoId" :availableQualities="video.quality" :key="key"/>
       </div>
       <div v-else> status {{ video.status }}{{ videoStatus }}</div>
       <h3>{{ video.name }}</h3>

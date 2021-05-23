@@ -95,7 +95,7 @@ func (r *VideoRepository) Delete(videoId string) error {
 
 func (r *VideoRepository) FindVideosByPage(page int, count int) ([]model.VideoListItem, error) {
 	offset := (page) * count
-	rows, err := r.connector.Database.Query("SELECT id_video, title, duration, thumbnail_url, uploaded, views, status FROM video WHERE status=3 LIMIT ?, ?;", offset, count)
+	rows, err := r.connector.Database.Query("SELECT id_video, title, duration, thumbnail_url, uploaded, views, status, quality FROM video WHERE status=3 LIMIT ?, ?;", offset, count)
 
 	return r.getVideoListItem(rows, err)
 }
@@ -136,7 +136,7 @@ func (r *VideoRepository) AddVideoQuality(id string, quality string) bool {
 func (r *VideoRepository) SearchVideo(searchString string, page int, count int) ([]model.VideoListItem, error) {
 
 	offset := (page - 1) * count
-	rows, err := r.connector.Database.Query("SELECT id_video, title, duration, thumbnail_url, uploaded, views, status FROM video WHERE MATCH(video.title) AGAINST (? IN NATURAL LANGUAGE MODE) AND status=3 LIMIT ?, ?;", searchString, offset, count)
+	rows, err := r.connector.Database.Query("SELECT id_video, title, duration, thumbnail_url, uploaded, views, status, quality  FROM video WHERE MATCH(video.title) AGAINST (? IN NATURAL LANGUAGE MODE) AND status=3 LIMIT ?, ?;", searchString, offset, count)
 
 	return r.getVideoListItem(rows, err)
 }
@@ -153,13 +153,12 @@ func (r *VideoRepository) IncrementViews(id string) bool {
 
 func (r *VideoRepository) FindUserVideos(userId string, page int, count int) ([]model.VideoListItem, error) {
 	offset := (page) * count
-	query := "SELECT video.id_video, title, duration, thumbnail_url, uploaded, views, status FROM video  WHERE owner_id=?  LIMIT ?, ?;"
+	query := "SELECT video.id_video, title, duration, thumbnail_url, uploaded, views, status, quality FROM video  WHERE owner_id=?  LIMIT ?, ?;"
 	rows, err := r.connector.Database.Query(query, userId, offset, count)
 	return r.getVideoListItem(rows, err)
 }
 
 func (r *VideoRepository) getVideoListItem(rows *sql.Rows, err error) ([]model.VideoListItem, error) {
-
 	if err != nil {
 		return nil, err
 	}
@@ -176,6 +175,7 @@ func (r *VideoRepository) getVideoListItem(rows *sql.Rows, err error) ([]model.V
 			&videoListItem.Uploaded,
 			&videoListItem.Views,
 			&videoListItem.Status,
+			&videoListItem.Quality,
 		)
 		if err != nil {
 			return nil, err

@@ -1,7 +1,7 @@
 .PHONY: build
-build: build-videoserver build-user build-thumbgenerator build-videoprocessor build-video-scaler
+build: build-video build-user build-thumbgenerator build-videoprocessor build-video-scaler
 
-build-videoserver:
+build-video:
 	go build  -o .\bin\videoserver\videoserver.exe .\cmd\videoserver\main.go
 
 build-user:

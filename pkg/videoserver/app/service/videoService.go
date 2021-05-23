@@ -52,6 +52,9 @@ func (s *VideoService) UploadVideo(userId string, title string, description stri
 	if err != nil {
 		return uuid.UUID{}, err
 	}
+
+	s.messageBroker.Publish("events_topic", "events.upload-video", videoId)
+
 	return id, nil
 }
 

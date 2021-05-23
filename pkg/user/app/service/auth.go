@@ -29,7 +29,7 @@ func CreateTokenWithDuration(userKey string, username string, role model.Role, d
 }
 
 func CreateToken(userKey string, username string, role model.Role) (string, error) {
-	return CreateTokenWithDuration(userKey, username, role, time.Minute*2)
+	return CreateTokenWithDuration(userKey, username, role, time.Hour*60)
 }
 
 func CheckToken(tokenString string) (*jwt.Token, bool) {

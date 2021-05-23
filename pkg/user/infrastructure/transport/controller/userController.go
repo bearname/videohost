@@ -106,44 +106,44 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 	vars := mux.Vars(request)
 	username, ok := vars["username"]
 	if !ok {
-		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot find username in request")
+		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Cannot find username in request")
 		return
 	}
 	if _, err := c.userRepository.FindByUserName(username); err != nil {
-		c.BaseController.WriteResponse(writer, http.StatusOK, false, "User not exist")
+		c.BaseController.WriteResponse(&writer, http.StatusOK, false, "User not exist")
 		return
 	}
 
 	userId, ok := context.Get(request, "userId").(string)
 	if !ok {
-		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot check userId")
+		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Cannot check userId")
 		return
 	}
 
 	var page int
 	page, err := c.GetIntRouteParameter(request, "page")
 	if err != nil {
-		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
+		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
 		return
 	}
 	var countVideoOnPage int
 	countVideoOnPage, err = c.GetIntRouteParameter(request, "countVideoOnPage")
 	if err != nil {
-		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
+		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
 		return
 	}
 
 	log.Info("page ", page, " count video ", countVideoOnPage)
 	countAllVideos, ok := c.userRepository.GetCountVideos(userId)
 	if !ok {
-		c.BaseController.WriteResponse(writer, http.StatusOK, false, "Failed get page countVideoOnPage")
+		c.BaseController.WriteResponse(&writer, http.StatusOK, false, "Failed get page countVideoOnPage")
 		return
 	}
 
 	videos, err := c.videoRepository.FindUserVideos(userId, page, countVideoOnPage)
 	if err != nil {
 		log.Error(err.Error())
-		c.BaseController.WriteResponse(writer, http.StatusOK, false, err.Error())
+		c.BaseController.WriteResponse(&writer, http.StatusOK, false, err.Error())
 		return
 	}
 

@@ -8,4 +8,5 @@ type VideoListItem struct {
 	Uploaded  string `json:"uploaded"`
 	Views     string `json:"views"`
 	Status    int    `json:"status"`
+	Quality   string `json:"quality"`
 }

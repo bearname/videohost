@@ -32,13 +32,13 @@ func (c *BaseController) JsonResponse(writer http.ResponseWriter, data interface
 	}
 }
 
-func (c *BaseController) WriteResponse(w http.ResponseWriter, statusCode int, success bool, message string) {
-	w.WriteHeader(statusCode)
+func (c *BaseController) WriteResponse(w *http.ResponseWriter, statusCode int, success bool, message string) {
+	(*w).WriteHeader(statusCode)
 	response := transport.Response{
 		Success: success,
 		Message: message,
 	}
-	c.JsonResponse(w, response)
+	c.JsonResponse(*w, response)
 }
 
 func (c *BaseController) GetIntRouteParameter(request *http.Request, key string) (int, error) {

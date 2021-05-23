@@ -24,31 +24,52 @@ func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *ht
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
 	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	if (*request).Method == "OPTIONS" {
+	method := (*request).Method
+	if method == "OPTIONS" {
 		writer.WriteHeader(http.StatusNoContent)
 		return
 	}
-	fmt.Println("readust", request.RequestURI)
+	fmt.Println("request uri", request.RequestURI)
 	vars := mux.Vars(request)
 	var videoId string
 	var ok bool
 
 	if videoId, ok = vars["videoId"]; !ok {
-		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Failed get videoId")
+		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Failed get 'videoId'")
 		return
 	}
-
-	video, err := c.videoRepository.Find(videoId)
-	if err != nil {
-		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Video not found")
+	var qualityString string
+	if qualityString, ok = vars["quality"]; !ok {
+		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Failed get 'quality'")
 		return
 	}
+	//atoi, err := strconv.Atoi(qualityString)
+	//if err != nil {
+	//	c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Unsupported quality")
+	//	return
+	//}
+	//if !domain.IsSupportedQuality(atoi) {
+	//	c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Unsupported quality")
+	//	return
+	//}
 
-	mediaBase := c.getMediaBase(video.Id)
+	//video, err := c.videoRepository.Find(videoId)
+	//if err != nil {
+	//	c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Video not found")
+	//	return
+	//}
+	//
+	//availableVideoQuality := strings.Split(video.Quality, ",")
+
+	//if !util.Contains(availableVideoQuality, qualityString) {
+	//	c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Unsupported quality")
+	//	return
+	//}
+	mediaBase := c.getMediaBase(videoId)
 	segName, ok := vars["segName"]
 	log.Info("videoId: " + videoId + " segName " + segName)
 	if !ok {
-		m3u8Name := "index.m3u8"
+		m3u8Name := "index-" + qualityString + ".m3u8"
 		log.Info("serveHlsM3u8")
 		c.serveHlsM3u8(writer, request, mediaBase, m3u8Name)
 	} else {
