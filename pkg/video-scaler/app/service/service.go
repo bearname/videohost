@@ -23,7 +23,7 @@ func NewScalerService(service *amqp.RabbitMqService, videoRepository repository.
 	return s
 }
 
-func (s *ScalerService) PrepareToStream(videoId string, inputVideoPath string, qualities []domain.Quality) bool {
+func (s *ScalerService) PrepareToStream(videoId string, inputVideoPath string, qualities []domain.Quality, ownerId string) bool {
 	const extension = ".mp4"
 
 	log.Info(inputVideoPath)
@@ -45,18 +45,18 @@ func (s *ScalerService) PrepareToStream(videoId string, inputVideoPath string, q
 		return false
 	}
 
-	s.prepareToStreamByQualities(qualities, videoId, inputVideoPath, extension)
+	s.prepareToStreamByQualities(qualities, videoId, inputVideoPath, extension, ownerId)
 
 	return true
 }
 
-func (s *ScalerService) prepareToStreamByQualities(qualities []domain.Quality, videoId string, inputVideoPath string, extension string) {
+func (s *ScalerService) prepareToStreamByQualities(qualities []domain.Quality, videoId string, inputVideoPath string, extension string, ownerId string) {
 	for _, quality := range qualities {
 		err := s.scaleVideoToQuality(inputVideoPath, extension, quality)
 		if err != nil {
 			log.Error("Failed prepare to stream file " + inputVideoPath + " in quality " + quality.String() + "p")
 		} else {
-			body := videoId + "," + quality.String() + "," + "mihail12russ@gmail.com"
+			body := videoId + "," + quality.String() + "," + ownerId
 			fmt.Println(body)
 			s.messageBroker.Publish("events_topic", "events.video-scaled", body)
 			log.Info("Success prepare to stream file " + inputVideoPath + " in quality " + quality.String() + "p")

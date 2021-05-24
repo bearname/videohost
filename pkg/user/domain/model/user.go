@@ -20,6 +20,8 @@ type User struct {
 	Key          string `json:"key"`
 	Username     string `json:"username"`
 	Password     []byte `json:"password"`
+	Email        string `json:"email"`
+	IsSubscribed bool   `json:"isSubscribed"`
 	Created      string `json:"uploaded"`
 	Role         Role   `json:"role"`
 	Secret       string `json:"secret"`

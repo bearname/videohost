@@ -5,6 +5,7 @@ import (
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
 	dto2 "github.com/bearname/videohost/pkg/user/app/dto"
 	service2 "github.com/bearname/videohost/pkg/user/app/service"
+	"github.com/bearname/videohost/pkg/user/domain/model"
 	"github.com/bearname/videohost/pkg/user/domain/repository"
 	repository2 "github.com/bearname/videohost/pkg/videoserver/domain/repository"
 	"github.com/gorilla/context"
@@ -12,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"regexp"
 )
 
 type UserController struct {
@@ -38,21 +40,33 @@ func (c *UserController) GetUser(writer http.ResponseWriter, request *http.Reque
 
 	log.Println("get username called")
 	vars := mux.Vars(request)
-	username, ok := vars["username"]
+	username, ok := vars["usernameOrId"]
 	if !ok {
 		http.Error(writer, "Cannot find username in request", http.StatusBadRequest)
 		return
 	}
-	if _, err := c.userRepository.FindByUserName(username); err != nil {
-		http.Error(writer, "Cannot find username", http.StatusNotFound)
+
+	var user model.User
+	var err error
+	uuid := isUUID(username)
+
+	if uuid {
+		user, err = c.userRepository.FindById(username)
+	} else {
+		user, err = c.userRepository.FindByUserName(username)
+	}
+	if err != nil {
+		http.Error(writer, "User not exist", http.StatusNotFound)
 		return
 	}
 
 	c.JsonResponse(writer,
 		struct {
-			Username    string `json:"username"`
-			Description string `json:"description"`
-		}{username, ""})
+			Username     string `json:"username"`
+			Email        string `json:"email"`
+			IsSubscribed bool   `json:"isSubscribed"`
+			Role         int    `json:"role"`
+		}{Username: username, Email: user.Email, IsSubscribed: user.IsSubscribed, Role: user.Role.Values()})
 }
 
 func (c *UserController) UpdatePassword(writer http.ResponseWriter, request *http.Request) {
@@ -92,6 +106,11 @@ func (c *UserController) UpdatePassword(writer http.ResponseWriter, request *htt
 	c.JsonResponse(writer, struct {
 		Result bool `json:"result"`
 	}{Result: true})
+}
+
+func isUUID(uuid string) bool {
+	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
+	return r.MatchString(uuid)
 }
 
 func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http.Request) {

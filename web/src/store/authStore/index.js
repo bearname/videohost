@@ -43,12 +43,12 @@ const actions = {
             console.log(error)
         })
     },
-    async signup(context, {username, password}) {
+    async signup(context, {username, password, email, isSubscribed}) {
         return await fetch(
             process.env.VUE_APP_USER_SERVER_ADDRESS + "/api/v1/auth/create-user",
             {
                 method: "POST",
-                body: JSON.stringify({username: username, password: password})
+                body: JSON.stringify({username: username, password: password, email: email, isSubscribed: isSubscribed})
             }
         )
             .then(response => {

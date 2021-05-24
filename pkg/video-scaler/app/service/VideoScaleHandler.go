@@ -19,6 +19,7 @@ func NewVideoScaleHandler(service *ScalerService, videoRepository repository.Vid
 	v.qualities = qualities
 	return v
 }
+
 func (h *VideoScaleHandler) Handle(message string) error {
 	videoId := message
 	log.Printf("'%s'", videoId)
@@ -28,7 +29,7 @@ func (h *VideoScaleHandler) Handle(message string) error {
 	}
 	log.Info("Uploaded video " + video.Id + " " + video.Uploaded)
 	inputVideoPath := "C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoserver\\" + video.Url
-	ok := h.videoScaleService.PrepareToStream(video.Id, inputVideoPath, h.qualities)
+	ok := h.videoScaleService.PrepareToStream(video.Id, inputVideoPath, h.qualities, video.OwnerId)
 	log.Info(h.getResultMessage(ok))
 	return nil
 }

@@ -12,7 +12,10 @@ import (
 	"github.com/gorilla/context"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
+	"net"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -23,7 +26,6 @@ type AuthController struct {
 
 func NewAuthController(userRepository repository.UserRepository) *AuthController {
 	v := new(AuthController)
-
 	v.userRepository = userRepository
 	return v
 }
@@ -36,12 +38,18 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 		writer.WriteHeader(http.StatusNoContent)
 		return
 	}
-	var newUser dto.UserDto
+	var newUser dto.SignupUserDto
 	err := json.NewDecoder(request.Body).Decode(&newUser)
 	if err != nil {
 		http.Error(writer, "Cannot decode request", http.StatusBadRequest)
 		return
 	}
+
+	if !c.isEmailValid(newUser.Email) {
+		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "User email not valid")
+		return
+	}
+
 	userFromDb, err := c.userRepository.FindByUserName(newUser.Username)
 	if (err == nil && userFromDb.Username == newUser.Username) || (err != nil && err.Error() != "sql: no rows in result set") {
 		http.Error(writer, "User already exists", http.StatusBadRequest)
@@ -56,20 +64,20 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
-
-	accessToken, err := service.CreateToken(userKey.String(), newUser.Username, model.General)
+	role := model.General
+	accessToken, err := service.CreateToken(userKey.String(), newUser.Username, role)
 	if err != nil {
 		http.Error(writer, "Cannot create accessToken", http.StatusInternalServerError)
 		return
 	}
 
-	refreshToken, err := service.CreateTokenWithDuration(userKey.String(), newUser.Username, model.General, time.Hour*24*365*10)
+	refreshToken, err := service.CreateTokenWithDuration(userKey.String(), newUser.Username, role, time.Hour*24*365*10)
 	if err != nil {
 		http.Error(writer, "Cannot create refreshToken", http.StatusInternalServerError)
 		return
 	}
 
-	err = c.userRepository.CreateUser(userKey.String(), newUser.Username, passwordHash, model.General, accessToken, refreshToken)
+	err = c.userRepository.CreateUser(userKey.String(), newUser.Username, passwordHash, newUser.Email, newUser.IsSubscribed, role, accessToken, refreshToken)
 	if err != nil {
 		http.Error(writer, "User"+err.Error(), http.StatusInternalServerError)
 		return
@@ -86,7 +94,7 @@ func (c *AuthController) GetTokenUserPassword(writer http.ResponseWriter, reques
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
 	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	var userDto dto.UserDto
+	var userDto dto.LoginUserDto
 	err := json.NewDecoder(request.Body).Decode(&userDto)
 	if err != nil {
 		http.Error(writer, "cannot decode username/password struct", http.StatusBadRequest)
@@ -109,6 +117,22 @@ func (c *AuthController) GetTokenUserPassword(writer http.ResponseWriter, reques
 		RefreshToken string `json:"refreshToken"`
 	}{userFromDb.AccessToken,
 		userFromDb.RefreshToken})
+}
+
+func (c *AuthController) isEmailValid(e string) bool {
+	if len(e) < 3 && len(e) > 254 {
+		return false
+	}
+	var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	if !emailRegex.MatchString(e) {
+		return false
+	}
+	parts := strings.Split(e, "@")
+	mx, err := net.LookupMX(parts[1])
+	if err != nil || len(mx) == 0 {
+		return false
+	}
+	return true
 }
 
 func (c *AuthController) GetTokenByToken(writer http.ResponseWriter, request *http.Request) {
@@ -146,8 +170,13 @@ func (c *AuthController) GetTokenByToken(writer http.ResponseWriter, request *ht
 		http.Error(writer, "Invalid Refresh token", http.StatusBadRequest)
 		return
 	}
+	user, err := c.userRepository.FindByUserName(username)
+	if err != nil {
+		http.Error(writer, "Unknown user", http.StatusBadRequest)
+		return
+	}
 
-	accessToken, err := service.CreateToken(userKey, username, model.General)
+	accessToken, err := service.CreateToken(userKey, username, user.Role)
 	if err != nil {
 		http.Error(writer, "Cannot create accessToken", http.StatusInternalServerError)
 		return

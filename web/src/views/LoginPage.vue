@@ -4,11 +4,19 @@
       <form @submit.prevent>
         <div>
           <label for="username"><span>Username</span> <input id="username" type="text" v-model="username"
-                                                             placeholder="Username"/></label>
+                                                             placeholder="Username" required/></label>
+        </div>
+        <div v-if="!loginSelected">
+          <label for="username"><span>Email</span> <input id="email" type="email" v-model="email" placeholder="Email"
+                                                          required/></label>
+        </div>
+        <div v-if="!loginSelected">
+          <label for="username"><input id="isSubscribed" type="checkbox" v-model="isSubscribed" placeholder="Subscribe"
+                                       required/><span>Subscribe to video processing result</span></label>
         </div>
         <div>
           <label for="password"><span>Password</span> <input id="password" type="password" v-model="password"
-                                                             placeholder="Password"/></label>
+                                                             placeholder="Password" required/></label>
         </div>
         <v-btn @click="onLoginButtonClick">{{ buttonString }}</v-btn>
       </form>
@@ -28,6 +36,8 @@ export default {
       loginSelected: true,
       username: "",
       password: "",
+      email: "",
+      isSubscribed: false,
       error: ""
     }
   },
@@ -44,7 +54,12 @@ export default {
       if (this.loginSelected) {
         promise = this.login({username: this.username, password: this.password});
       } else {
-        promise = this.signup({username: this.username, password: this.password});
+        promise = this.signup({
+          username: this.username,
+          password: this.password,
+          email: this.email,
+          isSubscribed: this.isSubscribed
+        });
       }
 
       promise.then(() => [

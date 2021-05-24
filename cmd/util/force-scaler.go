@@ -26,7 +26,7 @@ func main() {
 		fmt.Println(video)
 		inputVideoPath := "C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoserver\\content\\" + video.Id + "\\index.mp4"
 		if video.Quality == "" {
-			ok := scalerService.PrepareToStream(video.Id, inputVideoPath, qualities)
+			ok := scalerService.PrepareToStream(video.Id, inputVideoPath, qualities, "")
 			log.Info(getResultMessage(ok))
 		}
 	}

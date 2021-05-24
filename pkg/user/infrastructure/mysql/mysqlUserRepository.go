@@ -15,8 +15,9 @@ func NewMysqlUserRepository(connector database.Connector) *UserRepository {
 	return m
 }
 
-func (r *UserRepository) CreateUser(key string, username string, password []byte, role model.Role, accessToken string, refreshToken string) error {
-	query, err := r.connector.Database.Query("INSERT INTO users (key_user, username, password, role, access_token, refresh_token) VALUES (?, ?, ?, ?, ?, ?);", key, username, password, role, accessToken, refreshToken)
+func (r *UserRepository) CreateUser(key string, username string, password []byte, email string, isSubscribed bool, role model.Role, accessToken string, refreshToken string) error {
+	sqlQuery := "INSERT INTO users (key_user, username, password, email, isSubscribed,  role, access_token, refresh_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
+	query, err := r.connector.Database.Query(sqlQuery, key, username, password, email, isSubscribed, role, accessToken, refreshToken)
 	if err != nil {
 		return err
 	}
@@ -26,15 +27,17 @@ func (r *UserRepository) CreateUser(key string, username string, password []byte
 	return nil
 }
 
-func (r *UserRepository) FindByUserName(username string) (*model.User, error) {
+func (r *UserRepository) FindById(userId string) (model.User, error) {
 	var user model.User
 
-	row := r.connector.Database.QueryRow("SELECT key_user, username, password, created, role, secret, access_token, refresh_token FROM users WHERE username = ?;", username)
+	row := r.connector.Database.QueryRow("SELECT key_user, username, password, email, isSubscribed, created, role, secret, access_token, refresh_token FROM users WHERE key_user = ?;", userId)
 
 	err := row.Scan(
 		&user.Key,
 		&user.Username,
 		&user.Password,
+		&user.Email,
+		&user.IsSubscribed,
 		&user.Created,
 		&user.Role,
 		&user.Secret,
@@ -42,7 +45,28 @@ func (r *UserRepository) FindByUserName(username string) (*model.User, error) {
 		&user.RefreshToken,
 	)
 
-	return &user, err
+	return user, err
+}
+
+func (r *UserRepository) FindByUserName(username string) (model.User, error) {
+	var user model.User
+
+	row := r.connector.Database.QueryRow("SELECT key_user, username, password, email, isSubscribed, created, role, secret, access_token, refresh_token FROM users WHERE username = ?;", username)
+
+	err := row.Scan(
+		&user.Key,
+		&user.Username,
+		&user.Password,
+		&user.Email,
+		&user.IsSubscribed,
+		&user.Created,
+		&user.Role,
+		&user.Secret,
+		&user.AccessToken,
+		&user.RefreshToken,
+	)
+
+	return user, err
 }
 
 func (r *UserRepository) UpdatePassword(username string, password []byte) bool {

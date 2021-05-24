@@ -29,7 +29,7 @@ func Router(connector database.Connector) http.Handler {
 	subRouter.HandleFunc("/auth/token/validate", authController.CheckToken).Methods(http.MethodGet, http.MethodOptions)
 
 	subRouter.HandleFunc("/users/updatePassword", authController.CheckTokenHandler(userController.UpdatePassword)).Methods(http.MethodPut, http.MethodOptions)
-	subRouter.HandleFunc("/users/{username}", authController.CheckTokenHandler(userController.GetUser)).Methods(http.MethodGet, http.MethodOptions)
+	subRouter.HandleFunc("/users/{usernameOrId}", authController.CheckTokenHandler(userController.GetUser)).Methods(http.MethodGet, http.MethodOptions)
 	subRouter.HandleFunc("/users/{username}/videos", authController.CheckTokenHandler(userController.GetUserVideos)).Methods(http.MethodGet, http.MethodOptions)
 
 	return middleware.LogMiddleware(router)

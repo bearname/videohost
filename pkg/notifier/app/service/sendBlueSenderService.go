@@ -1,4 +1,4 @@
-package sendblue
+package service
 
 import (
 	"bytes"
@@ -18,6 +18,7 @@ func NewSendInBlueMailSender(apiKey string) *SendInBlueMailSender {
 	s.apiKey = apiKey
 	return s
 }
+
 func (s *SendInBlueMailSender) Send(from domain.User, to domain.User, subject string, content string) error {
 	message := domain.MailMessage{
 		Sender:      from,
