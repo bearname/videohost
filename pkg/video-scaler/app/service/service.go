@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/bearname/videohost/pkg/common/amqp"
 	"github.com/bearname/videohost/pkg/video-scaler/domain"
 	"github.com/bearname/videohost/pkg/videoserver/domain/repository"
 	log "github.com/sirupsen/logrus"
@@ -11,16 +12,18 @@ import (
 )
 
 type ScalerService struct {
-	videoRepo repository.VideoRepository
+	videoRepo     repository.VideoRepository
+	messageBroker *amqp.RabbitMqService
 }
 
-func NewScalerService(videoRepository repository.VideoRepository) *ScalerService {
+func NewScalerService(service *amqp.RabbitMqService, videoRepository repository.VideoRepository) *ScalerService {
 	s := new(ScalerService)
 	s.videoRepo = videoRepository
+	s.messageBroker = service
 	return s
 }
 
-func (s *ScalerService) ScaleVideos(videoId string, inputVideoPath string, qualities []domain.Quality) bool {
+func (s *ScalerService) PrepareToStream(videoId string, inputVideoPath string, qualities []domain.Quality) bool {
 	const extension = ".mp4"
 
 	log.Info(inputVideoPath)
@@ -42,17 +45,20 @@ func (s *ScalerService) ScaleVideos(videoId string, inputVideoPath string, quali
 		return false
 	}
 
-	s.scaleVideosToQuality(qualities, videoId, inputVideoPath, extension)
+	s.prepareToStreamByQualities(qualities, videoId, inputVideoPath, extension)
 
 	return true
 }
 
-func (s *ScalerService) scaleVideosToQuality(qualities []domain.Quality, videoId string, inputVideoPath string, extension string) {
+func (s *ScalerService) prepareToStreamByQualities(qualities []domain.Quality, videoId string, inputVideoPath string, extension string) {
 	for _, quality := range qualities {
 		err := s.scaleVideoToQuality(inputVideoPath, extension, quality)
 		if err != nil {
 			log.Error("Failed prepare to stream file " + inputVideoPath + " in quality " + quality.String() + "p")
 		} else {
+			body := videoId + "," + quality.String() + "," + "mihail12russ@gmail.com"
+			fmt.Println(body)
+			s.messageBroker.Publish("events_topic", "events.video-scaled", body)
 			log.Info("Success prepare to stream file " + inputVideoPath + " in quality " + quality.String() + "p")
 			ok := s.videoRepo.AddVideoQuality(videoId, quality.String())
 			log.Info(s.getResultMessage(ok))
@@ -71,7 +77,7 @@ func (s *ScalerService) getResultMessage(quality bool) string {
 }
 func (s *ScalerService) scaleVideoToQuality(inputVideoPath string, extension string, quality domain.Quality) error {
 	outputVideoPath := s.getOutputVideoPath(inputVideoPath, extension, quality)
-	log.Info("scale video to " + quality.String())
+	log.Info("prepare video to stream on quality " + quality.String() + "p")
 	outputHls := outputVideoPath[0:strings.LastIndex(outputVideoPath, "\\")+1] + "index-" + quality.String() + `.m3u8`
 	inputVideoPath = strings.ReplaceAll(inputVideoPath, "\\", "\\")
 	outputHls = strings.ReplaceAll(outputHls, "\\", "\\")

@@ -24,7 +24,8 @@ func main() {
 	var connector database.Connector
 	err := connector.Connect()
 	if err != nil {
-		panic("unable to connect to connector" + err.Error())
+		fmt.Println("unable to connect to connector" + err.Error())
+		return
 	}
 	defer connector.Close()
 

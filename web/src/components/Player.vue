@@ -1,16 +1,18 @@
 <template>
   <div>
-    <div>
-      <video id="video" controls></video>
-    </div>
     <div v-if="qualities !== null">
-      <select v-model="selectedQuality">
-        <option disabled value="">Please select one</option>
-        <option v-for="quality in qualities" :key="quality" :value="quality">{{ quality }}p</option>
-        <!--        <option value="720">720p</option>-->
-        <!--        <option value="480">480p</option>-->
-        <!--        <option value="360">360p</option>-->
-      </select>
+      <div>
+        <video id="video" controls width="992" height="558"></video>
+      </div>
+      <div>
+        <select v-model="selectedQuality">
+          <option disabled value="">Please select one</option>
+          <option v-for="quality in qualities" :key="quality" :value="quality">{{ quality }}p</option>
+        </select>
+      </div>
+    </div>
+    <div v-else>
+      Video not available
     </div>
   </div>
 </template>
@@ -27,6 +29,10 @@ export default {
   created() {
     this.qualities = this.availableQualities.split(",");
     console.log(this.qualities)
+    if (this.qualities[0] === "") {
+      this.qualities = null
+    }
+    console.log("this.qualities");
   },
   data() {
     return {

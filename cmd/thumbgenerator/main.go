@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/bearname/videohost/pkg/common/database"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
 	"github.com/bearname/videohost/pkg/thumbgenerator/app/worker"
@@ -23,7 +24,7 @@ func main() {
 	var connector database.Connector
 	err = connector.Connect()
 	if err != nil {
-		panic("unable to connect to connector" + err.Error())
+		fmt.Println("unable to connect to connector" + err.Error())
 	}
 	defer connector.Close()
 

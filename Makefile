@@ -13,6 +13,9 @@ build-thumbgenerator:
 build-videoprocessor:
 	go build  -o .\bin\videoprocessor\videoprocessor.exe .\cmd\videoprocessor\main.go
 
+build-notifier:
+	go build  -o .\bin\notifier\notifier.exe .\cmd\notifier\main.go
+
 build-video-scaler:
 	xcopy /f .\cmd\video-scaler\scale.bat .\bin\video-scaler\scale.bat  /Y
 	xcopy /f .\cmd\video-scaler\resolution.bat .\bin\video-scaler\resolution.bat /Y
@@ -32,6 +35,9 @@ run-thumbgenerator:
 
 run-video-scaler:
 	.\bin\video-scaler\video-scaler.exe
+
+run-notifier:
+	.\bin\notifier\notifier.exe
 
 run-web:
 	cd ./web/ && start npm run serve && cd ../

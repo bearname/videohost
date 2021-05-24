@@ -26,8 +26,7 @@ func Router(connector database.Connector) http.Handler {
 	videoService := service.NewVideoService(videoRepository, messageBroker)
 	videoController := controller.NewVideoController(videoRepository, videoService)
 	if videoController == nil {
-		log.Fatal("Failed")
-		panic("failed build videocontroller")
+		log.Fatal("failed build videocontroller")
 	}
 
 	streamController := controller.NewStreamController(videoRepository)
