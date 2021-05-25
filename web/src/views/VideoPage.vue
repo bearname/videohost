@@ -1,46 +1,56 @@
 <template>
-  <div>
-    Video page
-    <div class="text-align-left" v-if="video !== null">
-      <div v-if="video.status === '3'">
-        <Player :videoId="videoId" :duration="video.duration" :thumbnail="video.thumbnail" :availableQualities="video.quality" :key="key"/>
-      </div>
-      <div v-else> status {{ video.status }}{{ videoStatus }}</div>
-      <h3>{{ video.name }}</h3>
-      <p class="subtitle-1">Watch video {{ video.description }}</p>
-      <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
-      <p class="subtitle-2">{{ video.views }} views</p>
-      <div v-if="isCurrentUserOwner">
-        <v-btn v-on:click="toggleEdit" :data-id="video.id">edit</v-btn>
-        <div v-if="showEdit">
-          <div>
-            <label for="name">Name: <input id="name" type="text" v-model="video.name"></label>
+  <v-container class="grey lighten-5">
+    <v-row no-gutters>
+      <v-col
+          cols="12"
+          sm="8"
+      >
+        Video page
+        <div class="text-align-left" v-if="video !== null">
+          <div v-if="video.status === '3'">
+            <Player :videoId="videoId" :duration="video.duration" :thumbnail="video.thumbnail"
+                    :availableQualities="video.quality" :key="key"/>
           </div>
-          <div>
-            <label for="description">Description: <input id="description" type="text"
-                                                         v-model="video.description"></label>
-          </div>
-          <v-btn type="submit" v-on:click="updateTitleAndDescription">update</v-btn>
-          <div v-if="error !== null"><span v-if="!error">Success</span><span v-else>Failed</span> updated video title
-            and description
+          <div v-else> status {{ video.status }}{{ videoStatus }}</div>
+          <h3>{{ video.name }}</h3>
+          <p class="subtitle-1">Watch video {{ video.description }}</p>
+          <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
+          <p class="subtitle-2">{{ video.views }} views</p>
+          <div v-if="isCurrentUserOwner">
+            <v-btn v-on:click="toggleEdit" :data-id="video.id">edit</v-btn>
+            <div v-if="showEdit">
+              <div>
+                <label for="name">Name: <input id="name" type="text" v-model="video.name"></label>
+              </div>
+              <div>
+                <label for="description">Description: <input id="description" type="text"
+                                                             v-model="video.description"></label>
+              </div>
+              <v-btn type="submit" v-on:click="updateTitleAndDescription">update</v-btn>
+              <div v-if="error !== null"><span v-if="!error">Success</span><span v-else>Failed</span> updated video
+                title
+                and description
+              </div>
+            </div>
+            <v-btn v-on:click="deleteItemPermanent(video.id)">delete</v-btn>
           </div>
         </div>
-        <v-btn v-on:click="deleteItemPermanent(video.id)">delete</v-btn>
-      </div>
-    </div>
-    <div v-else>
-      Video not exist
-    </div>
-    <v-spacer></v-spacer>
-    <div>
-      <h4>Also see</h4>
-      <Pagination :show-status="false" :user-page="false"/>
-    </div>
-  </div>
+        <div v-else>
+          Video not exist
+        </div>
+      </v-col>
+    </v-row>
+<!--    <v-row>-->
+<!--      <h4>Also see</h4>-->
+<!--      <Pagination :show-status="false" :user-page="false"/>-->
+<!--    </v-row>-->
+  </v-container>
+
+
 </template>
 
 <script>
-import Pagination from '../components/Pagination.vue'
+// import Pagination from '../components/Pagination.vue'
 import Player from '../components/Player.vue'
 import axios from 'axios'
 import {mapActions, mapGetters} from "vuex";
@@ -52,7 +62,7 @@ export default {
   name: "StreamPage",
   components: {
     Player,
-    Pagination,
+    // Pagination,
   },
   data() {
     return {
@@ -85,6 +95,7 @@ export default {
   methods: {
     ...mapActions({
       deleteVideoPermanent: "video/deleteVideoPermanent",
+      // getVideo: "video/getVideoById"
     }),
     ...mapGetters({
       getStatus: "video/getStatus",

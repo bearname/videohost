@@ -1,66 +1,48 @@
 <template>
   <div>
     <div v-if="qualities !== null">
-      <div id="video-wrapper" class="video-wrapper">
-        <video id="video" width="720px" autoplay="autoplay" :poster="poster"></video>
-        <div>
-          <span>Quality: </span>
-          <select v-model="selectedQuality">
-            <option disabled value="">Please select one</option>
-            <option v-for="quality in qualities" :key="quality" :value="quality">{{ quality }}p</option>
-          </select>
-          <button v-on:click="changePlayerSize"><span v-if="isMedium">Увеличить</span><span v-else>Уменьшить</span>
-          </button>
-        </div>
-        <div id="videoControls" class="hide video-controls">
-          <canvas
-              id="bufferedCanvas"
-              width="720"
-              height="15"
-              class="videoCentered"
-              v-on:click="onClickBufferedRange($event);"
-              style="height: fit-content"
-          ></canvas>
-          <div>
-            <button
-                type="button"
-                class="btn btn-sm btn-info"
-                title="video.play()"
-                v-on:click="play()"
-            >
-              Play
-            </button>
+      <div id="videoWrapper" class="video-wrapper">
+        <video id="video" width="720px" autoplay="autoplay" :poster="poster" class="player-medium"></video>
+        <!--        <div id="videoControls" class="hide video-controls">-->
+        <div id="videoControls">
+          <div id="defaultBar">
+            <div id="progressBar"></div>
           </div>
+          <div style="clear:both"></div>
+          <!--          <canvas-->
+          <!--              id="bufferedCanvas"-->
+          <!--              width="720"-->
+          <!--              height="15"-->
+          <!--              class="videoCentered"-->
+          <!--              v-on:click="onClickBufferedRange($event);"-->
+          <!--              style="height: fit-content"-->
+          <!--          ></canvas>-->
           <div>
-            <button
-                type="button"
-                class="btn btn-sm btn-info"
-                title="video.pause()"
-                v-on:click="pause()"
-            >
-              Pause
-            </button>
-          </div>
-          <div>
-            <button type="button"
-                    class="btn btn-sm btn-info"
-                    title="video.playbackRate = text input"
-                    v-on:click="setPlaybackSpeed()"
-            >
-              Playback speed
-            </button>
-            <select name="playSpeed" id="playSpeed">
-              <option disabled value="">Playback Speed</option>
-              <option value="0.25">0.25x</option>
-              <option value="0.50">0.5x</option>
-              <option value="0.75">0.75x</option>
-              <option value="1" selected="selected">Normal</option>
-              <option value="1.25">1.25x</option>
-              <option value="1.50">1.50x</option>
-              <option value="1.75">1.75x</option>
-            </select>
-          </div>
-          <div>
+            <span>
+              <button
+                  id="playButton"
+                  type="button"
+                  title="video.play()"
+                  v-on:click="playOrPause()">Play</button>
+            </span>
+            <span>
+              <span id="currentTime"></span>
+              <span></span>
+            </span>
+            <span>
+              <span>Playback speed</span>
+              <select name="playSpeed" id="playSpeed" v-on:input="setPlaybackSpeed()">
+                <option disabled value="">Playback Speed</option>
+                <option value="0.25">0.25x</option>
+                <option value="0.50">0.5x</option>
+                <option value="0.75">0.75x</option>
+                <option value="1" selected="selected">Normal</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.50">1.50x</option>
+                <option value="1.75">1.75x</option>
+              </select>
+            </span>
+            <span>
             <button
                 type="button"
                 class="btn btn-sm btn-info"
@@ -77,8 +59,8 @@
             >
               + 10 s
             </button>
-          </div>
-          <div>
+          </span>
+            <span>
             <button
                 type="button"
                 class="btn btn-xs btn-warning"
@@ -95,26 +77,42 @@
             >
               Stop loading
             </button>
-          </div>
-          <div>Volume
-            <span id="volume" v-if="this.video !== null">{{ this.video.volume * 100 }}</span>
+          </span>
+            <span>Volume
+            <span id="volume" v-if="this.videoElement !== null">{{ this.videoElement.volume * 100 }}</span>
             <span v-else>100%</span>
+          </span>
+            <button v-on:click="toggleFullScreen">full screen</button>
           </div>
-          <span v-on:click="toggleFullScreen">full screen</span>
+          <span>
+            <span>Quality: </span>
+            <select id="selectQuality" v-on:input="changeQuality()">
+              <option disabled value="">Please select one</option>
+              <option value="-1">auto</option>
+              <option v-for="(quality, index) in qualities" :key="quality" :value="index">{{ index }} ! {{
+                  quality
+                }}p</option>
+            </select>
+          </span>
+          <span>
+            <button v-on:click="togglePlayerSize" id="changePlayerSizeButton" class="vi">Увеличить</button>
+          </span>
         </div>
       </div>
-
     </div>
     <div v-else>
       Video not available
     </div>
-
+    <ul id="videoList" v-if="videos !== null">
+      <li v-for="video in videos" :key="video.id" :data-videoId="video.src">{{ video.name }}</li>
+    </ul>
   </div>
 </template>
 
 <script>
-let Hls = require('hls.js');
+import {mapActions, mapGetters} from "vuex";
 
+let Hls = require('hls.js');
 
 export default {
   name: "Player",
@@ -130,6 +128,7 @@ export default {
     if (this.qualities[0] === "") {
       this.qualities = null
     }
+    this.qualities.reverse()
     console.log("this.qualities");
   },
   data() {
@@ -139,188 +138,233 @@ export default {
       qualities: null,
       videoDuration: this.duration,
       isMedium: true,
-      video: null,
       previousVolume: 1,
       playbackRate: null,
       shiftTime: 10,
       volume: null,
       hls: null,
-      isPause: true,
-      poster: this.thumbnail,
+      isPause: false,
+      videoElement: null,
       playbackSpeed: null,
       isFullScreen: false,
       bufferingIdx: null,
       lastStartPosition: 0,
-      canvas: null,
-      videoControlElement: null
+      bufferedCanvas: null,
+      poster: this.thumbnail,
+      videoControlElement: null,
+      playButton: null,
+      pauseButton: null,
+      changePlayerSizeButton: null,
+      selectQualityElement: null,
+      videoWrapperElement: null,
+      currentTimeElement: null,
+      videos: null,
+      updateBar: null,
+      defaultBar: null,
+      progressBar: null,
     }
   },
   mounted() {
     this.initPlayer()
     this.initKeyHandler()
+    this.fetchVideosByPage(0, 10)
   },
   updated() {
     this.initPlayer()
   },
   methods: {
+    ...mapActions({
+      getVideoOnPage: "video/getVideoOnPage"
+    }),
+    ...mapGetters({
+      getVideos: "video/getVideos",
+      getPageCount: "video/getPageCount"
+    }),
+    async fetchVideosByPage(page, countVideoOnPage) {
+      await this.getVideoOnPage(page, countVideoOnPage)
+          .then(() => {
+            this.videos = this.getVideos()
+            console.log(this.videos)
+            this.countPage = this.getPageCount()
+          })
+    },
     onClickBufferedRange(event) {
-      if (this.canvas === null) {
-        this.canvas = document.querySelector('#bufferedCanvas');
+      if (this.bufferedCanvas === null) {
+        this.bufferedCanvas = document.querySelector('#bufferedCanvas');
       }
-      this.video.currentTime = ((event.clientX - this.canvas.offsetLeft) / this.canvas.width) * this.getSeekableEnd();
+      console.log(this.bufferedCanvas.offsetLeft)
+
+      this.videoElement.currentTime = ((event.clientX - this.bufferedCanvas.offsetLeft) / this.bufferedCanvas.width) * this.getSeekableEnd();
     },
     getSeekableEnd() {
-      if (isFinite(this.video.duration)) {
-        return this.video.duration;
+      if (isFinite(this.videoElement.duration)) {
+        return this.videoElement.duration;
       }
-      if (this.video.seekable.length) {
-        return this.video.seekable.end(this.video.seekable.length - 1);
+      if (this.videoElement.seekable.length) {
+        return this.videoElement.seekable.end(this.videoElement.seekable.length - 1);
       }
       return 0;
     },
     checkBuffer() {
-      // const colors = ['#000000', '#d21c1c', '#52fd16', '#0409fd',]
-      // const rndInt = Math.floor(Math.random() * colors.length)
-      // ctx.fillStyle = colors[rndInt]
-      // ctx.fillRect(0, 0, this.canvas.clientWidth, this.canvas.clientHeight)
-      const buffered = this.video.buffered;
-      const seekableEnd = this.getSeekableEnd();
-      console.log('buffered')
-      console.log(buffered)
-      console.log('seekableEnd')
-      console.log(seekableEnd)
+      // if (this.isPause) {
+      //   return
+      // }
+      // const buffered = this.videoElement.buffered;
+      //
+      // const seekableEnd = this.getSeekableEnd();
+
+      // console.log('seekableEnd')
+      // console.log(seekableEnd)
       // let bufferingDuration;
-      const ctx = this.canvas.getContext('2d');
-      if (buffered) {
-        ctx.fillStyle = '#000000';
-        if (!this.canvas.width || this.canvas.width !== this.video.clientWidth) {
-          this.canvas.width = this.video.clientWidth;
-        }
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        const pos = this.video.currentTime;
-        let bufferLen = 0;
-        ctx.fillStyle = '#03bb2b';
-        for (let i = 0; i < buffered.length; i++) {
-          const start = (buffered.start(i) / seekableEnd) * this.canvas.width;
-          const end = (buffered.end(i) / seekableEnd) * this.canvas.width;
-          ctx.fillRect(start, 2, Math.max(2, end - start), 11);
-          if (pos >= buffered.start(i) && pos < buffered.end(i)) {
-            // play position is inside this buffer TimeRange, retrieve end of buffer position and buffer length
-            bufferLen = buffered.end(i) - pos;
-          }
-        }
-        console.log(bufferLen)
-        // check if we are in buffering / or playback ended state
-        // if (
-        //     bufferLen <= 0.1 &&
-        //     this.video.paused === false && pos - this.lastStartPosition > 0.5
-        // ) {
-        //   if (lastDuration - pos <= 0.5 && events.isLive === false) {
-        //     // don't create buffering event if we are at the end of the playlist, don't report ended for live playlist
-        //   } else {
-        //     // we are not at the end of the playlist ... real buffering
-        //     if (bufferingIdx !== -1) {
-        //       bufferingDuration =
-        //           self.performance.now() -
-        //           events.t0 -
-        //           events.video[bufferingIdx].time;
-        //       this.video[bufferingIdx].duration = bufferingDuration;
-        //       this.video[bufferingIdx].name = bufferingDuration;
-        //     } else {
-        //       this.video.push({
-        //         type: 'buffering',
-        //         // time: self.performance.now() - events.t0,
-        //       });
-        //       // trimEventHistory();
-        //       // we are in buffering state
-        //       // bufferingIdx = events.video.length - 1;
-        //     }
-        //   }
-        // }
-        //
-        // if (bufferLen > 0.1 && bufferingIdx !== -1) {
-        //   bufferingDuration =
-        //       self.performance.now() - events.t0 - events.video[bufferingIdx].time;
-        //   events.video[bufferingIdx].duration = bufferingDuration;
-        //   events.video[bufferingIdx].name = bufferingDuration;
-        //   // we are out of buffering state
-        //   bufferingIdx = -1;
-        // }
+      // const ctx = this.bufferedCanvas.getContext('2d');
+      //
+      // if (buffered) {
+      // console.log('buffered')
+      // console.log(buffered)
 
-        // update buffer/position for current Time
-        // const event = {
-        //   time: self.performance.now() - events.t0,
-        //   buffer: Math.round(bufferLen * 1000),
-        //   pos: Math.round(pos * 1000),
-        // };
-        // const bufEvents = events.buffer;
-        // const bufEventLen = bufEvents.length;
-        // if (bufEventLen > 1) {
-        //   const event0 = bufEvents[bufEventLen - 2];
-        //   const event1 = bufEvents[bufEventLen - 1];
-        //   const slopeBuf0 =
-        //       (event0.buffer - event1.buffer) / (event0.time - event1.time);
-        //   const slopeBuf1 =
-        //       (event1.buffer - event.buffer) / (event1.time - event.time);
-        //
-        //   const slopePos0 = (event0.pos - event1.pos) / (event0.time - event1.time);
-        //   const slopePos1 = (event1.pos - event.pos) / (event1.time - event.time);
-        //   // compute slopes. if less than 30% difference, remove event1
-        //   if (
-        //       (slopeBuf0 === slopeBuf1 ||
-        //           Math.abs(slopeBuf0 / slopeBuf1 - 1) <= 0.3) &&
-        //       (slopePos0 === slopePos1 || Math.abs(slopePos0 / slopePos1 - 1) <= 0.3)
-        //   ) {
-        //     bufEvents.pop();
-        //   }
-        // }
-        // events.buffer.push(event);
-        // trimEventHistory();
-        // canvas.refreshCanvas();
-
-        ctx.fillStyle = '#0511b6';
-        const x = (this.video.currentTime / seekableEnd) * this.canvas.width;
-        ctx.fillRect(x, 0, 2, 15);
-      } else if (ctx.fillStyle !== '#000') {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      }
+      // const pos = this.video.currentTime;
+      // let bufferLen = 0;
+      // ctx.fillStyle = '#03bb2b';
+      //
+      // for (let i = 0; i < buffered.length; i++) {
+      //   const start = (buffered.start(i) / seekableEnd) * this.canvas.width;
+      //   const end = (buffered.end(i) / seekableEnd) * this.canvas.width;
+      //   ctx.fillRect(start, 2, Math.max(2, end - start), 11);
+      //   if (pos >= buffered.start(i) && pos < buffered.end(i)) {
+      //     // play position is inside this buffer TimeRange, retrieve end of buffer position and buffer length
+      //     bufferLen = buffered.end(i) - pos;
+      //   }
+      // }
+      // console.log(bufferLen);
+      // } else if (ctx.fillStyle !== '#000') {
+      //   ctx.fillStyle = '#000';
+      //   ctx.fillRect(0, 0, this.bufferedCanvas.width, this.bufferedCanvas.height);
+      // }
+      // let date = new Date(0);
+      // let sec = this.videoElement.currentTime;
+      // date.setSeconds(sec);
+      // let timeString = date.toISOString().substr(11, 8);
+      //
+      // if (sec < 3600) {
+      //   timeString = timeString.substring(2, timeString.length)
+      // }
+      // console.log(timeString)
+      // this.currentTimeElement.innerText = timeString
+      //
+      // ctx.fillStyle = '#0511b6';
+      // const x = this.videoElement.currentTime / seekableEnd * this.bufferedCanvas.width;
+      // ctx.fillRect(x, 0, 2, 15);
+    },
+    getCurrentTime(seekableEnd) {
+      return (this.videoElement.currentTime / seekableEnd) * this.bufferedCanvas.width
     },
     initPlayer() {
-      this.video = document.getElementById('video');
+      this.videoWrapperElement = document.getElementById('videoWrapper');
+      this.videoElement = document.getElementById('video');
+      this.videoElement.addEventListener('click', () => {
+        // this.togglePause()
+        this.playOrPause()
+      })
       this.volume = document.getElementById('volume');
-      this.canvas = document.getElementById('bufferedCanvas')
+      this.bufferedCanvas = document.getElementById('bufferedCanvas')
       this.videoControlElement = document.getElementById('videoControls')
-      this.video.addEventListener('mouseover', () => {
-        this.videoControlElement.classList.remove('hide');
-      })
-      this.video.addEventListener('mouseout', () => {
-        this.videoControlElement.classList.add('hide');
-      })
-      console.log(this.video.getVideoPlaybackQuality())
+      this.playButton = document.getElementById('playButton')
+      this.pauseButton = document.getElementById('pauseButton')
+      this.changePlayerSizeButton = document.getElementById('changePlayerSize')
+      this.selectQualityElement = document.getElementById('selectQuality')
+      this.currentTimeElement = document.getElementById('currentTime')
+      // this.video.addEventListener('mouseover', (e) => {
+      //   e.preventDefault()
+      //   this.videoControlElement.classList.remove('hide');
+      // })
+      // this.video.addEventListener('mouseout', () => {
+      //   if (!this.video.isPause) {
+      //     this.videoControlElement.classList.add('hide');
+      //   }
+      // })
+      console.log(this.videoElement.getVideoPlaybackQuality())
+      this.initHls();
+    },
+
+    playOrPause() {
+      if (!this.videoElement.paused && !this.videoElement.ended) {
+        this.videoElement.pause();
+        this.playButton.innerHTML = 'Play';
+        window.clearInterval(this.updateBar);
+      } else {
+        this.videoElement.play();
+        this.playButton.innerHTML = 'Pause';
+        this.updateBar = setInterval(this.update, 500);
+      }
+    },
+    update() {
+      if (!this.videoElement.ended) {
+        let size = parseInt(this.videoElement.currentTime * this.videoElement.width / this.videoElement.duration);
+        this.progressBar.style.width = size + 'px';
+      } else {
+        this.progressBar.style.width = '0px';
+        this.playButton.innerHTML = 'Play';
+        window.clearInterval(this.updateBar);
+      }
+    },
+    clickedBar(e) {
+      if (!this.videoElement.paused && !this.videoElement.ended) {
+        let mouseX = e.pageX - this.defaultBar.offsetLeft;
+        this.videoElement.currentTime = mouseX * this.videoElement.duration / this.videoElement.width;
+        this.progressBar.style.width = mouseX + 'px';
+      }
+    },
+    initProgressBar() {
+      this.defaultBar = document.getElementById('defaultBar');
+      this.progressBar = document.getElementById('progressBar');
+
+      this.playButton.addEventListener('click', this.playOrPause, false);
+      this.defaultBar.addEventListener('click', this.clickedBar, false);
+    },
+    initHls() {
       if (Hls.isSupported()) {
-        this.hls = new Hls();
-        this.hls.loadSource(process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/' + this.selectedQuality + '/stream/');
-        this.hls.attachMedia(this.video);
-        this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        this.prepareHls(this.id, this.selectedQuality);
+      } else if (this.videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        this.videoElement.src = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/stream/';
+        this.videoElement.addEventListener('loadedmetadata', function () {
           this.video.play();
-          console.log('getVideoPlaybackQuality()')
-        });
-        console.log('frag_buffered')
-        this.hls.on(Hls.Events.FRAG_BUFFERED, () => {
-          console.log('frag,et buffered')
-          // this.hls.bufferTimer = setInterval(this.checkBuffer, 300);
-        })
-      } else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
-        this.video.src = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/' + this.selectedQuality + '/stream/';
-        this.video.addEventListener('loadedmetadata', function () {
-          this.video.play();
+          this.initProgressBar()
           console.log('getVideoPlaybackQuality()')
         });
       } else {
-        let videoWrapper = document.getElementById('video-wrapper');
+        let videoWrapper = document.getElementById('videoWrapper');
         videoWrapper.innerText = "Not support streaming video"
       }
+    },
+    prepareHls(id, quality) {
+      if (this.hls !== null) {
+        this.hls.destroy();
+        clearInterval(this.hls.bufferTimer);
+        this.hls = null;
+      }
+      console.log(quality)
+      this.hls = new Hls();
+      this.hls.loadSource(process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + id + '/stream/');
+      this.hls.attachMedia(this.videoElement);
+      this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        this.videoElement.play();
+        console.log('getVideoPlaybackQuality()')
+      });
+      console.log('frag_buffered')
+      this.hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        console.log('frag,et buffered')
+        // this.hls.bufferTimer = setInterval(this.checkBuffer, 1000);
+      })
+      // this.hls.on(Hls.Events.MEDIA_DETACHED, function () {
+      //   clearInterval(this.hls.bufferTimer);
+      // });
+      // this.hls.on(Hls.Events.DESTROYING, function () {
+      //   clearInterval(this.hls.bufferTimer);
+      // });
+      // this.hls.on(Hls.Events.BUFFER_RESET, function () {
+      //   clearInterval(this.hls.bufferTimer);
+      // });
+      console.log(this.hls)
     },
     initKeyHandler() {
       console.log('ADDING EVENT HANDLER');
@@ -335,13 +379,6 @@ export default {
           }
           case 'f' || 'F': {
             this.toggleFullScreen()
-            // if (!this.isFullScreen) {
-            //   this.video.requestFullscreen();
-            //   this.isFullScreen = true;
-            // } else {
-            //   this.video.exitFullscreen();
-            //   this.isFullScreen = false;
-            // }
             break
           }
           case '<': {
@@ -357,7 +394,8 @@ export default {
             break
           }
           case 'k' || 'K': {
-            this.togglePause()
+            // this.togglePause()
+            this.playOrPause()
             break;
           }
           case 'ArrowLeft': {
@@ -369,27 +407,27 @@ export default {
             break
           }
           case 'ArrowUp': {
-            if (this.video.volume + 0.05 <= 1) {
-              this.video.volume += 0.05
+            if (this.videoElement.volume + 0.05 <= 1) {
+              e.preventDefault()
+              this.videoElement.volume += 0.05
               this.setVolumeText()
-            } else if (this.video.volume + 0.05 > 1) {
-              this.video.volume += 1 - this.video.volume
             }
             break
           }
           case 'ArrowDown': {
-            if (this.video.volume > 0) {
-              this.video.volume -= 0.05
-              this.setVolumeText()
+            if (this.videoElement.volume > 0) {
+              e.preventDefault()
+              this.videoElement.volume -= 0.05;
+              this.setVolumeText();
             }
             break
           }
           case 'm' || 'M': {
-            if (this.video.volume > 0) {
-              this.previousVolume = this.video.volume
-              this.video.volume = 0;
-            } else if (this.video.volume === 0) {
-              this.video.volume = this.previousVolume
+            if (this.videoElement.volume > 0) {
+              this.previousVolume = this.videoElement.volume
+              this.videoElement.volume = 0;
+            } else if (this.videoElement.volume === 0) {
+              this.videoElement.volume = this.previousVolume
               this.previousVolume = 0
             }
             break;
@@ -398,35 +436,47 @@ export default {
             const eventCode = e.code;
 
             console.log(eventCode)
-            if (eventCode ==='Space') {
+            if (eventCode === 'Space') {
               e.preventDefault()
-              this.togglePause()
-            }
-            const s = eventCode.substring(0, eventCode.length - 1);
-            const keyElement = eventCode[eventCode.length - 1];
-            console.log(s)
-            console.log(keyElement)
+              // this.togglePause()
+              this.playOrPause()
+            } else {
+              const s = eventCode.substring(0, eventCode.length - 1);
+              const keyElement = eventCode[eventCode.length - 1];
+              console.log(s)
+              console.log(keyElement)
 
-            if ((s === 'Numpad' || s === 'Digit') && keyElement >= '0' && keyElement <= '9') {
-              const number = parseInt(keyElement);
-              console.log(number / 10)
-              const shift = this.videoDuration * (number / 10);
-              console.log(shift)
-              this.setCurrentTime(shift)
+              if ((s === 'Numpad' || s === 'Digit') && keyElement >= '0' && keyElement <= '9') {
+                const number = parseInt(keyElement);
+                console.log(number / 10)
+                const shift = this.videoDuration * (number / 10);
+                console.log(shift)
+                this.setCurrentTime(shift)
+              }
             }
+
             break
           }
         }
       }, false);
     },
     togglePause() {
-      if (this.isPause) {
-        this.play()
-      } else {
-        this.pause()
-      }
+      this.playOrPause()
+      // if (this.isPause) {
+      //   this.play()
+      // } else {
+      //   this.pause()
+      // }
     },
     toggleFullScreen() {
+      // if (!this.isFullScreen) {
+      //   this.isFullScreen = true;
+      //   console.log( this.screen)
+      //   this.videoElement.width = this.screen.width;
+      //   this.videoElement.height = this.screen.height;
+      // } else {
+      //   this.isFullScreen = false;
+      // }
       if (!this.isFullScreen) {
         if (this.video.mozRequestFullScreen) {
           this.video.mozRequestFullScreen();
@@ -443,25 +493,65 @@ export default {
         this.isFullScreen = false;
       }
     },
-    changePlayerSize() {
-      let video = document.getElementById('video');
+    togglePlayerSize() {
       if (this.isMedium) {
         this.isMedium = false
-        video.setAttribute('width', '1420px');
-        this.shiftCurrentTime(0)
+        this.videoElement.classList.remove('player-medium')
+        this.videoElement.classList.add('player-big')
+        this.changePlayerSizeButton.innerText = "Уменьшить"
+        this.bufferedCanvas.width = '1327px'
       } else {
         this.isMedium = true
-        video.setAttribute('width', '720px')
-        this.shiftCurrentTime(0)
+        this.videoElement.classList.add('player-medium')
+        this.videoElement.classList.remove('player-big')
+        this.changePlayerSizeButton.innerText = "Увеличить"
+        this.bufferedCanvas.width = '992px'
       }
     },
+    changeQuality() {
+      console.log(this.hls)
+
+      let loadLevelNumber = this.selectQualityElement.value;
+      console.log(loadLevelNumber);
+      this.hls.loadLevel = parseInt(loadLevelNumber)
+
+      // this.hls.loadSource(process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/' + quality + '/stream/');
+      // let tmpVideoElement = document.createElement("video");
+      // tmpVideoElement.setAttribute('id', 'video');
+      // let width;
+      // let cssClass;
+      //
+      // if (this.isMedium) {
+      //   width="720px"
+      //   cssClass = "player-medium"
+      // } else {
+      //   width="1327px"
+      //   cssClass = "player-big"
+      // }
+      //
+      // tmpVideoElement.setAttribute('autoplay', 'autoplay');
+      // tmpVideoElement.setAttribute('class', cssClass);
+      // tmpVideoElement.setAttribute('width', width);
+      //
+      // this.videoWrapperElement.insertBefore(tmpVideoElement, this.videoControlElement)
+      // // this.videoWrapperElement.appendChild(tmpVideoElement)
+      // // this.hls.attachMedia(tmpVideoElement);
+      // tmpVideoElement.setAttribute('id', 'video');
+      // let currentTime = this.videoElement.currentTime;
+      // this.videoElement.parentNode.removeChild(this.videoElement)
+      // this.videoElement = tmpVideoElement;
+      // this.videoElement.currentTime = currentTime
+      // // this.prepareHls(this.id, value)
+    },
     play() {
-      this.video.play()
+      this.videoElement.play()
       this.isPause = false
+      this.playButton.innerText = "Pause"
     },
     pause() {
-      this.video.pause()
+      this.videoElement.pause()
       this.isPause = true
+      this.playButton.innerText = "Play"
     },
     startLoadHls() {
       this.hls.startLoad()
@@ -473,14 +563,14 @@ export default {
       this.playbackRate = document.getElementById("playSpeed");
       const playbackRate = this.playbackRate.value;
       if (playbackRate >= 0.25 && playbackRate <= 1.75) {
-        this.video.defaultPlaybackRate = playbackRate;
-        this.video.playbackRate = playbackRate;
+        this.videoElement.defaultPlaybackRate = playbackRate;
+        this.videoElement.playbackRate = playbackRate;
       }
     },
     shiftPlaybackSpeed(shift) {
-      if (this.video.defaultPlaybackRate + shift >= 0.25 && this.video.defaultPlaybackRate + shift <= 1.75) {
-        this.video.defaultPlaybackRate += shift;
-        this.video.playbackRate += shift;
+      if (this.videoElement.defaultPlaybackRate + shift >= 0.25 && this.videoElement.defaultPlaybackRate + shift <= 1.75) {
+        this.videoElement.defaultPlaybackRate += shift;
+        this.videoElement.playbackRate += shift;
 
         if (this.playbackSpeed === null) {
           this.playbackSpeed = document.getElementById('playSpeed');
@@ -496,8 +586,8 @@ export default {
         }, children)
 
         console.log('this.video.defaultPlaybackRate')
-        console.log(this.video.defaultPlaybackRate)
-        const defaultPlaybackRate = this.video.playbackRate;
+        console.log(this.videoElement.defaultPlaybackRate)
+        const defaultPlaybackRate = this.videoElement.playbackRate;
         for (let i = 0; i < children.length; i++) {
           const optionElement = children[i];
           const value = optionElement.getAttribute('value');
@@ -515,13 +605,13 @@ export default {
       }
     },
     shiftCurrentTime(shift) {
-      this.video.currentTime += shift
+      this.videoElement.currentTime += shift
     },
     setCurrentTime(time) {
-      this.video.currentTime = time
+      this.videoElement.currentTime = time
     },
     setVolumeText() {
-      this.volume.innerText = Math.ceil(this.video.volume * 100) + '%'
+      this.volume.innerText = Math.ceil(this.videoElement.volume * 100) + '%'
     },
     // updateVolume() {
     //   if (this.video !== null) {
@@ -551,12 +641,12 @@ export default {
   width: 1327px;
 }
 
-.hide {
-  display: none;
-}
-
 .player-medium {
   width: 992px;
+}
+
+.hide {
+  display: none;
 }
 
 .video-wrapper {
@@ -566,8 +656,24 @@ export default {
 
 .video-controls {
   position: absolute;
-  top: 360px;
+  top: 320px;
   z-index: 1;
   background-color: transparent;
+}
+
+#defaultBar {
+  position: relative;
+  float: left;
+  width: 720px;
+  height: 10px;
+  padding: 4px;
+  background: yellow;
+}
+
+#progressBar {
+  position: absolute;
+  width: 0;
+  height: 5px;
+  background: blue;
 }
 </style>

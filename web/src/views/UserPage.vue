@@ -40,7 +40,7 @@ export default {
   },
   methods: {
     ...mapActions({
-      fetchUserVideos: "video/fetchUserVideos"
+      fetchUserVideos: "video/getUserVideos"
     }),
     ...mapGetters({
       getUserVideos: "video/getUserVideos",
@@ -49,7 +49,7 @@ export default {
       getCurrentUser: "auth/getCurrentUser"
     }),
     getAsyncVideos() {
-      this.fetchUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
+      this.getUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
           .then(() => {
             const result = this.getUserVideos()
             this.videos = result.videos

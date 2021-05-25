@@ -1,7 +1,31 @@
 import axios from "axios";
 import Cookie from "../../util/cookie.js";
+import VideoStatus from "./videoStatus";
+import getElapsedString from "./video";
 
 const actions = {
+    getVideoById(context, {videoId}) {
+        let url = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/api/v1/videos/' + videoId;
+        axios.get(url)
+            .then(response => {
+                console.log(response.data)
+                this.video = response.data
+                this.videoStatus = VideoStatus.intToStatus(this.video.status)
+                this.video.uploaded = getElapsedString(this.video.uploaded)
+            })
+            .catch(function (error) {
+                if (error.response) {
+                    console.log(error.response.data);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                } else if (error.request) {
+                    console.log(error.request);
+                } else {
+                    console.log('Error', error.message);
+                }
+                this.error = true
+            });
+    },
     async uploadVideo(context, {file, title, description}) {
         const promise = context
             .dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
@@ -73,7 +97,7 @@ const actions = {
                 context.state.error = true
             });
     },
-    fetchUserVideos(context, {page, countVideoOnPage}) {
+    getUserVideos(context, {page, countVideoOnPage}) {
         const promise = context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
 
         promise.then(() => {

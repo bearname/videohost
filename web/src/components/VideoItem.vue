@@ -40,7 +40,6 @@
 
 import {mapActions, mapGetters} from "vuex";
 import VideoStatus from "../store/videoStore/videoStatus";
-// import Cookie from "@/util/cookie";
 
 export default {
   name: "VideoItem",

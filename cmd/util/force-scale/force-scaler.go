@@ -6,6 +6,7 @@ import (
 	"github.com/bearname/videohost/pkg/video-scaler/app/service"
 	"github.com/bearname/videohost/pkg/video-scaler/domain"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 )
 
