@@ -3,7 +3,7 @@
     Video page
     <div class="text-align-left" v-if="video !== null">
       <div v-if="video.status === '3'">
-        <Player :videoId="videoId" :availableQualities="video.quality" :key="key"/>
+        <Player :videoId="videoId" :duration="video.duration" :thumbnail="video.thumbnail" :availableQualities="video.quality" :key="key"/>
       </div>
       <div v-else> status {{ video.status }}{{ videoStatus }}</div>
       <h3>{{ video.name }}</h3>
@@ -70,7 +70,6 @@ export default {
     this.setVideoId()
     this.key = Date.now()
     this.currentUserId = Cookie.getCookie("userId");
-    this.getAsyncVideos()
   },
   watch: {
     '$route'() {
