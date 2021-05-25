@@ -20,13 +20,6 @@ func main() {
 		fmt.Println("Failed get Video Duration")
 		log.Fatal(err)
 	}
-	outputPath := os.Args[3]
-
-	_, err = prepareToStream(videoPath, outputPath)
-	if err != nil {
-		fmt.Println("Failed Prepare to stream")
-		log.Fatal(err)
-	}
 
 	fmt.Printf("%f", duration)
 

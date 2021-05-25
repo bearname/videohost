@@ -48,5 +48,6 @@ func QualityToResolution(quality Quality) Resolution {
 		Q480p:  {width: 850, height: 480},
 		Q320p:  {width: 640, height: 360},
 	}
+
 	return m[quality]
 }

@@ -39,10 +39,7 @@ func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *ht
 		return
 	}
 	var qualityString string
-	if qualityString, ok = vars["quality"]; !ok {
-		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Failed get 'quality'")
-		return
-	}
+	qualityString, hasQuality := vars["quality"]
 	//atoi, err := strconv.Atoi(qualityString)
 	//if err != nil {
 	//	c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Unsupported quality")
@@ -68,10 +65,13 @@ func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *ht
 	mediaBase := c.getMediaBase(videoId)
 	segName, ok := vars["segName"]
 	log.Info("videoId: " + videoId + " segName " + segName)
-	if !ok {
+	if !ok && hasQuality {
 		m3u8Name := "index-" + qualityString + ".m3u8"
-		log.Info("serveHlsM3u8")
+		log.Info("serveHls" + qualityString + "M3u8")
 		c.serveHlsM3u8(writer, request, mediaBase, m3u8Name)
+	} else if !ok {
+		log.Info("serveHlsM3u8")
+		c.serveHlsM3u8(writer, request, mediaBase, "index.m3u8")
 	} else {
 		log.Info("serveHlsTs")
 		c.serveHlsTs(writer, request, mediaBase, segName)

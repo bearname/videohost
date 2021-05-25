@@ -8,16 +8,9 @@ import (
 	"github.com/bearname/videohost/pkg/video-scaler/app/service"
 	"github.com/bearname/videohost/pkg/video-scaler/domain"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 	"time"
-
-	//"github.com/bearname/videohost/pkg/common/database"
-	//"github.com/bearname/videohost/pkg/video-scaler/app/service"
-	//"github.com/bearname/videohost/pkg/video-scaler/domain"
-	//"github.com/bearname/videohost/pkg/videoserver/infrastructure/mysql"
-	_ "github.com/go-sql-driver/mysql"
-	//"github.com/streadway/amqp"
-	//"os"
 )
 
 func main() {
@@ -49,7 +42,7 @@ func main() {
 	defer connector.Close()
 	videoRepo := mysql.NewMysqlVideoRepository(connector)
 	messageBroker := amqp.NewRabbitMqService("guest", "guest", "localhost", 5672)
-	qualities := []domain.Quality{domain.Q1080p, domain.Q720p, domain.Q480p, domain.Q320p}
+	qualities := []domain.Quality{domain.Q1440p, domain.Q1080p, domain.Q720p, domain.Q480p, domain.Q320p}
 	scalerService := service.NewScalerService(messageBroker, videoRepo)
 	handler := service.NewVideoScaleHandler(scalerService, videoRepo, qualities)
 	messageBroker.Consume("events_topic", "events.video-uploaded", handler)

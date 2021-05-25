@@ -30,6 +30,7 @@ func Router(connector database.Connector) http.Handler {
 	}
 
 	streamController := controller.NewStreamController(videoRepository)
+	router.HandleFunc("/media/{videoId}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/health", handler.HealthHandler).Methods(http.MethodGet)
