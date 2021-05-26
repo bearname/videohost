@@ -31,24 +31,6 @@
               <span id="currentTime"></span>
               <span> / {{ videoDuration }}</span>
             </span>
-            <!--            <span>-->
-            <!--              <button-->
-            <!--                  type="button"-->
-            <!--                  class="btn btn-xs btn-warning"-->
-            <!--                  title="hls.startLoad()"-->
-            <!--                  v-on:click="startLoadHls()"-->
-            <!--              >-->
-            <!--                Start loading-->
-            <!--              </button>-->
-            <!--              <button-->
-            <!--                  type="button"-->
-            <!--                  class="btn btn-xs btn-warning"-->
-            <!--                  title="hls.stopLoad()"-->
-            <!--                  v-on:click="stopLoadHls()"-->
-            <!--              >-->
-            <!--                Stop loading-->
-            <!--              </button>-->
-            <!--            </span>-->
             <div class="float-right ">
               <span id="settingButton" class="gear player-controls-item "></span>
               <button v-on:click="togglePlayerSize" id="changePlayerSize" class="player-controls-item">&#9645;</button>
@@ -442,13 +424,13 @@ export default {
       this.videoElement.play()
       this.isPause = false
       this.playButton.innerText = '❚ ❚'
-      // this.videoControlElement.style.transform = 'translateY(100px)'
+      this.videoControlElement.style.transform = 'translateY(100px)'
     },
     pause() {
       this.videoElement.pause()
       this.isPause = true
       this.playButton.textContent = '►'
-      // this.videoControlElement.style.transform = 'translateY(-10px)'
+      this.videoControlElement.style.transform = 'translateY(-10px)'
     },
     formatTimeString(seconds) {
       let date = new Date(0);
@@ -461,12 +443,6 @@ export default {
       }
 
       return timeString
-    },
-    startLoadHls() {
-      this.hls.startLoad()
-    },
-    stopLoadHls() {
-      this.hls.stopLoad()
     },
     setPlaybackSpeed() {
       this.playbackRate = document.getElementById("playSpeed");
