@@ -15,7 +15,7 @@
                   id="playButton"
                   type="button"
                   title="video.play()"
-                  v-on:click="playOrPause()">&#x23F5;</button>
+                  v-on:click="togglePlay()">&#x23F5;</button>
             </span>
             <span class="player-controls-item">
               <button id="volumeMute">mute</button>
@@ -172,7 +172,7 @@ export default {
       this.videoWrapperElement = document.getElementById('videoWrapper');
       this.videoElement = document.getElementById('video');
       this.videoElement.addEventListener('click', () => {
-        this.playOrPause()
+        this.togglePlay()
       })
       this.volume = document.getElementById('volume');
       this.bufferedCanvas = document.getElementById('bufferedCanvas')
@@ -206,7 +206,7 @@ export default {
       console.log(this.videoElement.getVideoPlaybackQuality())
       this.initHls();
     },
-    playOrPause() {
+    togglePlay() {
       if (!this.videoElement.paused && !this.videoElement.ended) {
         this.pause();
       } else {
@@ -284,8 +284,7 @@ export default {
             break
           }
           case 'k' || 'K': {
-            // this.togglePause()
-            this.playOrPause()
+            this.togglePlay()
             break;
           }
           case 'ArrowLeft': {
@@ -328,8 +327,7 @@ export default {
             console.log(eventCode)
             if (eventCode === 'Space') {
               e.preventDefault()
-              // this.togglePause()
-              this.playOrPause()
+              this.togglePlay()
             } else {
               const s = eventCode.substring(0, eventCode.length - 1);
               const keyElement = eventCode[eventCode.length - 1];
@@ -424,7 +422,6 @@ export default {
       this.videoElement.play()
       this.isPause = false
       this.playButton.innerText = '❚ ❚'
-      this.videoControlElement.style.transform = 'translateY(100px)'
     },
     pause() {
       this.videoElement.pause()
