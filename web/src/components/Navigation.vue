@@ -12,10 +12,11 @@
       <v-toolbar-title>
         <router-link :to="{ name: 'uploadVideo'}">Загрузить видео</router-link>
       </v-toolbar-title>
-      <v-toolbar-title>
+<!--      <SearchRow/>-->
+      <v-toolbar-title class="float-right">
         <router-link :to="{ name: 'user'}">User {{ currentUsername }}</router-link>
       </v-toolbar-title>
-      <v-toolbar-title>
+      <v-toolbar-title class="float-right">
         <div v-if="isLoggedUser === false">
           <router-link :to="{ name: 'login'}">login</router-link>
         </div>
@@ -29,9 +30,11 @@
 
 <script>
 import {mapActions, mapGetters} from "vuex";
+// import SearchRow from "./SearchRow";
 
 export default {
   name: "Navigation",
+  // components: {SearchRow},
   data() {
     return {
       userid: {type: String, default: ""}

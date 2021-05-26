@@ -190,6 +190,35 @@ const actions = {
             })
         })
         return promise
+    },
+    async searchVideos(context, { searchString, page = '1', countVideoOnPage = '10' }) {
+        const videoServerAddress = process.env.VUE_APP_VIDEO_SERVER_ADDRESS;
+        let url = videoServerAddress + '/api/v1/videos/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
+        await axios.get(url)
+            .then(response => {
+                let data = response.data;
+                console.log(data)
+
+                if (Object.keys(data).includes("pageCount")) {
+                    this.countPage = data.pageCount
+                }
+                if (Object.keys(data).includes("videos")) {
+                    context.state.userVideos = data.videos
+                    context.state.userVideos.forEach(updateThumbnail, context.state.userVideos)
+                    context.state.countUserVideos = data.countAllVideos
+                }
+            })
+            .catch(function (error) {
+                if (error.response) {
+                    console.log(error.response.data);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                } else if (error.request) {
+                    console.log(error.request);
+                } else {
+                    console.log('Error', error.message);
+                }
+            });
     }
 };
 

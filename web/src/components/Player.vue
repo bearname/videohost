@@ -64,7 +64,22 @@
               </select>
             </div>
           </div>
+          <div id="contextMenu" class="settings-popup hide">
+            <div>
+              <button id="loopButton">loop</button>
+            </div>
+            <div>
+              <button id="copyVideo">copy video url</button>
+            </div>
+            <div>
+              <button id="copyVideoURLWithCurrentTime">Copy video URL at current time</button>
+            </div>
+            <div>
+              <button id="statsOfNerds">Stats of nerds</button>
+            </div>
+          </div>
         </div>
+        <div id="statsOfNerdsShow" class="stats-show"></div>
       </div>
     </div>
     <div v-else>
@@ -135,9 +150,16 @@ export default {
       settingsPopupElement: null,
       playbackSpeedSettingElement: null,
       qualitySettingElement: null,
+      toggleLoopButtonElement: null,
+      contextMenuElement: null,
+      copyVideoElement: null,
+      copyVideoURLWithCurrentTimeElement: null,
+      statsOfNerdsElement: null,
+      statsOfNerdsShowElement: null,
       videos: null,
       volumePrevious: 1,
       showSetting: false,
+      isLoopedVideo: false,
     }
   },
   mounted() {
@@ -169,46 +191,16 @@ export default {
     },
 
     initPlayer() {
-      this.videoWrapperElement = document.getElementById('videoWrapper');
-      this.videoElement = document.getElementById('video');
-      this.videoElement.addEventListener('click', () => {
-        this.togglePlay()
-      })
-      this.volume = document.getElementById('volume');
-      this.bufferedCanvas = document.getElementById('bufferedCanvas')
-      this.videoControlElement = document.getElementById('videoControls')
-      this.playButton = document.getElementById('playButton')
-      this.pauseButton = document.getElementById('pauseButton')
-      this.changePlayerSizeButton = document.getElementById('changePlayerSize')
-      this.selectQualityElement = document.getElementById('selectQuality')
-      this.currentTimeElement = document.getElementById('currentTime')
-      this.volumeMuteElement = document.getElementById('volumeMute')
-      this.progressBarWrapperElement = document.getElementById('progressBarWrapper')
-      this.progressBarElement = document.getElementById('progressBar')
-      this.showHoverTimeElement = document.getElementById('showHoverTime')
-      this.progressBarCircleElement = document.getElementById('progressBarCircle')
-      this.volumeChangerElement = document.getElementById('volumeChanger')
-      this.settingButtonElement = document.getElementById('settingButton')
-      this.qualitySettingElement = document.getElementById('qualitySetting')
-      this.playbackSpeedSettingElement = document.getElementById('playbackSpeedSetting')
-      this.settingsPopupElement = document.getElementById('settings')
-
-      this.videoElement.addEventListener('timeupdate', this.handleTimeUpdate, false)
-      this.videoElement.addEventListener('stop', this.onVideoStop, false)
-      this.volumeMuteElement.addEventListener('click', this.toggleMute, false)
-
-      this.progressBarWrapperElement.addEventListener('mousemove', this.onHoverProgressBar, false)
-      this.progressBarWrapperElement.addEventListener('mouseout', this.hideShowTime, false)
-      this.volumeChangerElement.addEventListener('change', this.handleVolumeChange, false)
-      this.volumeChangerElement.addEventListener('mousemove', this.handleVolumeChange, false)
-
-      this.settingButtonElement.addEventListener('click', this.toggleSettingPopup, false)
+      this.initElements()
+      this.addToElementEventListeners()
       console.log(this.videoElement.getVideoPlaybackQuality())
       this.initHls();
     },
     togglePlay() {
       if (!this.videoElement.paused && !this.videoElement.ended) {
         this.pause();
+      } else if (this.videoElement.ended) {
+        this.videoReplay()
       } else {
         this.play();
       }
@@ -220,7 +212,6 @@ export default {
         this.videoElement.src = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/stream/';
         this.videoElement.addEventListener('loadedmetadata', function () {
           this.video.play();
-          console.log('getVideoPlaybackQuality()')
         });
       } else {
         let videoWrapper = document.getElementById('videoWrapper');
@@ -238,26 +229,9 @@ export default {
       this.hls.attachMedia(this.videoElement);
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
         this.play();
-        console.log('getVideoPlaybackQuality()')
       });
-      console.log('frag_buffered')
-      this.hls.on(Hls.Events.FRAG_BUFFERED, () => {
-        console.log('frag,et buffered')
-        // this.hls.bufferTimer = setInterval(this.checkBuffer, 1000);
-      })
-      // this.hls.on(Hls.Events.MEDIA_DETACHED, function () {
-      //   clearInterval(this.hls.bufferTimer);
-      // });
-      // this.hls.on(Hls.Events.DESTROYING, function () {
-      //   clearInterval(this.hls.bufferTimer);
-      // });
-      // this.hls.on(Hls.Events.BUFFER_RESET, function () {
-      //   clearInterval(this.hls.bufferTimer);
-      // });
-      console.log(this.hls)
     },
     initKeyHandler() {
-      console.log('ADDING EVENT HANDLER');
       window.addEventListener("keydown", e => {
         const key = e.key;
         console.log('key')
@@ -312,13 +286,7 @@ export default {
             break
           }
           case 'm' || 'M': {
-            if (this.videoElement.volume > 0) {
-              this.previousVolume = this.videoElement.volume
-              this.videoElement.volume = 0;
-            } else if (this.videoElement.volume === 0) {
-              this.videoElement.volume = this.previousVolume
-              this.previousVolume = 0
-            }
+            this.toggleMute()
             break;
           }
           default: {
@@ -441,6 +409,18 @@ export default {
 
       return timeString
     },
+    copyTextToClipboard(text) {
+      if (!navigator.clipboard) {
+        console.log("failed copy")
+        return;
+      }
+      navigator.clipboard.writeText(text).then(function () {
+        console.log('Async: Copying to clipboard was successful!');
+      }, function (err) {
+        console.error('Async: Could not copy text: ', err);
+      });
+    },
+
     setPlaybackSpeed() {
       this.playbackRate = document.getElementById("playSpeed");
       const playbackRate = this.playbackRate.value;
@@ -506,7 +486,7 @@ export default {
     },
     toggleMute() {
       if (this.videoElement.muted) {
-        this.videoElement.volume = this.volumePrevious
+        this.videoElement.volume = 1
         this.videoElement.muted = false
         this.changeButtonType(this.volumeMuteElement, 'mute')
         this.volumeChangerElement.value = this.videoElement.volume
@@ -545,6 +525,7 @@ export default {
       this.videoControlElement.style.transform = 'translateY(-20px)'
     },
     handleVolumeChange() {
+      this.volumePrevious = this.volumeChangerElement.value
       this.videoElement.volume = this.volumeChangerElement.value
       if (this.videoElement.volume === 0) {
         this.volumeMuteElement.innerText = "unmute"
@@ -554,7 +535,6 @@ export default {
         this.videoElement.muted = false
         this.volumeMuteElement.innerText = "mute"
         this.volumeChangerElement.value = this.volumePrevious
-
       }
       this.updateVolumeText();
     },
@@ -563,6 +543,117 @@ export default {
       this.settingsPopupElement.style.top = boundingClientRect.top - 300
       this.settingsPopupElement.style.left = boundingClientRect.left + 100
       this.settingsPopupElement.classList.toggle('hide')
+    },
+    toggleLoop() {
+      if (!this.isLoopedVideo) {
+        this.isLoopedVideo = true;
+        this.toggleLoopButtonElement.textContent = "looped"
+        this.videoElement.addEventListener('ended', this.loopVideo, false);
+      } else {
+        this.toggleLoopButtonElement.textContent = "loop"
+        this.isLoopedVideo = false;
+      }
+    },
+    loopVideo() {
+      if (this.isLoopedVideo) {
+        this.videoReplay();
+      } else {
+        this.playButton.textContent = 'Replay'
+      }
+    },
+    toggleContextMenu(e) {
+      e.preventDefault();
+      this.contextMenuElement.classList.toggle('hide')
+    },
+    videoReplay() {
+      this.currentTime = 0;
+      this.play();
+    },
+    initElements() {
+      this.videoWrapperElement = document.getElementById('videoWrapper');
+      this.videoElement = document.getElementById('video');
+
+      let time = this.$route.query.time;
+      console.log(time)
+      if (time !== undefined) {
+        this.videoElement.currentTime = time;
+      }
+      this.volume = document.getElementById('volume');
+      this.bufferedCanvas = document.getElementById('bufferedCanvas')
+      this.videoControlElement = document.getElementById('videoControls')
+      this.playButton = document.getElementById('playButton')
+      this.pauseButton = document.getElementById('pauseButton')
+      this.changePlayerSizeButton = document.getElementById('changePlayerSize')
+      this.selectQualityElement = document.getElementById('selectQuality')
+      this.currentTimeElement = document.getElementById('currentTime')
+      this.volumeMuteElement = document.getElementById('volumeMute')
+      this.progressBarWrapperElement = document.getElementById('progressBarWrapper')
+      this.progressBarElement = document.getElementById('progressBar')
+      this.showHoverTimeElement = document.getElementById('showHoverTime')
+      this.progressBarCircleElement = document.getElementById('progressBarCircle')
+      this.volumeChangerElement = document.getElementById('volumeChanger')
+      this.settingButtonElement = document.getElementById('settingButton')
+      this.qualitySettingElement = document.getElementById('qualitySetting')
+      this.playbackSpeedSettingElement = document.getElementById('playbackSpeedSetting')
+      this.settingsPopupElement = document.getElementById('settings')
+      this.contextMenuElement = document.getElementById('contextMenu')
+      this.toggleLoopButtonElement = document.getElementById('loopButton')
+      this.copyVideoElement = document.getElementById('copyVideo')
+      this.copyVideoURLWithCurrentTimeElement = document.getElementById('copyVideoURLWithCurrentTime')
+      this.statsOfNerdsElement = document.getElementById('statsOfNerds')
+      this.statsOfNerdsShowElement = document.getElementById('statsOfNerdsShow')
+    },
+    addToElementEventListeners() {
+      if (this.videoWrapperElement.addEventListener) {
+        this.videoWrapperElement.addEventListener('contextmenu', this.toggleContextMenu, false);
+      } else {
+        this.videoWrapperElement.attachEvent('oncontextmenu', function () {
+          window.event.returnValue = false;
+        });
+      }
+      this.videoElement.addEventListener('click', () => {
+        this.contextMenuElement.classList.add('hide')
+        this.statsOfNerdsShowElement.classList.add('hide')
+        this.togglePlay()
+      })
+
+      this.videoElement.addEventListener('dblclick', this.toggleFullScreen, false)
+      this.videoElement.addEventListener('timeupdate', this.handleTimeUpdate, false)
+      this.videoElement.addEventListener('stop', this.onVideoStop, false)
+      this.volumeMuteElement.addEventListener('click', this.toggleMute, false)
+
+      this.progressBarWrapperElement.addEventListener('mousemove', this.onHoverProgressBar, false)
+      this.progressBarWrapperElement.addEventListener('mouseout', this.hideShowTime, false)
+      this.volumeChangerElement.addEventListener('change', this.handleVolumeChange, false)
+      this.volumeChangerElement.addEventListener('mousemove', this.handleVolumeChange, false)
+      this.settingButtonElement.addEventListener('click', this.toggleSettingPopup, false)
+      this.toggleLoopButtonElement.addEventListener('click', this.toggleLoop, false)
+
+      this.copyVideoElement.addEventListener('click', this.copyVideoPath, false)
+      this.copyVideoURLWithCurrentTimeElement.addEventListener('click', this.copyVideoPathWithTime, false)
+      this.statsOfNerdsElement.addEventListener('click', this.showStatsOfNerds, false)
+    },
+    copyVideoPath() {
+      this.copyTextToClipboard(document.URL)
+    },
+    copyVideoPathWithTime() {
+      let string = document.URL.split('?')[0];
+      this.copyTextToClipboard(string + "?time=" + this.videoElement.currentTime)
+    },
+    showStatsOfNerds() {
+      this.statsOfNerdsShowElement.classList.remove('hide')
+      let hls = this.hls;
+      let boundingClientRect = this.videoElement.getBoundingClientRect();
+      this.statsOfNerdsShowElement.innerHTML = '<p>Video ID' + this.videoId + '</p>' +
+          '<p>Viewport ' + boundingClientRect.width + 'x' + boundingClientRect.height + '</p>' +
+          '<p>Volume ' + this.videoElement.volume * 100 + '%</p>' +
+          '<p>Codecs ' + hls.levels[hls.currentLevel].videoCodec + '</p>' +
+          '<p>Latency / Bandwidth Estimated ' + hls.latency.toFixed(3) + '  ' + hls.bandwidthEstimate + '</p>' +
+          '<p>Max Latency: ' + this.hls.maxLatency + '</p>' +
+          '<p>Target Latency: ' + this.hls.targetLatency.toFixed(3) + '</p>' +
+          '<p>Bitrate: ' + Math.round(hls.levels[hls.currentLevel].bitrate / 1000) + '</p>' +
+          '<p>Latency: ' + this.hls.latency.toFixed(3) + '</p>' +
+          '<p>Drift: ' + this.hls.drift.toFixed(3) + '  (edge advance rate)</p>'
     },
   },
 }
@@ -604,6 +695,7 @@ select {
 
 .hide {
   opacity: 0;
+  display: none;
 }
 
 .player-wrapper {
@@ -631,7 +723,7 @@ select {
 }
 
 .player-wrapper:hover .player-controls {
-  transform: translateY(-10px);
+  transform: translateY(0px);
   opacity: 1;
 }
 
@@ -745,4 +837,13 @@ select {
   border-radius: 4px;
 }
 
+.stats-show {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 10px 10px;
+  background: rgba(28, 28, 28, 0.9);
+  border-radius: 4px;
+  color: #e8dbdb;
+}
 </style>

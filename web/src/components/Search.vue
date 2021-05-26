@@ -1,52 +1,66 @@
 <template>
   <div>
-    <v-btn
-        class="hidden-xs-only"
-        v-on:click="toggleDisplay"
-    >
-      <span v-if="isNeedDisplay">close </span>
-      <span v-else>open </span>
-      <span> search </span>
-    </v-btn>
-    <div v-if="isNeedDisplay">
-      <div class="search-wrapper">
-        <input type="text" v-model="search" placeholder="Search title.."/>
-      </div>
-      <v-btn v-on:click="onSearchSubmit">Search</v-btn>
-      <div v-if="videos !== null && videos !== []">
-        <VideoList :videos="videos" :show-status="false" :user-page="false" :key="videos"/>
-      </div>
-      <div v-else>
-        Not Found
-      </div>
+    {{ search }}
+    <div class="search-wrapper">
+      <input id="searchBox" type="text" v-model="search" placeholder="Search title.."/>
+    </div>
+    <v-btn v-on:click="searchVideo">Search</v-btn>
+    <div v-if="videos !== null && videos !== []">
+      <VideoList :videos="videos" :show-status="false" :user-page="false" :key="videos"/>
+    </div>
+    <div v-else>
+      Not Found
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
 import VideoList from "./VideoList";
+import axios from "axios";
 
 export default {
   name: "Search",
   components: {VideoList},
+  props: [
+    'searchQuery'
+  ],
   data() {
     return {
-      search: null,
+      search: this.searchQuery,
       videos: null,
       error: false,
       page: 1,
       isNeedDisplay: false
     }
   },
+  async created() {
+    this.searchVideos(this.search)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Slash') {
+        let searchBoxElement = document.getElementById('searchBox');
+        if (searchBoxElement !== null) {
+          searchBoxElement.focus();
+        }
+      }
+    })
+  },
   methods: {
-    toggleDisplay() {
-      this.isNeedDisplay = !this.isNeedDisplay
-    },
-    onSearchSubmit() {
+    // ...mapActions({
+    //   searchVideosByQuery: "video/searchVideos"
+    // }),
+    // ...mapGetters({
+    //   getVideos: "video/getVideos",
+    //   getPageCount: "video/getPageCount"
+    // }),
+    // async searchVideo() {
+    //   await this.searchVideosByQuery({searchString: this.search});
+    //   this.videos = this.getVideos();
+    // },
+    searchVideo() {
       this.searchVideos(this.search)
     },
     searchVideos(searchString, page = '1', countVideoOnPage = '10') {
+
       const videoServerAddress = process.env.VUE_APP_VIDEO_SERVER_ADDRESS;
       let url = videoServerAddress + '/api/v1/videos/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
       axios.get(url)

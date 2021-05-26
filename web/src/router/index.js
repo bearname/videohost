@@ -4,8 +4,8 @@ import StreamPage from '../views/VideoPage.vue'
 import UploadVideo from "../views/UploadVideoPage";
 import LoginPage from "../views/LoginPage";
 import UserPage from "../views/UserPage";
-// import VideoEditPage from "../views/VideoEditPage";
 import store from "../store/index.js";
+import SearchPage from "../views/SearchPage";
 
 const routes = {
     home: {
@@ -42,6 +42,11 @@ const routes = {
         path: '/videos/:videoId?',
         component: StreamPage
     },
+    search: {
+        name: 'search',
+        path: '/search/:searchQuery',
+        component: SearchPage,
+    },
     // editVideo: {
     //     name: 'videoStream',
     //     path: '/videos/:videoId/edit',
@@ -77,6 +82,7 @@ const router = new VueRouter({
         routes.videoStream,
         routes.uploadVideo,
         routes.login,
+        routes.search,
         // routes.editVideo,
     ],
 });
