@@ -5,8 +5,10 @@
           cols="12"
           sm="8"
       >
-        Video page
-        <div class="text-align-left" v-if="video !== null">
+        <h4 v-if="video === null">
+          Video unavailable
+        </h4>
+        <div class="text-align-left" v-else>
           <div v-if="video.status === '3'">
             <Player :videoId="videoId" :duration="video.duration" :thumbnail="video.thumbnail"
                     :availableQualities="video.quality" :key="key"/>
@@ -34,9 +36,6 @@
             </div>
             <v-btn v-on:click="deleteItemPermanent(video.id)">delete</v-btn>
           </div>
-        </div>
-        <div v-else>
-          Video not exist
         </div>
       </v-col>
     </v-row>
@@ -95,7 +94,6 @@ export default {
   methods: {
     ...mapActions({
       deleteVideoPermanent: "video/deleteVideoPermanent",
-      // getVideo: "video/getVideoById"
     }),
     ...mapGetters({
       getStatus: "video/getStatus",

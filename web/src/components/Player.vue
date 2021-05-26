@@ -1,36 +1,63 @@
 <template>
   <div>
     <div v-if="qualities !== null">
-      <div id="videoWrapper" class="video-wrapper">
-        <video id="video" width="720px" autoplay="autoplay" :poster="poster" class="player-medium"></video>
-        <!--        <div id="videoControls" class="hide video-controls">-->
-        <div id="videoControls">
-          <div id="defaultBar">
-            <div id="progressBar"></div>
+      <div id="videoWrapper" class="player-wrapper player-medium">
+        <video id="video" width="720px" autoplay="autoplay" :poster="poster" class="player-video player-medium"></video>
+        <div id="videoControls" class="player-controls">
+          <div id="progressBarWrapper" class="wrapper-bar player-medium" v-on:click="onClickBufferedRange($event);">
+            <div id="progressBar" class="progress-bar player-medium"></div>
           </div>
-          <div style="clear:both"></div>
-          <!--          <canvas-->
-          <!--              id="bufferedCanvas"-->
-          <!--              width="720"-->
-          <!--              height="15"-->
-          <!--              class="videoCentered"-->
-          <!--              v-on:click="onClickBufferedRange($event);"-->
-          <!--              style="height: fit-content"-->
-          <!--          ></canvas>-->
+          <div id="progressBarCircle" class="progress-bar-circle"></div>
           <div>
-            <span>
+            <span id="showHoverTime" class="hide"></span>
+            <span class="player-controls-item">
               <button
                   id="playButton"
                   type="button"
                   title="video.play()"
-                  v-on:click="playOrPause()">Play</button>
+                  v-on:click="playOrPause()">&#x23F5;</button>
+            </span>
+            <span class="player-controls-item">
+              <button id="volumeMute">mute</button>
+            </span>
+            <span class="player-controls-item">
+              <input id="volumeChanger" type="range" name="volume" class="player-volume" min="0" max="1" step="0.05"
+                     value="1">
+              <span id="volume" class="player-controls-item"
+                    v-if="this.videoElement !== null">{{ this.videoElement.volume * 100 }}       </span>
+              <span v-else>100%       </span>
             </span>
             <span>
               <span id="currentTime"></span>
-              <span></span>
+              <span> / {{ videoDuration }}</span>
             </span>
-            <span>
-              <span>Playback speed</span>
+            <!--            <span>-->
+            <!--              <button-->
+            <!--                  type="button"-->
+            <!--                  class="btn btn-xs btn-warning"-->
+            <!--                  title="hls.startLoad()"-->
+            <!--                  v-on:click="startLoadHls()"-->
+            <!--              >-->
+            <!--                Start loading-->
+            <!--              </button>-->
+            <!--              <button-->
+            <!--                  type="button"-->
+            <!--                  class="btn btn-xs btn-warning"-->
+            <!--                  title="hls.stopLoad()"-->
+            <!--                  v-on:click="stopLoadHls()"-->
+            <!--              >-->
+            <!--                Stop loading-->
+            <!--              </button>-->
+            <!--            </span>-->
+            <div class="float-right ">
+              <span id="settingButton" class="gear player-controls-item "></span>
+              <button v-on:click="togglePlayerSize" id="changePlayerSize" class="player-controls-item">&#9645;</button>
+              <button v-on:click="toggleFullScreen" class="float-right player-controls-item">&#x26F6;</button>
+            </div>
+          </div>
+          <div id="settings" class="settings-popup hide">
+            <div>
+              <span id="playbackSpeedSetting">Playback speed</span>
               <select name="playSpeed" id="playSpeed" v-on:input="setPlaybackSpeed()">
                 <option disabled value="">Playback Speed</option>
                 <option value="0.25">0.25x</option>
@@ -40,63 +67,21 @@
                 <option value="1.25">1.25x</option>
                 <option value="1.50">1.50x</option>
                 <option value="1.75">1.75x</option>
+                <option value="2">2x</option>
               </select>
-            </span>
-            <span>
-            <button
-                type="button"
-                class="btn btn-sm btn-info"
-                title="video.currentTime -= 10"
-                v-on:click="shiftCurrentTime(-10)"
-            >
-              - 10 s
-            </button>
-            <button
-                type="button"
-                class="btn btn-sm btn-info"
-                title="video.currentTime += 10"
-                v-on:click="shiftCurrentTime(10)"
-            >
-              + 10 s
-            </button>
-          </span>
-            <span>
-            <button
-                type="button"
-                class="btn btn-xs btn-warning"
-                title="hls.startLoad()"
-                v-on:click="startLoadHls()"
-            >
-              Start loading
-            </button>
-            <button
-                type="button"
-                class="btn btn-xs btn-warning"
-                title="hls.stopLoad()"
-                v-on:click="stopLoadHls()"
-            >
-              Stop loading
-            </button>
-          </span>
-            <span>Volume
-            <span id="volume" v-if="this.videoElement !== null">{{ this.videoElement.volume * 100 }}</span>
-            <span v-else>100%</span>
-          </span>
-            <button v-on:click="toggleFullScreen">full screen</button>
+            </div>
+            <div id="qualitySetting">
+              <span>Quality: </span>
+              <select id="selectQuality" v-on:input="changeQuality()">
+                <option disabled value="">Please select one</option>
+                <option value="-1">auto</option>
+                <option v-for="(quality, index) in qualities" :key="quality" :value="index">{{ index }} ! {{
+                    quality
+                  }}p
+                </option>
+              </select>
+            </div>
           </div>
-          <span>
-            <span>Quality: </span>
-            <select id="selectQuality" v-on:input="changeQuality()">
-              <option disabled value="">Please select one</option>
-              <option value="-1">auto</option>
-              <option v-for="(quality, index) in qualities" :key="quality" :value="index">{{ index }} ! {{
-                  quality
-                }}p</option>
-            </select>
-          </span>
-          <span>
-            <button v-on:click="togglePlayerSize" id="changePlayerSizeButton" class="vi">Увеличить</button>
-          </span>
         </div>
       </div>
     </div>
@@ -136,7 +121,7 @@ export default {
       id: this.videoId,
       selectedQuality: '1080',
       qualities: null,
-      videoDuration: this.duration,
+      videoDuration: this.formatTimeString(this.duration),
       isMedium: true,
       previousVolume: 1,
       playbackRate: null,
@@ -158,10 +143,19 @@ export default {
       selectQualityElement: null,
       videoWrapperElement: null,
       currentTimeElement: null,
+      volumeMuteElement: null,
+      showHoverTimeElement: null,
+      progressBarWrapperElement: null,
+      progressBarElement: null,
+      progressBarCircleElement: null,
+      volumeChangerElement: null,
+      settingButtonElement: null,
+      settingsPopupElement: null,
+      playbackSpeedSettingElement: null,
+      qualitySettingElement: null,
       videos: null,
-      updateBar: null,
-      defaultBar: null,
-      progressBar: null,
+      volumePrevious: 1,
+      showSetting: false,
     }
   },
   mounted() {
@@ -189,80 +183,13 @@ export default {
           })
     },
     onClickBufferedRange(event) {
-      if (this.bufferedCanvas === null) {
-        this.bufferedCanvas = document.querySelector('#bufferedCanvas');
-      }
-      console.log(this.bufferedCanvas.offsetLeft)
+      this.videoElement.currentTime = this.getEventMouseTime(event);
+    },
 
-      this.videoElement.currentTime = ((event.clientX - this.bufferedCanvas.offsetLeft) / this.bufferedCanvas.width) * this.getSeekableEnd();
-    },
-    getSeekableEnd() {
-      if (isFinite(this.videoElement.duration)) {
-        return this.videoElement.duration;
-      }
-      if (this.videoElement.seekable.length) {
-        return this.videoElement.seekable.end(this.videoElement.seekable.length - 1);
-      }
-      return 0;
-    },
-    checkBuffer() {
-      // if (this.isPause) {
-      //   return
-      // }
-      // const buffered = this.videoElement.buffered;
-      //
-      // const seekableEnd = this.getSeekableEnd();
-
-      // console.log('seekableEnd')
-      // console.log(seekableEnd)
-      // let bufferingDuration;
-      // const ctx = this.bufferedCanvas.getContext('2d');
-      //
-      // if (buffered) {
-      // console.log('buffered')
-      // console.log(buffered)
-
-      // const pos = this.video.currentTime;
-      // let bufferLen = 0;
-      // ctx.fillStyle = '#03bb2b';
-      //
-      // for (let i = 0; i < buffered.length; i++) {
-      //   const start = (buffered.start(i) / seekableEnd) * this.canvas.width;
-      //   const end = (buffered.end(i) / seekableEnd) * this.canvas.width;
-      //   ctx.fillRect(start, 2, Math.max(2, end - start), 11);
-      //   if (pos >= buffered.start(i) && pos < buffered.end(i)) {
-      //     // play position is inside this buffer TimeRange, retrieve end of buffer position and buffer length
-      //     bufferLen = buffered.end(i) - pos;
-      //   }
-      // }
-      // console.log(bufferLen);
-      // } else if (ctx.fillStyle !== '#000') {
-      //   ctx.fillStyle = '#000';
-      //   ctx.fillRect(0, 0, this.bufferedCanvas.width, this.bufferedCanvas.height);
-      // }
-      // let date = new Date(0);
-      // let sec = this.videoElement.currentTime;
-      // date.setSeconds(sec);
-      // let timeString = date.toISOString().substr(11, 8);
-      //
-      // if (sec < 3600) {
-      //   timeString = timeString.substring(2, timeString.length)
-      // }
-      // console.log(timeString)
-      // this.currentTimeElement.innerText = timeString
-      //
-      // ctx.fillStyle = '#0511b6';
-      // const x = this.videoElement.currentTime / seekableEnd * this.bufferedCanvas.width;
-      // ctx.fillRect(x, 0, 2, 15);
-    },
-    getCurrentTime(seekableEnd) {
-      return (this.videoElement.currentTime / seekableEnd) * this.bufferedCanvas.width
-    },
     initPlayer() {
       this.videoWrapperElement = document.getElementById('videoWrapper');
       this.videoElement = document.getElementById('video');
       this.videoElement.addEventListener('click', () => {
-        // this.togglePause()
         this.playOrPause()
       })
       this.volume = document.getElementById('volume');
@@ -273,53 +200,36 @@ export default {
       this.changePlayerSizeButton = document.getElementById('changePlayerSize')
       this.selectQualityElement = document.getElementById('selectQuality')
       this.currentTimeElement = document.getElementById('currentTime')
-      // this.video.addEventListener('mouseover', (e) => {
-      //   e.preventDefault()
-      //   this.videoControlElement.classList.remove('hide');
-      // })
-      // this.video.addEventListener('mouseout', () => {
-      //   if (!this.video.isPause) {
-      //     this.videoControlElement.classList.add('hide');
-      //   }
-      // })
+      this.volumeMuteElement = document.getElementById('volumeMute')
+      this.progressBarWrapperElement = document.getElementById('progressBarWrapper')
+      this.progressBarElement = document.getElementById('progressBar')
+      this.showHoverTimeElement = document.getElementById('showHoverTime')
+      this.progressBarCircleElement = document.getElementById('progressBarCircle')
+      this.volumeChangerElement = document.getElementById('volumeChanger')
+      this.settingButtonElement = document.getElementById('settingButton')
+      this.qualitySettingElement = document.getElementById('qualitySetting')
+      this.playbackSpeedSettingElement = document.getElementById('playbackSpeedSetting')
+      this.settingsPopupElement = document.getElementById('settings')
+
+      this.videoElement.addEventListener('timeupdate', this.handleTimeUpdate, false)
+      this.videoElement.addEventListener('stop', this.onVideoStop, false)
+      this.volumeMuteElement.addEventListener('click', this.toggleMute, false)
+
+      this.progressBarWrapperElement.addEventListener('mousemove', this.onHoverProgressBar, false)
+      this.progressBarWrapperElement.addEventListener('mouseout', this.hideShowTime, false)
+      this.volumeChangerElement.addEventListener('change', this.handleVolumeChange, false)
+      this.volumeChangerElement.addEventListener('mousemove', this.handleVolumeChange, false)
+
+      this.settingButtonElement.addEventListener('click', this.toggleSettingPopup, false)
       console.log(this.videoElement.getVideoPlaybackQuality())
       this.initHls();
     },
-
     playOrPause() {
       if (!this.videoElement.paused && !this.videoElement.ended) {
-        this.videoElement.pause();
-        this.playButton.innerHTML = 'Play';
-        window.clearInterval(this.updateBar);
+        this.pause();
       } else {
-        this.videoElement.play();
-        this.playButton.innerHTML = 'Pause';
-        this.updateBar = setInterval(this.update, 500);
+        this.play();
       }
-    },
-    update() {
-      if (!this.videoElement.ended) {
-        let size = parseInt(this.videoElement.currentTime * this.videoElement.width / this.videoElement.duration);
-        this.progressBar.style.width = size + 'px';
-      } else {
-        this.progressBar.style.width = '0px';
-        this.playButton.innerHTML = 'Play';
-        window.clearInterval(this.updateBar);
-      }
-    },
-    clickedBar(e) {
-      if (!this.videoElement.paused && !this.videoElement.ended) {
-        let mouseX = e.pageX - this.defaultBar.offsetLeft;
-        this.videoElement.currentTime = mouseX * this.videoElement.duration / this.videoElement.width;
-        this.progressBar.style.width = mouseX + 'px';
-      }
-    },
-    initProgressBar() {
-      this.defaultBar = document.getElementById('defaultBar');
-      this.progressBar = document.getElementById('progressBar');
-
-      this.playButton.addEventListener('click', this.playOrPause, false);
-      this.defaultBar.addEventListener('click', this.clickedBar, false);
     },
     initHls() {
       if (Hls.isSupported()) {
@@ -328,7 +238,6 @@ export default {
         this.videoElement.src = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/stream/';
         this.videoElement.addEventListener('loadedmetadata', function () {
           this.video.play();
-          this.initProgressBar()
           console.log('getVideoPlaybackQuality()')
         });
       } else {
@@ -339,7 +248,6 @@ export default {
     prepareHls(id, quality) {
       if (this.hls !== null) {
         this.hls.destroy();
-        clearInterval(this.hls.bufferTimer);
         this.hls = null;
       }
       console.log(quality)
@@ -347,7 +255,7 @@ export default {
       this.hls.loadSource(process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + id + '/stream/');
       this.hls.attachMedia(this.videoElement);
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        this.videoElement.play();
+        this.play();
         console.log('getVideoPlaybackQuality()')
       });
       console.log('frag_buffered')
@@ -410,7 +318,7 @@ export default {
             if (this.videoElement.volume + 0.05 <= 1) {
               e.preventDefault()
               this.videoElement.volume += 0.05
-              this.setVolumeText()
+              this.updateVolumeText()
             }
             break
           }
@@ -418,7 +326,7 @@ export default {
             if (this.videoElement.volume > 0) {
               e.preventDefault()
               this.videoElement.volume -= 0.05;
-              this.setVolumeText();
+              this.updateVolumeText();
             }
             break
           }
@@ -460,37 +368,45 @@ export default {
         }
       }, false);
     },
-    togglePause() {
-      this.playOrPause()
-      // if (this.isPause) {
-      //   this.play()
-      // } else {
-      //   this.pause()
-      // }
-    },
     toggleFullScreen() {
-      // if (!this.isFullScreen) {
-      //   this.isFullScreen = true;
-      //   console.log( this.screen)
-      //   this.videoElement.width = this.screen.width;
-      //   this.videoElement.height = this.screen.height;
-      // } else {
-      //   this.isFullScreen = false;
-      // }
       if (!this.isFullScreen) {
-        if (this.video.mozRequestFullScreen) {
-          this.video.mozRequestFullScreen();
-        } else {
-          this.video.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
-        }
+        this.openFullscreen()
+      } else {
+        this.closeFullscreen()
+      }
+    },
+    openFullscreen() {
+      let elem = this.videoWrapperElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+        this.toggleFullScreenOnVideoElement()
+      } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+        this.toggleFullScreenOnVideoElement()
+      } else if (elem.msRequestFullscreen) { /* IE11 */
+        elem.msRequestFullscreen();
+        this.toggleFullScreenOnVideoElement()
+      }
+    },
+    closeFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+        this.toggleFullScreenOnVideoElement()
+      } else if (document.webkitExitFullscreen) { /* Safari */
+        document.webkitExitFullscreen();
+        this.toggleFullScreenOnVideoElement()
+      } else if (document.msExitFullscreen) { /* IE11 */
+        document.msExitFullscreen();
+        this.toggleFullScreenOnVideoElement()
+      }
+    },
+    toggleFullScreenOnVideoElement() {
+      if (!this.isFullScreen) {
+        this.changePlayerSizeButton.classList.add('hide')
         this.isFullScreen = true;
       } else {
-        if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else {
-          document.webkitCancelFullScreen();
-        }
         this.isFullScreen = false;
+        this.changePlayerSizeButton.classList.remove('hide')
       }
     },
     togglePlayerSize() {
@@ -498,13 +414,20 @@ export default {
         this.isMedium = false
         this.videoElement.classList.remove('player-medium')
         this.videoElement.classList.add('player-big')
-        this.changePlayerSizeButton.innerText = "Уменьшить"
+        this.videoWrapperElement.classList.remove('player-medium')
+        this.videoWrapperElement.classList.add('player-big')
+        this.progressBarElement.classList.remove('player-medium')
+        this.progressBarElement.classList.add('player-big')
+
         this.bufferedCanvas.width = '1327px'
       } else {
         this.isMedium = true
         this.videoElement.classList.add('player-medium')
-        this.videoElement.classList.remove('player-big')
-        this.changePlayerSizeButton.innerText = "Увеличить"
+        this.videoElement.classList.add('player-medium')
+        this.videoWrapperElement.classList.add('player-medium')
+        this.videoWrapperElement.classList.remove('player-big')
+        this.progressBarElement.classList.add('player-medium')
+        this.progressBarElement.classList.remove('player-big')
         this.bufferedCanvas.width = '992px'
       }
     },
@@ -514,44 +437,30 @@ export default {
       let loadLevelNumber = this.selectQualityElement.value;
       console.log(loadLevelNumber);
       this.hls.loadLevel = parseInt(loadLevelNumber)
-
-      // this.hls.loadSource(process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/' + quality + '/stream/');
-      // let tmpVideoElement = document.createElement("video");
-      // tmpVideoElement.setAttribute('id', 'video');
-      // let width;
-      // let cssClass;
-      //
-      // if (this.isMedium) {
-      //   width="720px"
-      //   cssClass = "player-medium"
-      // } else {
-      //   width="1327px"
-      //   cssClass = "player-big"
-      // }
-      //
-      // tmpVideoElement.setAttribute('autoplay', 'autoplay');
-      // tmpVideoElement.setAttribute('class', cssClass);
-      // tmpVideoElement.setAttribute('width', width);
-      //
-      // this.videoWrapperElement.insertBefore(tmpVideoElement, this.videoControlElement)
-      // // this.videoWrapperElement.appendChild(tmpVideoElement)
-      // // this.hls.attachMedia(tmpVideoElement);
-      // tmpVideoElement.setAttribute('id', 'video');
-      // let currentTime = this.videoElement.currentTime;
-      // this.videoElement.parentNode.removeChild(this.videoElement)
-      // this.videoElement = tmpVideoElement;
-      // this.videoElement.currentTime = currentTime
-      // // this.prepareHls(this.id, value)
     },
     play() {
       this.videoElement.play()
       this.isPause = false
-      this.playButton.innerText = "Pause"
+      this.playButton.innerText = '❚ ❚'
+      // this.videoControlElement.style.transform = 'translateY(100px)'
     },
     pause() {
       this.videoElement.pause()
       this.isPause = true
-      this.playButton.innerText = "Play"
+      this.playButton.textContent = '►'
+      // this.videoControlElement.style.transform = 'translateY(-10px)'
+    },
+    formatTimeString(seconds) {
+      let date = new Date(0);
+
+      date.setSeconds(seconds);
+      let timeString = date.toISOString().substr(11, 8);
+
+      if (seconds < 3600) {
+        timeString = timeString.substring(3, timeString.length)
+      }
+
+      return timeString
     },
     startLoadHls() {
       this.hls.startLoad()
@@ -562,13 +471,13 @@ export default {
     setPlaybackSpeed() {
       this.playbackRate = document.getElementById("playSpeed");
       const playbackRate = this.playbackRate.value;
-      if (playbackRate >= 0.25 && playbackRate <= 1.75) {
+      if (playbackRate >= 0.25 && playbackRate <= 2) {
         this.videoElement.defaultPlaybackRate = playbackRate;
         this.videoElement.playbackRate = playbackRate;
       }
     },
     shiftPlaybackSpeed(shift) {
-      if (this.videoElement.defaultPlaybackRate + shift >= 0.25 && this.videoElement.defaultPlaybackRate + shift <= 1.75) {
+      if (this.videoElement.defaultPlaybackRate + shift >= 0.25 && this.videoElement.defaultPlaybackRate + shift <= 2) {
         this.videoElement.defaultPlaybackRate += shift;
         this.videoElement.playbackRate += shift;
 
@@ -585,8 +494,6 @@ export default {
           }
         }, children)
 
-        console.log('this.video.defaultPlaybackRate')
-        console.log(this.videoElement.defaultPlaybackRate)
         const defaultPlaybackRate = this.videoElement.playbackRate;
         for (let i = 0; i < children.length; i++) {
           const optionElement = children[i];
@@ -595,8 +502,6 @@ export default {
             const number = parseFloat(value);
             console.log(number)
             if (number === defaultPlaybackRate) {
-              // console.log(value)
-              // console.log('value')
               children[i].setAttribute('selected', 'selected')
               break;
             }
@@ -610,33 +515,101 @@ export default {
     setCurrentTime(time) {
       this.videoElement.currentTime = time
     },
-    setVolumeText() {
+    updateVolumeText() {
       this.volume.innerText = Math.ceil(this.videoElement.volume * 100) + '%'
     },
-    // updateVolume() {
-    //   if (this.video !== null) {
-    //     const videoVolumeOutput = document.getElementById('videoVolumeOutput');
-    //     const newVolume = parseInt(videoVolumeOutput.innerText) / 100;
-    //     console.log(newVolume)
-    //     while (this.video.volume > 0 || this.video.volume < 1) {
-    //       if ((newVolume > this.video.volume && newVolume < this.video.volume + 5) || (newVolume < this.video.volume && newVolume < this.video.volume - 5)) {
-    //         break
-    //       }
-    //       if (this.video.volume > newVolume) {
-    //         this.video.volume -= 0.05
-    //       } else if (this.video.volume < newVolume) {
-    //         this.video.volume += 0.05
-    //       }
-    //     }
-    //
-    //     this.setVolumeText()
-    //   }
-    // },
+    handleTimeUpdate() {
+      this.updateTime()
+      this.updateProgressBar()
+    },
+    updateTime() {
+      this.currentTimeElement.innerText = this.formatTimeString(this.videoElement.currentTime)
+    },
+    updateProgressBar() {
+      let boundingClientRect = this.videoElement.getBoundingClientRect();
+      let size = parseInt(this.videoElement.currentTime * boundingClientRect.width / this.duration);
+      this.progressBarElement.style.width = size + 'px';
+      this.progressBarCircleElement.style.left = size + 'px'
+    },
+    toggleMute() {
+      if (this.videoElement.muted) {
+        this.videoElement.volume = this.volumePrevious
+        this.videoElement.muted = false
+        this.changeButtonType(this.volumeMuteElement, 'mute')
+        this.volumeChangerElement.value = this.videoElement.volume
+      } else {
+        this.volumePrevious = this.videoElement.volume
+        this.videoElement.muted = true
+        this.changeButtonType(this.volumeMuteElement, 'unmute')
+        this.volumeChangerElement.value = 0
+      }
+
+      this.handleVolumeChange()
+    },
+    changeButtonType(btn, value) {
+      btn.title = value;
+      btn.innerHTML = value;
+      btn.className = value;
+    },
+    onHoverProgressBar(event) {
+      let eventMouseTime = this.getEventMouseTime(event);
+      let boundingClientRect = this.progressBarWrapperElement.getBoundingClientRect();
+      let x = event.x - boundingClientRect.x;
+      this.showHoverTimeElement.style.left = x - 15 + 'px'
+      this.showHoverTimeElement.style.top = -20 + 'px'
+      this.showHoverTimeElement.classList.remove('hide')
+      this.showHoverTimeElement.innerText = this.formatTimeString(eventMouseTime);
+    },
+    getEventMouseTime(event) {
+      let boundingClientRect = this.progressBarWrapperElement.getBoundingClientRect();
+
+      return (event.pageX - boundingClientRect.left) * this.duration / boundingClientRect.width;
+    },
+    hideShowTime() {
+      this.showHoverTimeElement.classList.add('hide')
+    },
+    onVideoStop() {
+      this.videoControlElement.style.transform = 'translateY(-20px)'
+    },
+    handleVolumeChange() {
+      this.videoElement.volume = this.volumeChangerElement.value
+      if (this.videoElement.volume === 0) {
+        this.volumeMuteElement.innerText = "unmute"
+        this.volumeChangerElement.value = 0
+        this.videoElement.muted = true
+      } else {
+        this.videoElement.muted = false
+        this.volumeMuteElement.innerText = "mute"
+        this.volumeChangerElement.value = this.volumePrevious
+
+      }
+      this.updateVolumeText();
+    },
+    toggleSettingPopup() {
+      let boundingClientRect = this.settingButtonElement.getBoundingClientRect();
+      this.settingsPopupElement.style.top = boundingClientRect.top - 300
+      this.settingsPopupElement.style.left = boundingClientRect.left + 100
+      this.settingsPopupElement.classList.toggle('hide')
+    },
   },
 }
 </script>
 
 <style scoped>
+
+select {
+  color: #e8dbdb;
+  background: rgba(28, 28, 28, 0.9);
+}
+
+.float-right {
+  float: right;
+}
+
+.player-video {
+  width: 100%;
+}
+
 .player-big {
   width: 1327px;
 }
@@ -645,35 +618,158 @@ export default {
   width: 992px;
 }
 
-.hide {
-  display: none;
+.player-wrapper:fullscreen, .player-video {
+  max-width: none;
+  width: 100%;
+  margin: auto 0;
 }
 
-.video-wrapper {
+.player-wrapper:-webkit-full-screen {
+  max-width: none;
+  width: 100%;
+}
+
+.hide {
+  opacity: 0;
+}
+
+.player-wrapper {
   position: relative;
   overflow: hidden;
 }
 
-.video-controls {
+.player-controls {
+  /*display: flex;*/
   position: absolute;
-  top: 320px;
-  z-index: 1;
-  background-color: transparent;
+  bottom: 0;
+  width: 100%;
+  transform: translateY(100px);
+  transition-delay: 0.5s;
+  transition: all .3s;
+  flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.5);
+  color: #e8dbdb;
+  opacity: 0;
+  padding: 0 4px 10px;
 }
 
-#defaultBar {
+.player-controls-item {
+  padding: 10px;
+}
+
+.player-wrapper:hover .player-controls {
+  transform: translateY(-10px);
+  opacity: 1;
+}
+
+.player-wrapper:hover .progress-bar {
+  height: 4px;
+}
+
+.wrapper-bar {
   position: relative;
   float: left;
-  width: 720px;
-  height: 10px;
-  padding: 4px;
-  background: yellow;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  margin-bottom: 14px;
 }
 
-#progressBar {
-  position: absolute;
-  width: 0;
-  height: 5px;
-  background: blue;
+.progress-bar,
+.wrapper-bar {
+  cursor: pointer;
+  position: relative;
+  height: 3px;
 }
+
+.progress-bar {
+  background-color: #f00;
+  height: 3px;
+}
+
+.wrapper-bar:hover {
+  height: 4px;
+}
+
+.wrapper-bar:hover .progress-bar {
+  height: 5px;
+}
+
+.wrapper-bar:hover, .progress-bar-circle {
+  opacity: 1;
+}
+
+.progress-bar-circle {
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  background-color: #f00;
+  position: absolute;
+  top: -5px;
+  left: 0;
+}
+
+#showHoverTime {
+  position: absolute;
+  z-index: 10;
+  color: #e8dbdb;
+  text-shadow: #9c9b9b;
+}
+
+.player-volume,
+.player-volume[value] {
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  width: 52px;
+  height: 4px;
+  color: white;
+  background-color: white;
+  border-radius: 2px;
+  background-size: 35px 20px, 100% 100%, 100% 100%;
+}
+
+.gear {
+  display: inline-block;
+  position: relative;
+  margin: 0.25em;
+  width: 1em;
+  height: 1em;
+  background: white;
+  border-radius: 50%;
+  border: 0.3em solid gray;
+  box-sizing: border-box;
+}
+
+.gear:before,
+.gear:after {
+  content: "×";
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  font-size: 2.5em;
+  color: white;
+}
+
+.gear:after {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.gear:hover {
+  cursor: pointer;
+}
+
+.settings-popup {
+  position: absolute;
+  top: -100px;
+  left: 600px;
+  z-index: 100;
+  padding: 30px 30px;
+  background: rgba(28, 28, 28, 0.9);
+  border-radius: 4px;
+}
+
 </style>
