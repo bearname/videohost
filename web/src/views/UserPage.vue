@@ -49,7 +49,7 @@ export default {
       getCurrentUser: "auth/getCurrentUser"
     }),
     getAsyncVideos() {
-      this.getUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
+      this.fetchUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
           .then(() => {
             const result = this.getUserVideos()
             this.videos = result.videos
