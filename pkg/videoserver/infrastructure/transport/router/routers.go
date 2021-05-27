@@ -2,9 +2,11 @@ package router
 
 import (
 	"github.com/bearname/videohost/pkg/common/amqp"
-	"github.com/bearname/videohost/pkg/common/database"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/caching"
+	mysql2 "github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/handler"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/middleware"
+	"github.com/bearname/videohost/pkg/common/model"
 	"github.com/bearname/videohost/pkg/videoserver/app/service"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/mysql"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport/controller"
@@ -13,7 +15,7 @@ import (
 	"net/http"
 )
 
-func Router(connector database.Connector) http.Handler {
+func Router(connector mysql2.MysqlConnector) http.Handler {
 	router := mux.NewRouter()
 	subRouter := router.PathPrefix("/api/v1").Subrouter()
 
@@ -23,7 +25,8 @@ func Router(connector database.Connector) http.Handler {
 		return nil
 	}
 
-	videoService := service.NewVideoService(videoRepository, messageBroker)
+	cache := caching.NewRedisCache(model.NewDsn("localhost:6379", "", "", ""))
+	videoService := service.NewVideoService(videoRepository, messageBroker, cache)
 	videoController := controller.NewVideoController(videoRepository, videoService)
 	if videoController == nil {
 		log.Fatal("failed build videocontroller")
@@ -41,6 +44,7 @@ func Router(connector database.Connector) http.Handler {
 	subRouter.HandleFunc("/videos/{videoId}", videoController.GetVideo()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/videos/", videoController.UploadVideo()).Methods(http.MethodPost, http.MethodOptions)
 	subRouter.HandleFunc("/videos/{videoId}", videoController.UpdateTitleAndDescription()).Methods(http.MethodPut, http.MethodOptions)
+	subRouter.HandleFunc("/videos/{videoId}/add-quality", videoController.AddQuality()).Methods(http.MethodPut, http.MethodOptions)
 	subRouter.HandleFunc("/videos/{videoId}", videoController.DeleteVideo()).Methods(http.MethodDelete, http.MethodOptions)
 	subRouter.HandleFunc("/videos/{videoId}/increment", videoController.IncrementViews()).Methods(http.MethodPost, http.MethodOptions)
 

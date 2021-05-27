@@ -28,6 +28,7 @@ func (c *BaseController) JsonResponse(writer http.ResponseWriter, data interface
 	}
 	_, err = writer.Write(jsonData)
 	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }

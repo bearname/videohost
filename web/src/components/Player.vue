@@ -2,7 +2,10 @@
   <div>
     <div v-if="qualities !== null">
       <div id="videoWrapper" class="player-wrapper player-medium">
-        <video id="video" width="720px" autoplay="autoplay" :poster="poster" class="player-video player-medium"></video>
+        <video id="video" width="720px" autoplay="autoplay" :poster="poster" class="player-video player-medium">
+          <track label="English" kind="subtitles" srclang="en"
+                 src="http://localhost:8000/content/afe67012-bc76-11eb-afc7-e4e74940035b/subtitle.srt" default>
+        </video>
         <div id="videoControls" class="player-controls">
           <div id="progressBarWrapper" class="wrapper-bar player-medium" v-on:click="onClickBufferedRange($event);">
             <div id="progressBar" class="progress-bar player-medium"></div>
@@ -79,7 +82,7 @@
             </div>
           </div>
         </div>
-        <div id="statsOfNerdsShow" class="stats-show"></div>
+        <div id="statsOfNerdsShow" class="stats-show hide"></div>
       </div>
     </div>
     <div v-else>
@@ -107,10 +110,13 @@ export default {
   created() {
     this.qualities = this.availableQualities.split(",");
     console.log(this.qualities)
-    if (this.qualities[0] === "") {
+    if (this.qualities.length === 0 && this.qualities[0] === "") {
       this.qualities = null
     }
     this.qualities.reverse()
+    this.qualities = this.qualities.filter(quality=> {
+      return quality.length !== 0
+    })
     console.log("this.qualities");
   },
   data() {

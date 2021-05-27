@@ -18,13 +18,16 @@ func NewRabbitMqService(user string, password string, host string, port int) *Ra
 	return rabbitMqService
 }
 
-func (r *RabbitMqService) Publish(exchange string, routingKey string, body string) {
+func (r *RabbitMqService) Publish(exchange string, routingKey string, body string) error {
 	conn, err := amqp.Dial(r.url)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	if err != nil {
+		log.Fatalf("%s: %s", "Failed to open a channel", err)
+		return err
+	}
 	defer ch.Close()
 
 	err = ch.ExchangeDeclare(
@@ -36,7 +39,10 @@ func (r *RabbitMqService) Publish(exchange string, routingKey string, body strin
 		false,
 		nil,
 	)
-	failOnError(err, "Failed to declare an exchange")
+	if err != nil {
+		log.Fatalf("%s: %s", "Failed to declare an exchange", err)
+		return err
+	}
 
 	err = ch.Publish(
 		exchange,
@@ -47,9 +53,14 @@ func (r *RabbitMqService) Publish(exchange string, routingKey string, body strin
 			ContentType: "text/plain",
 			Body:        []byte(body),
 		})
-	failOnError(err, "Failed to publish a message")
+
+	if err != nil {
+		log.Fatalf("%s: %s", "Failed to publish a message", err)
+		return err
+	}
 
 	log.Printf(" [x] Sent %s", body)
+	return nil
 }
 
 func (r *RabbitMqService) Consume(exchange string, routingKey string, handler ConsumerHandler) {
@@ -105,22 +116,26 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 	forever := make(chan bool)
 	go func() {
 		for data := range messages {
-			message := string(data.Body)
-			err := handler.Handle(message)
-
-			var args string
-			if err != nil {
-				args = "Failed"
-			} else {
-				args = "Success"
-			}
-
-			log.Info(args + " handle message '" + message + "'")
+			r.handleMessage(data, handler)
 		}
 	}()
 
 	log.Printf(" [*] Waiting for logs. To exit press CTRL+C")
 	<-forever
+}
+
+func (r *RabbitMqService) handleMessage(data amqp.Delivery, handler ConsumerHandler) {
+	message := string(data.Body)
+	err := handler.Handle(message)
+
+	var args string
+	if err != nil {
+		args = "Failed"
+	} else {
+		args = "Success"
+	}
+
+	log.Info(args + " handle message '" + message + "'")
 }
 
 func failOnError(err error, msg string) {

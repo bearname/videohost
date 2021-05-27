@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/bearname/videohost/pkg/common/database"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	var connector database.Connector
+	var connector mysql.MysqlConnector
 	err := connector.Connect()
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())

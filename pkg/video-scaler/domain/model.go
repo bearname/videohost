@@ -43,6 +43,7 @@ func (r *Resolution) String() string {
 
 func QualityToResolution(quality Quality) Resolution {
 	m := map[Quality]Resolution{
+		Q1440p: {width: 2560, height: 1440},
 		Q1080p: {width: 1920, height: 1080},
 		Q720p:  {width: 1280, height: 720},
 		Q480p:  {width: 850, height: 480},

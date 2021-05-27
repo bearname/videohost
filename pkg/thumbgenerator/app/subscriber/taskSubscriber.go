@@ -2,10 +2,13 @@ package subscriber
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"github.com/bearname/videohost/pkg/common/database"
+	"github.com/bearname/videohost/pkg/common/caching"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/thumbgenerator/domain/model"
+	model2 "github.com/bearname/videohost/pkg/videoserver/domain/model"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +16,7 @@ import (
 	"strings"
 )
 
-func HandleTask(task *model.Task, db *sql.DB) {
+func HandleTask(task *model.Task, db *sql.DB, cache caching.Cache) {
 	url := task.Url
 	thumbUrl := filepath.Join(filepath.Dir(url), util.ThumbFileName)
 	log.Info("HandleTask" + task.Id + task.Url)
@@ -35,7 +38,7 @@ func HandleTask(task *model.Task, db *sql.DB) {
 		return
 	}
 
-	err = database.ExecTransaction(
+	err = mysql.ExecTransaction(
 		db,
 		"UPDATE video SET status=?, duration=?, thumbnail_url=? WHERE id_video=?;",
 		model.Processed,
@@ -43,6 +46,31 @@ func HandleTask(task *model.Task, db *sql.DB) {
 		thumbUrl,
 		task.Id,
 	)
+
+	var video model2.Video
+
+	query := "SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views, owner_id, status FROM video WHERE id_video=?;"
+	row := db.QueryRow(query, task.Id)
+
+	err = row.Scan(
+		&video.Id,
+		&video.Name,
+		&video.Description,
+		&video.Duration,
+		&video.Thumbnail,
+		&video.Url,
+		&video.Uploaded,
+		&video.Quality,
+		&video.Views,
+		&video.OwnerId,
+		&video.Status,
+	)
+	if err == nil {
+		marshal, err := json.Marshal(video)
+		if err == nil {
+			err = cache.Set(task.Id, string(marshal))
+		}
+	}
 
 	if err != nil {
 		log.Error("Failed set status processed" + err.Error())

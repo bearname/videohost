@@ -1,9 +1,9 @@
 package intrastructure
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/notifier/app/service"
 	"github.com/bearname/videohost/pkg/notifier/domain"
 	"github.com/bearname/videohost/pkg/user/domain/model"
@@ -14,16 +14,14 @@ import (
 )
 
 type EmailSendConsumer struct {
-	mailSender        service.MailSender
-	adminAccessToken  string
-	adminRefreshToken string
+	mailSender service.MailSender
+	token      *util.Token
 }
 
 func NewEmailSendConsumer(sender service.MailSender) *EmailSendConsumer {
 	e := new(EmailSendConsumer)
 	e.mailSender = sender
-	e.adminAccessToken = ""
-	e.adminAccessToken = ""
+	e.token = util.NewToken("", "")
 	return e
 }
 
@@ -37,33 +35,16 @@ func (c *EmailSendConsumer) Handle(message string) error {
 	quality := split[1]
 	ownerId := split[2]
 	client := &http.Client{}
-	if c.adminAccessToken == "" {
-		bodyStr, err := json.Marshal(struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}{"admin", "admin"})
-		req, err := http.NewRequest("POST", "http://localhost:8001/api/v1/auth/login", bytes.NewBuffer(bodyStr))
-		resp, err := client.Do(req)
-		if err != nil || resp.StatusCode != http.StatusOK {
-			log.Error("Failed get id of owner of the video ")
-			return err
-		}
-		defer resp.Body.Close()
-
-		v := struct {
-			AccessToken  string `json:"accessToken"`
-			RefreshToken string `json:"refreshToken"`
-		}{}
-		respBody, err := io.ReadAll(resp.Body)
-		err = json.Unmarshal(respBody, &v)
+	if c.token.AccessToken == "" {
+		token, err := util.GetAdminAccessToken(client, "http://localhost:8001")
 		if err != nil {
 			return err
 		}
-		c.adminRefreshToken = v.RefreshToken
-		c.adminAccessToken = v.AccessToken
+		c.token = token
 	}
+
 	req, err := http.NewRequest("GET", "http://localhost:8001"+"/api/v1/users/"+ownerId, nil)
-	req.Header.Add("Authorization", "Bearer "+c.adminAccessToken)
+	req.Header.Add("Authorization", "Bearer "+c.token.AccessToken)
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		log.Error("Failed get id of owner of the video ")

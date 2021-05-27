@@ -1,15 +1,15 @@
 package mysql
 
 import (
-	"github.com/bearname/videohost/pkg/common/database"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/user/domain/model"
 )
 
 type UserRepository struct {
-	connector database.Connector
+	connector mysql.MysqlConnector
 }
 
-func NewMysqlUserRepository(connector database.Connector) *UserRepository {
+func NewMysqlUserRepository(connector mysql.MysqlConnector) *UserRepository {
 	m := new(UserRepository)
 	m.connector = connector
 	return m
@@ -70,7 +70,7 @@ func (r *UserRepository) FindByUserName(username string) (model.User, error) {
 }
 
 func (r *UserRepository) UpdatePassword(username string, password []byte) bool {
-	err := database.ExecTransaction(
+	err := mysql.ExecTransaction(
 		r.connector.Database,
 		"UPDATE users SET password = ? WHERE username = ?;", password, username)
 
@@ -78,14 +78,14 @@ func (r *UserRepository) UpdatePassword(username string, password []byte) bool {
 }
 
 func (r *UserRepository) UpdateAccessToken(username string, token string) bool {
-	err := database.ExecTransaction(
+	err := mysql.ExecTransaction(
 		r.connector.Database,
 		"UPDATE users SET access_token = ?  WHERE username = ?;", token, username)
 	return err == nil
 }
 
 func (r *UserRepository) UpdateRefreshToken(username string, token string) bool {
-	err := database.ExecTransaction(
+	err := mysql.ExecTransaction(
 		r.connector.Database,
 		"UPDATE users SET refresh_token = ?  WHERE username = ?;", token, username)
 	return err == nil

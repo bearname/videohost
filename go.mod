@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/bearname/videohost/videoserver v0.0.0-20210517041336-153c0acc2878
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/context v1.1.1

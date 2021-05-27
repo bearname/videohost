@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/bearname/videohost/pkg/common/database"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/caching"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
+	"github.com/bearname/videohost/pkg/common/model"
 	"github.com/bearname/videohost/pkg/thumbgenerator/app/worker"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
@@ -21,7 +23,7 @@ func main() {
 		defer file.Close()
 	}
 	log.Info("Started")
-	var connector database.Connector
+	var connector mysql.MysqlConnector
 	err = connector.Connect()
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
@@ -32,7 +34,9 @@ func main() {
 	stopChan := make(chan struct{})
 
 	killChan := server.GetKillSignalChan()
-	waitGroup := worker.WorkerPool(stopChan, connector.Database)
+	cache := caching.NewRedisCache(model.NewDsn("localhost:6379", "", "", ""))
+
+	waitGroup := worker.WorkerPool(stopChan, connector.Database, cache)
 
 	server.WaitForKillSignal(killChan)
 	stopChan <- struct{}{}

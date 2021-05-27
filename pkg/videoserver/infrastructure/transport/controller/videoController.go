@@ -45,18 +45,17 @@ func (c VideoController) GetVideo() func(w http.ResponseWriter, r *http.Request)
 		}
 
 		vars := mux.Vars(request)
-		var id string
+		var videoId string
 		var ok bool
 
-		if id, ok = vars["videoId"]; !ok {
-			c.BaseController.WriteResponse(&writer, http.StatusNotFound, false, "401 id not present")
+		if videoId, ok = vars["videoId"]; !ok {
+			c.BaseController.WriteResponse(&writer, http.StatusNotFound, false, "401 videoId not present")
 			return
 		}
-
-		video, err := c.videoRepository.Find(id)
+		video, err := c.videoService.FindVideo(videoId)
 		if err != nil {
 			log.Error(err.Error())
-			c.BaseController.WriteResponse(&writer, http.StatusNotFound, false, "401 id not present")
+			c.BaseController.WriteResponse(&writer, http.StatusNotFound, false, "401 videoId not present")
 			return
 		}
 
@@ -123,7 +122,7 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 		}
 
 		authorization := request.Header.Get("Authorization")
-		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		userDto, ok := util.ValidateToken(authorization, "http://localhost:8001")
 		if !ok {
 			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
@@ -145,10 +144,11 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		videoId, err := c.videoService.UploadVideo(userId, title, description, fileReader, header)
+		videoId, err := c.videoService.UploadVideo(userDto.UserId, title, description, fileReader, header)
 		if err != nil {
 			log.Error(err.Error())
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Failed upload video")
+			http.Error(writer, "Failed upload video", http.StatusInternalServerError)
+			//c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Failed upload video")
 			return
 		}
 
@@ -168,7 +168,7 @@ func (c *VideoController) UpdateTitleAndDescription() func(http.ResponseWriter, 
 		}
 
 		authorization := request.Header.Get("Authorization")
-		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		userDto, ok := util.ValidateToken(authorization, "http://localhost:8001")
 		if !ok {
 			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
@@ -189,7 +189,7 @@ func (c *VideoController) UpdateTitleAndDescription() func(http.ResponseWriter, 
 			return
 		}
 
-		err = c.videoService.UpdateTitleAndDescription(userId, videoId, videoDto)
+		err = c.videoService.UpdateTitleAndDescription(userDto, videoId, videoDto)
 		if err != nil {
 			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Failed update title and description")
 			return
@@ -210,7 +210,7 @@ func (c *VideoController) DeleteVideo() func(http.ResponseWriter, *http.Request)
 		}
 
 		authorization := request.Header.Get("Authorization")
-		userId, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		userDto, ok := util.ValidateToken(authorization, "http://localhost:8001")
 		if !ok {
 			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
@@ -224,7 +224,7 @@ func (c *VideoController) DeleteVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		err := c.videoService.DeleteVideo(userId, videoId)
+		err := c.videoService.DeleteVideo(userDto, videoId)
 		if err != nil {
 			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
 			return
@@ -313,4 +313,47 @@ func (c *VideoController) responseVideoListItems(writer http.ResponseWriter, pag
 	responseData["videos"] = videos
 
 	c.BaseController.WriteResponseData(writer, responseData)
+}
+
+func (c VideoController) AddQuality() func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		authorization := request.Header.Get("Authorization")
+		userDto, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		if !ok {
+			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
+			return
+		}
+
+		vars := mux.Vars(request)
+
+		var videoId string
+		if videoId, ok = vars["videoId"]; !ok {
+			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "videoId on path not found")
+			return
+		}
+
+		var quality dto.Quality
+		err := json.NewDecoder(request.Body).Decode(&quality)
+
+		if err != nil {
+			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "cannot decode quality struct")
+			return
+		}
+
+		err = c.videoService.AddQuality(videoId, userDto, quality)
+		if err != nil {
+			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Failed add quality")
+			return
+		}
+
+		c.BaseController.WriteResponse(&writer, http.StatusOK, true, "Success add quality")
+	}
 }

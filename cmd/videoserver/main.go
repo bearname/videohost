@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/bearname/videohost/pkg/common/database"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
 	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport/router"
@@ -21,7 +21,7 @@ func main() {
 		port = toInt
 	}
 
-	var connector database.Connector
+	var connector mysql.MysqlConnector
 	err := connector.Connect()
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())

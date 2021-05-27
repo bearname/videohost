@@ -1,12 +1,15 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/bearname/videohost/pkg/common/amqp"
 	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/video-scaler/domain"
 	"github.com/bearname/videohost/pkg/videoserver/domain/repository"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -16,12 +19,15 @@ import (
 type ScalerService struct {
 	videoRepo     repository.VideoRepository
 	messageBroker *amqp.RabbitMqService
+	token         *util.Token
 }
 
 func NewScalerService(service *amqp.RabbitMqService, videoRepository repository.VideoRepository) *ScalerService {
 	s := new(ScalerService)
 	s.videoRepo = videoRepository
 	s.messageBroker = service
+	s.token = util.NewToken("", "")
+
 	return s
 }
 
@@ -81,11 +87,57 @@ func (s *ScalerService) prepareToStreamByQuality(videoId string, inputVideoPath 
 	} else {
 		body := videoId + "," + quality.String() + "," + ownerId
 		fmt.Println(body)
-		s.messageBroker.Publish("events_topic", "events.video-scaled", body)
 		log.Info("Success prepare to stream file " + inputVideoPath + " in quality " + quality.String() + "p")
-		ok := s.videoRepo.AddVideoQuality(videoId, quality.String())
+		ok := s.addVideoQuality(videoId, quality)
 		log.Info(s.getResultMessage(ok))
+		err = s.messageBroker.Publish("events_topic", "events.video-scaled", body)
+		if err != nil {
+			log.Error("Failed publish event 'video-scaled")
+		}
 	}
+}
+
+func (s *ScalerService) addVideoQuality(videoId string, quality domain.Quality) bool {
+	//ok := s.videoRepo.AddVideoQuality(videoId, quality.String())
+	buf := struct {
+		Quality int `json:"quality"`
+	}{Quality: quality.Values()}
+
+	marshal, err := json.Marshal(buf)
+	if err != nil {
+		return false
+	}
+
+	request, err := http.NewRequest("PUT", "http://localhost:8000/api/v1/videos/"+videoId+"/add-quality", bytes.NewBuffer(marshal))
+	client := &http.Client{}
+	if s.token.AccessToken == "" {
+		token, err := util.GetAdminAccessToken(client, "http://localhost:8001")
+		if err != nil {
+			log.Error(err)
+			return false
+		}
+		s.token = token
+	}
+
+	request.Header.Add("Authorization", "Bearer "+s.token.AccessToken)
+	response, err := client.Do(request)
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusUnauthorized {
+		token, err := util.GetAdminAccessToken(client, "http://localhost:8001")
+		if err != nil {
+			log.Error(err)
+			return false
+		}
+		s.token = token
+	}
+
+	if err != nil || response.StatusCode != http.StatusOK {
+		log.Error("Failed get id of owner of the video ")
+		return false
+	}
+	log.Info(s.getResultMessage(true))
+	return true
 }
 
 func (s *ScalerService) getResultMessage(quality bool) string {

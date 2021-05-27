@@ -1,11 +1,11 @@
-package database
+package mysql
 
 import (
 	"database/sql"
 	log "github.com/sirupsen/logrus"
 )
 
-type Connector struct {
+type MysqlConnector struct {
 	Database *sql.DB
 }
 
@@ -13,12 +13,12 @@ const user = "root"
 const password = "123"
 const databaseName = "video"
 
-func (c *Connector) Connect() error {
+func (c *MysqlConnector) Connect() error {
 	if c.Database != nil {
 		log.Info("Already connected")
 	}
 
-	db, err := sql.Open("mysql", user+":"+password+"@/"+databaseName)
+	db, err := sql.Open("mysql", user+":"+password+"@/"+databaseName+"?parseTime=true")
 	if err != nil {
 		log.Error(err)
 		return err
@@ -34,7 +34,7 @@ func (c *Connector) Connect() error {
 	return nil
 }
 
-func (c *Connector) Close() error {
+func (c *MysqlConnector) Close() error {
 	err := c.Database.Close()
 	if err != nil {
 		log.Error(err.Error())

@@ -2,16 +2,16 @@ package mysql
 
 import (
 	"database/sql"
-	"github.com/bearname/videohost/pkg/common/database"
+	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
 	log "github.com/sirupsen/logrus"
 )
 
 type VideoRepository struct {
-	connector database.Connector
+	connector mysql.MysqlConnector
 }
 
-func NewMysqlVideoRepository(connector database.Connector) *VideoRepository {
+func NewMysqlVideoRepository(connector mysql.MysqlConnector) *VideoRepository {
 	m := new(VideoRepository)
 	m.connector = connector
 	return m
@@ -123,14 +123,13 @@ func (r *VideoRepository) GetPageCount(countVideoOnPage int) (int, bool) {
 	return countPage, true
 }
 
-func (r *VideoRepository) AddVideoQuality(id string, quality string) bool {
-	rows, err := r.connector.Database.Query("UPDATE video SET `quality` = concat(quality,  concat(',',  ?))  WHERE id_video = ?;", quality, id)
+func (r *VideoRepository) AddVideoQuality(videoId string, quality string) error {
+	rows, err := r.connector.Database.Query("UPDATE video SET `quality` = concat(quality,  concat(',',  ?))  WHERE id_video = ?;", quality, videoId)
 	if err != nil {
-		log.Info(err.Error())
-		return false
+		return err
 	}
 	defer rows.Close()
-	return true
+	return nil
 }
 
 func (r *VideoRepository) SearchVideo(searchString string, page int, count int) ([]model.VideoListItem, error) {

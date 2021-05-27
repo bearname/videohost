@@ -29,24 +29,35 @@ func CreateTokenWithDuration(userKey string, username string, role model.Role, d
 }
 
 func CreateToken(userKey string, username string, role model.Role) (string, error) {
-	return CreateTokenWithDuration(userKey, username, role, time.Hour*60)
+	return CreateTokenWithDuration(userKey, username, role, time.Second*60)
 }
 
 func CheckToken(tokenString string) (*jwt.Token, bool) {
-	keyFunc := func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(getSecret()), nil
-	}
-	token, err := jwt.Parse(tokenString, keyFunc)
+	token, err := parseToken(tokenString)
 	if err != nil {
 		return nil, false
 	}
 	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
 		return nil, false
 	}
+
 	return token, true
+}
+
+func parseToken(tokenString string) (*jwt.Token, error) {
+	keyFunc := func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(getSecret()), nil
+	}
+
+	token, err := jwt.Parse(tokenString, keyFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
 func IsUsernameContextOk(username string, r *http.Request) bool {

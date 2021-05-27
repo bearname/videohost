@@ -13,7 +13,7 @@ type VideoRepository interface {
 	Update(videoId string, title string, description string) error
 	Delete(videoId string) error
 	GetPageCount(countVideoOnPage int) (int, bool)
-	AddVideoQuality(id string, quality string) bool
-	IncrementViews(id string) bool
+	AddVideoQuality(videoId string, quality string) error
+	IncrementViews(videoId string) bool
 	SearchVideo(searchString string, page int, count int) ([]model.VideoListItem, error)
 }

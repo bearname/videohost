@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	commonDto "github.com/bearname/videohost/pkg/common/dto"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
 	"github.com/bearname/videohost/pkg/user/app/dto"
 	"github.com/bearname/videohost/pkg/user/app/service"
@@ -21,12 +22,12 @@ import (
 
 type AuthController struct {
 	controller.BaseController
-	userRepository repository.UserRepository
+	userRepo repository.UserRepository
 }
 
 func NewAuthController(userRepository repository.UserRepository) *AuthController {
 	v := new(AuthController)
-	v.userRepository = userRepository
+	v.userRepo = userRepository
 	return v
 }
 
@@ -50,7 +51,7 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	userFromDb, err := c.userRepository.FindByUserName(newUser.Username)
+	userFromDb, err := c.userRepo.FindByUserName(newUser.Username)
 	if (err == nil && userFromDb.Username == newUser.Username) || (err != nil && err.Error() != "sql: no rows in result set") {
 		http.Error(writer, "User already exists", http.StatusBadRequest)
 		return
@@ -77,7 +78,7 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	err = c.userRepository.CreateUser(userKey.String(), newUser.Username, passwordHash, newUser.Email, newUser.IsSubscribed, role, accessToken, refreshToken)
+	err = c.userRepo.CreateUser(userKey.String(), newUser.Username, passwordHash, newUser.Email, newUser.IsSubscribed, role, accessToken, refreshToken)
 	if err != nil {
 		http.Error(writer, "User"+err.Error(), http.StatusInternalServerError)
 		return
@@ -100,7 +101,7 @@ func (c *AuthController) GetTokenUserPassword(writer http.ResponseWriter, reques
 		http.Error(writer, "cannot decode username/password struct", http.StatusBadRequest)
 		return
 	}
-	userFromDb, err := c.userRepository.FindByUserName(userDto.Username)
+	userFromDb, err := c.userRepo.FindByUserName(userDto.Username)
 	if (err == nil && userFromDb.Username != userDto.Username) || err != nil {
 		http.Error(writer, "User not exist", http.StatusBadRequest)
 		return
@@ -154,7 +155,7 @@ func (c *AuthController) GetTokenByToken(writer http.ResponseWriter, request *ht
 		return
 	}
 
-	userFromDb, err := c.userRepository.FindByUserName(username)
+	userFromDb, err := c.userRepo.FindByUserName(username)
 	if (err == nil && userFromDb.Username != username) || err != nil {
 		http.Error(writer, "Unauthorized, user not exists", http.StatusUnauthorized)
 		return
@@ -170,7 +171,7 @@ func (c *AuthController) GetTokenByToken(writer http.ResponseWriter, request *ht
 		http.Error(writer, "Invalid Refresh token", http.StatusBadRequest)
 		return
 	}
-	user, err := c.userRepository.FindByUserName(username)
+	user, err := c.userRepo.FindByUserName(username)
 	if err != nil {
 		http.Error(writer, "Unknown user", http.StatusBadRequest)
 		return
@@ -182,7 +183,7 @@ func (c *AuthController) GetTokenByToken(writer http.ResponseWriter, request *ht
 		return
 	}
 
-	ok = c.userRepository.UpdateAccessToken(username, accessToken)
+	ok = c.userRepo.UpdateAccessToken(username, accessToken)
 	if !ok {
 		http.Error(writer, "Failed update accessToken", http.StatusInternalServerError)
 		return
@@ -219,34 +220,42 @@ func (c *AuthController) CheckTokenHandler(next http.HandlerFunc) http.HandlerFu
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if ok && token.Valid {
-			username, ok := claims["username"].(string)
-			if !ok {
-				http.Error(writer, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-			userId, ok := claims["userId"].(string)
-			if !ok {
-				http.Error(writer, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-
-			_, err := c.userRepository.FindByUserName(username)
-			if err != nil {
-				http.Error(writer, "Unauthorized, user not exists", http.StatusUnauthorized)
-				return
-			}
-
-			context.Set(request, "username", username)
-			context.Set(request, "userId", userId)
-			context.Set(request, "token", tokenString)
+		if !c.setContext(writer, request, ok, token, tokenString) {
+			return
 		}
 
 		log.Println("success")
 
 		next(writer, request)
 	}
+}
+
+func (c *AuthController) setContext(writer http.ResponseWriter, request *http.Request, ok bool, token *jwt.Token, tokenString string) bool {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		username, ok := claims["username"].(string)
+		if !ok {
+			http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+			return false
+		}
+		userId, ok := claims["userId"].(string)
+		if !ok {
+			http.Error(writer, "Unauthorized", http.StatusUnauthorized)
+			return false
+		}
+
+		_, err := c.userRepo.FindByUserName(username)
+		if err != nil {
+			http.Error(writer, "Unauthorized, user not exists", http.StatusUnauthorized)
+			return false
+		}
+
+		context.Set(request, "username", username)
+		context.Set(request, "userId", userId)
+		context.Set(request, "token", tokenString)
+		return true
+	}
+	return false
 }
 
 func (c *AuthController) CheckToken(writer http.ResponseWriter, request *http.Request) {
@@ -280,13 +289,15 @@ func (c *AuthController) CheckToken(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
+	user, err := c.userRepo.FindById(userId)
+	if err != nil {
+		http.Error(writer, username, http.StatusUnauthorized)
+		return
+	}
+
 	log.Println("success")
 
-	c.JsonResponse(writer, struct {
-		Username string `json:"username"`
-		UserId   string `json:"user_id"`
-		ok       bool
-	}{Username: username, UserId: userId, ok: true})
+	c.BaseController.JsonResponse(writer, commonDto.UserDto{Username: username, UserId: userId, Ok: true, Role: user.Role.Values()})
 }
 
 func (c *AuthController) parsePayload(ok bool, token *jwt.Token) (string, string, bool) {
@@ -303,7 +314,7 @@ func (c *AuthController) parsePayload(ok bool, token *jwt.Token) (string, string
 			return "Unauthorized, userId not exist", "", false
 		}
 
-		_, err := c.userRepository.FindByUserName(username)
+		_, err := c.userRepo.FindByUserName(username)
 		if err != nil {
 			return "Unauthorized, user not exists", "", false
 		}
