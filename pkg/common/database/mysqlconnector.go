@@ -18,13 +18,18 @@ func (c *Connector) Connect() error {
 		log.Info("Already connected")
 	}
 
-	database, err := sql.Open("mysql", user+":"+password+"@/"+databaseName)
+	db, err := sql.Open("mysql", user+":"+password+"@/"+databaseName)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	c.Database = database
+	if err = db.Ping(); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	c.Database = db
 
 	return nil
 }
@@ -46,7 +51,12 @@ func ExecTransaction(db *sql.DB, query string, args ...interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func(tx *sql.Tx) {
+		err := tx.Rollback()
+		if err != nil {
+			log.Error(err)
+		}
+	}(tx)
 
 	_, err = tx.Exec(query, args...)
 	if err != nil {
