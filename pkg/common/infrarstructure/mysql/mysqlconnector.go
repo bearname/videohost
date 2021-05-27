@@ -5,16 +5,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type MysqlConnector struct {
-	Database *sql.DB
+type ConnectorImpl struct {
+	database *sql.DB
 }
 
 const user = "root"
 const password = "123"
 const databaseName = "video"
 
-func (c *MysqlConnector) Connect() error {
-	if c.Database != nil {
+func (c *ConnectorImpl) GetDb() *sql.DB {
+	return c.database
+}
+
+func (c *ConnectorImpl) Connect() error {
+	if c.database != nil {
 		log.Info("Already connected")
 	}
 
@@ -29,25 +33,25 @@ func (c *MysqlConnector) Connect() error {
 		return err
 	}
 
-	c.Database = db
+	c.database = db
 
 	return nil
 }
 
-func (c *MysqlConnector) Close() error {
-	err := c.Database.Close()
+func (c *ConnectorImpl) Close() error {
+	err := c.database.Close()
 	if err != nil {
 		log.Error(err.Error())
 		return err
 	}
 
-	c.Database = nil
+	c.database = nil
 
 	return nil
 }
 
-func ExecTransaction(db *sql.DB, query string, args ...interface{}) error {
-	tx, err := db.Begin()
+func (c *ConnectorImpl) ExecTransaction(query string, args ...interface{}) error {
+	tx, err := c.database.Begin()
 	if err != nil {
 		return err
 	}

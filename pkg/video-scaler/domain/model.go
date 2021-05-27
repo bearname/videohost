@@ -5,8 +5,7 @@ import "strconv"
 type Quality int
 
 const (
-	Q2160p Quality = iota
-	Q1440p
+	Q1440p Quality = iota
 	Q1080p
 	Q720p
 	Q480p
@@ -14,16 +13,16 @@ const (
 )
 
 func (q Quality) String() string {
-	return [...]string{"2160", "1440", "1080", "720", "480", "360"}[q]
+	return [...]string{"1440", "1080", "720", "480", "360"}[q]
 }
 
 func (q Quality) Values() int {
-	return [...]int{2160, 1440, 1080, 720, 480, 360}[q]
+	return [...]int{1440, 1080, 720, 480, 360}[q]
 }
 
 func IsSupportedQuality(quality int) bool {
-	ints := []int{2160, 1440, 1080, 720, 480, 360}
-	for _, a := range ints {
+	values := []int{1440, 1080, 720, 480, 360}
+	for _, a := range values {
 		if a == quality {
 			return true
 		}

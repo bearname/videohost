@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/bearname/videohost/pkg/common/util"
-	"github.com/bearname/videohost/pkg/notifier/app/service"
 	"github.com/bearname/videohost/pkg/notifier/domain"
 	"github.com/bearname/videohost/pkg/user/domain/model"
 	log "github.com/sirupsen/logrus"
@@ -14,11 +13,11 @@ import (
 )
 
 type EmailSendConsumer struct {
-	mailSender service.MailSender
+	mailSender domain.MailSender
 	token      *util.Token
 }
 
-func NewEmailSendConsumer(sender service.MailSender) *EmailSendConsumer {
+func NewEmailSendConsumer(sender domain.MailSender) *EmailSendConsumer {
 	e := new(EmailSendConsumer)
 	e.mailSender = sender
 	e.token = util.NewToken("", "")
@@ -29,7 +28,7 @@ func (c *EmailSendConsumer) Handle(message string) error {
 	log.Info(message)
 	split := strings.Split(message, ",")
 	if len(split) != 3 {
-		return errors.New("Invalid message. format <videoId> <quality> <ownerId>")
+		return errors.New("invalid message. format <videoId> <quality> <ownerId>")
 	}
 	videoId := split[0]
 	quality := split[1]
@@ -44,10 +43,14 @@ func (c *EmailSendConsumer) Handle(message string) error {
 	}
 
 	req, err := http.NewRequest("GET", "http://localhost:8001"+"/api/v1/users/"+ownerId, nil)
+	if err != nil {
+		log.Error(err.Error())
+		return err
+	}
 	req.Header.Add("Authorization", "Bearer "+c.token.AccessToken)
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		log.Error("Failed get id of owner of the video ")
+		log.Error("failed get id of owner of the video ")
 		return err
 	}
 	defer resp.Body.Close()

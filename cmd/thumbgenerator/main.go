@@ -23,7 +23,7 @@ func main() {
 		defer file.Close()
 	}
 	log.Info("Started")
-	var connector mysql.MysqlConnector
+	var connector mysql.ConnectorImpl
 	err = connector.Connect()
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
@@ -36,7 +36,7 @@ func main() {
 	killChan := server.GetKillSignalChan()
 	cache := caching.NewRedisCache(model.NewDsn("localhost:6379", "", "", ""))
 
-	waitGroup := worker.WorkerPool(stopChan, connector.Database, cache)
+	waitGroup := worker.PoolOfWorker(stopChan, &connector, cache)
 
 	server.WaitForKillSignal(killChan)
 	stopChan <- struct{}{}

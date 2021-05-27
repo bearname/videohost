@@ -5,4 +5,5 @@ type UserDto struct {
 	UserId   string `json:"user_id"`
 	Ok       bool   `json:"ok"`
 	Role     int    `json:"role"`
+	Token    string `json:"token"`
 }

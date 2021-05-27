@@ -39,12 +39,21 @@ func ValidateToken(authorization string, authServerUrl string) (dto.UserDto, boo
 func getRequest(authorization string, url string) ([]byte, error) {
 	client := &http.Client{}
 	validateAccessTokenRequest, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	validateAccessTokenRequest.Header.Add("Authorization", authorization)
 	response, err := client.Do(validateAccessTokenRequest)
-	if err != nil || response.StatusCode == http.StatusUnauthorized {
+	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
+
+	if response.StatusCode == http.StatusUnauthorized {
+		return nil, err
+	}
+
 	defer response.Body.Close()
 	return io.ReadAll(response.Body)
 }

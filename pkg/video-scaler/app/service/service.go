@@ -16,14 +16,14 @@ import (
 	"strings"
 )
 
-type ScalerService struct {
+type ScalerServiceImpl struct {
 	videoRepo     repository.VideoRepository
 	messageBroker *amqp.RabbitMqService
 	token         *util.Token
 }
 
-func NewScalerService(service *amqp.RabbitMqService, videoRepository repository.VideoRepository) *ScalerService {
-	s := new(ScalerService)
+func NewScalerService(service *amqp.RabbitMqService, videoRepository repository.VideoRepository) *ScalerServiceImpl {
+	s := new(ScalerServiceImpl)
 	s.videoRepo = videoRepository
 	s.messageBroker = service
 	s.token = util.NewToken("", "")
@@ -31,7 +31,7 @@ func NewScalerService(service *amqp.RabbitMqService, videoRepository repository.
 	return s
 }
 
-func (s *ScalerService) PrepareToStream(videoId string, inputVideoPath string, allNeededQualities []domain.Quality, ownerId string) bool {
+func (s *ScalerServiceImpl) PrepareToStream(videoId string, inputVideoPath string, allNeededQualities []domain.Quality, ownerId string) bool {
 	const extension = ".mp4"
 
 	log.Info(inputVideoPath)
@@ -80,7 +80,7 @@ func (s *ScalerService) PrepareToStream(videoId string, inputVideoPath string, a
 	return true
 }
 
-func (s *ScalerService) prepareToStreamByQuality(videoId string, inputVideoPath string, extension string, quality domain.Quality, ownerId string) {
+func (s *ScalerServiceImpl) prepareToStreamByQuality(videoId string, inputVideoPath string, extension string, quality domain.Quality, ownerId string) {
 	err := s.scaleVideoToQuality(inputVideoPath, extension, quality)
 	if err != nil {
 		log.Error("Failed prepare to stream file " + inputVideoPath + " in quality " + quality.String() + "p")
@@ -97,8 +97,7 @@ func (s *ScalerService) prepareToStreamByQuality(videoId string, inputVideoPath 
 	}
 }
 
-func (s *ScalerService) addVideoQuality(videoId string, quality domain.Quality) bool {
-	//ok := s.videoRepo.AddVideoQuality(videoId, quality.String())
+func (s *ScalerServiceImpl) addVideoQuality(videoId string, quality domain.Quality) bool {
 	buf := struct {
 		Quality int `json:"quality"`
 	}{Quality: quality.Values()}
@@ -109,6 +108,10 @@ func (s *ScalerService) addVideoQuality(videoId string, quality domain.Quality) 
 	}
 
 	request, err := http.NewRequest("PUT", "http://localhost:8000/api/v1/videos/"+videoId+"/add-quality", bytes.NewBuffer(marshal))
+	if err != nil {
+		log.Error(err)
+		return false
+	}
 	client := &http.Client{}
 	if s.token.AccessToken == "" {
 		token, err := util.GetAdminAccessToken(client, "http://localhost:8001")
@@ -121,6 +124,11 @@ func (s *ScalerService) addVideoQuality(videoId string, quality domain.Quality) 
 
 	request.Header.Add("Authorization", "Bearer "+s.token.AccessToken)
 	response, err := client.Do(request)
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusUnauthorized {
@@ -132,15 +140,15 @@ func (s *ScalerService) addVideoQuality(videoId string, quality domain.Quality) 
 		s.token = token
 	}
 
-	if err != nil || response.StatusCode != http.StatusOK {
-		log.Error("Failed get id of owner of the video ")
+	if response.StatusCode != http.StatusOK {
+		log.Error("failed get id of owner of the video ")
 		return false
 	}
 	log.Info(s.getResultMessage(true))
 	return true
 }
 
-func (s *ScalerService) getResultMessage(quality bool) string {
+func (s *ScalerServiceImpl) getResultMessage(quality bool) string {
 	message := "Add video quality "
 	if quality {
 		message += "success"
@@ -149,7 +157,7 @@ func (s *ScalerService) getResultMessage(quality bool) string {
 	}
 	return message
 }
-func (s *ScalerService) scaleVideoToQuality(inputVideoPath string, extension string, quality domain.Quality) error {
+func (s *ScalerServiceImpl) scaleVideoToQuality(inputVideoPath string, extension string, quality domain.Quality) error {
 	outputVideoPath := s.getOutputVideoPath(inputVideoPath, extension, quality)
 	log.Info("prepare video to stream on quality " + quality.String() + "p")
 	root := outputVideoPath[0 : strings.LastIndex(outputVideoPath, "\\")+1]
@@ -178,7 +186,7 @@ func (s *ScalerService) scaleVideoToQuality(inputVideoPath string, extension str
 	return nil
 }
 
-func (s *ScalerService) getDimension(split []string, key string) (int, bool) {
+func (s *ScalerServiceImpl) getDimension(split []string, key string) (int, bool) {
 	value := strings.Split(split[1], "=")
 	if value[0] != key {
 		return 0, false
@@ -194,13 +202,13 @@ func (s *ScalerService) getDimension(split []string, key string) (int, bool) {
 	return atoi, true
 }
 
-func (s *ScalerService) prepareToStream(videoPath string, output string, quality domain.Quality) error {
+func (s *ScalerServiceImpl) prepareToStream(videoPath string, output string, quality domain.Quality) error {
 	resolution := domain.QualityToResolution(quality)
 	fmt.Println(resolution)
 	return exec.Command(`ffmpeg`, `-i`, videoPath, `-profile:v`, `baseline`, `-level`, `3.0`, `-s`, resolution.String(),
 		`-start_number`, `0`, `-hls_time`, `10`, `-hls_list_size`, `0`, `-f`, `hls`, output).Run()
 }
 
-func (s *ScalerService) getOutputVideoPath(videoPath string, extension string, quality domain.Quality) string {
+func (s *ScalerServiceImpl) getOutputVideoPath(videoPath string, extension string, quality domain.Quality) string {
 	return videoPath[0:len(videoPath)-len(extension)] + "-" + quality.String() + "p" + extension
 }

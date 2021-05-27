@@ -6,21 +6,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type VideoScaleHandler struct {
-	videoScaleService *ScalerService
+type VideoScaleVisitor struct {
+	videoScaleService domain.ScalerService
 	videoRepo         repository.VideoRepository
 	qualities         []domain.Quality
 }
 
-func NewVideoScaleHandler(service *ScalerService, videoRepository repository.VideoRepository, qualities []domain.Quality) *VideoScaleHandler {
-	v := new(VideoScaleHandler)
+func NewVideoScaleHandler(service domain.ScalerService, videoRepository repository.VideoRepository, qualities []domain.Quality) *VideoScaleVisitor {
+	v := new(VideoScaleVisitor)
 	v.videoScaleService = service
 	v.videoRepo = videoRepository
 	v.qualities = qualities
 	return v
 }
 
-func (h *VideoScaleHandler) Handle(message string) error {
+func (h *VideoScaleVisitor) Handle(message string) error {
 	videoId := message
 	log.Printf("'%s'", videoId)
 	video, err := h.videoRepo.Find(videoId)
@@ -34,7 +34,7 @@ func (h *VideoScaleHandler) Handle(message string) error {
 	return nil
 }
 
-func (h *VideoScaleHandler) getResultMessage(ok bool) string {
+func (h *VideoScaleVisitor) getResultMessage(ok bool) string {
 	message := "Add video ok "
 	if ok {
 		message += "success"

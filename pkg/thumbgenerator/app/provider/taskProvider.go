@@ -1,14 +1,14 @@
 package provider
 
 import (
-	"database/sql"
+	"github.com/bearname/videohost/pkg/common/database"
 	"github.com/bearname/videohost/pkg/thumbgenerator/app/publisher"
 	"github.com/bearname/videohost/pkg/thumbgenerator/domain/model"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
 
-func RunTaskProvider(stopChan chan struct{}, db *sql.DB) <-chan *model.Task {
+func RunTaskProvider(stopChan chan struct{}, db database.Connector) <-chan *model.Task {
 	resultChan := make(chan *model.Task)
 	stopTaskProviderChan := make(chan struct{})
 	taskProviderChan := runTaskPublisher(stopTaskProviderChan, db)
@@ -35,7 +35,7 @@ func RunTaskProvider(stopChan chan struct{}, db *sql.DB) <-chan *model.Task {
 	return resultChan
 }
 
-func runTaskPublisher(stopChan chan struct{}, db *sql.DB) <-chan *model.Task {
+func runTaskPublisher(stopChan chan struct{}, db database.Connector) <-chan *model.Task {
 	tasksChan := make(chan *model.Task)
 	go func() {
 		for {

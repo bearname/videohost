@@ -34,6 +34,7 @@ func (s *SendInBlueMailSender) Send(from domain.User, to domain.User, subject st
 	request, err := http.NewRequest("POST", "https://api.sendinblue.com/v3/smtp/email", bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Println(err.Error())
+		return err
 	}
 	request.Header.Set("Accept", "application/json")
 	request.Header.Set("api-key", s.apiKey)

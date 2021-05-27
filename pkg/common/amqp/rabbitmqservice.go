@@ -63,7 +63,7 @@ func (r *RabbitMqService) Publish(exchange string, routingKey string, body strin
 	return nil
 }
 
-func (r *RabbitMqService) Consume(exchange string, routingKey string, handler ConsumerHandler) {
+func (r *RabbitMqService) Consume(exchange string, routingKey string, handler ConsumerVisitor) {
 	conn, err := amqp.Dial(r.url)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -124,7 +124,7 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 	<-forever
 }
 
-func (r *RabbitMqService) handleMessage(data amqp.Delivery, handler ConsumerHandler) {
+func (r *RabbitMqService) handleMessage(data amqp.Delivery, handler ConsumerVisitor) {
 	message := string(data.Body)
 	err := handler.Handle(message)
 

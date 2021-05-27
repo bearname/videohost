@@ -1,24 +1,22 @@
 package controller
 
 import (
-	"encoding/json"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
-	dto2 "github.com/bearname/videohost/pkg/user/app/dto"
-	service2 "github.com/bearname/videohost/pkg/user/app/service"
-	"github.com/bearname/videohost/pkg/user/domain/model"
+	userService "github.com/bearname/videohost/pkg/user/app/service"
 	"github.com/bearname/videohost/pkg/user/domain/repository"
+	"github.com/bearname/videohost/pkg/videoserver/app/dto"
+	videoService "github.com/bearname/videohost/pkg/videoserver/app/service"
 	repository2 "github.com/bearname/videohost/pkg/videoserver/domain/repository"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
-	"regexp"
 )
 
 type UserController struct {
 	controller.BaseController
 	userRepository  repository.UserRepository
+	userService     userService.UserService
 	videoRepository repository2.VideoRepository
 }
 
@@ -38,79 +36,42 @@ func (c *UserController) GetUser(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	log.Println("get username called")
-	vars := mux.Vars(request)
-	username, ok := vars["usernameOrId"]
-	if !ok {
-		http.Error(writer, "Cannot find username in request", http.StatusBadRequest)
-		return
-	}
-
-	var user model.User
-	var err error
-	uuid := isUUID(username)
-
-	if uuid {
-		user, err = c.userRepository.FindById(username)
-	} else {
-		user, err = c.userRepository.FindByUserName(username)
-	}
+	log.Println("get usernameOrId called")
+	variable, err := c.ParseMuxVariable(request, []string{"usernameOrId"})
 	if err != nil {
-		http.Error(writer, "User not exist", http.StatusNotFound)
+		http.Error(writer, "Cannot find usernameOrId in request", http.StatusBadRequest)
 		return
 	}
 
-	c.JsonResponse(writer,
-		struct {
-			Username     string `json:"username"`
-			Email        string `json:"email"`
-			IsSubscribed bool   `json:"isSubscribed"`
-			Role         int    `json:"role"`
-		}{Username: username, Email: user.Email, IsSubscribed: user.IsSubscribed, Role: user.Role.Values()})
+	usernameOrId := variable[0]
+
+	userDto, err := c.userService.Find(usernameOrId)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	c.JsonResponse(writer, userDto)
 }
 
 func (c *UserController) UpdatePassword(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Access-Control-Allow-Origin", "*")
 	writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	var userDto dto2.ChangePasswordUserDto
-	err := json.NewDecoder(request.Body).Decode(&userDto)
+	if (*request).Method == "OPTIONS" {
+		writer.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	err := c.userService.UpdatePassword(request)
 	if err != nil {
-		http.Error(writer, "cannot decode username/password struct", http.StatusBadRequest)
-		return
-	}
-	if !service2.IsUsernameContextOk(userDto.Username, request) {
-		http.Error(writer, "Is username context invalid", http.StatusBadRequest)
-		return
-	}
-
-	userFromDb, err := c.userRepository.FindByUserName(userDto.Username)
-	if (err == nil && userFromDb.Username != userDto.Username) || err != nil {
-		http.Error(writer, "User not exist", http.StatusBadRequest)
-		return
-	}
-
-	err = bcrypt.CompareHashAndPassword(userFromDb.Password, []byte(userDto.OldPassword))
-	if err != nil {
-		http.Error(writer, "Wrong password", http.StatusUnauthorized)
-		return
-	}
-
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userDto.NewPassword), bcrypt.DefaultCost)
-
-	if ok := c.userRepository.UpdatePassword(userDto.Username, passwordHash); !ok {
-		http.Error(writer, "Failed update password", http.StatusUnauthorized)
+		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	c.JsonResponse(writer, struct {
 		Result bool `json:"result"`
 	}{Result: true})
-}
-
-func isUUID(uuid string) bool {
-	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
-	return r.MatchString(uuid)
 }
 
 func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http.Request) {
@@ -128,6 +89,7 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "Cannot find username in request")
 		return
 	}
+
 	if _, err := c.userRepository.FindByUserName(username); err != nil {
 		c.BaseController.WriteResponse(&writer, http.StatusOK, false, "User not exist")
 		return
@@ -139,27 +101,22 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 		return
 	}
 
-	var page int
-	page, err := c.GetIntRouteParameter(request, "page")
+	parser := videoService.NewCatalogVideoParser()
+	result, err := parser.Parse(request)
 	if err != nil {
 		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
 		return
 	}
-	var countVideoOnPage int
-	countVideoOnPage, err = c.GetIntRouteParameter(request, "countVideoOnPage")
-	if err != nil {
-		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
-		return
-	}
+	searchDto := result.(*dto.SearchDto)
 
-	log.Info("page ", page, " count video ", countVideoOnPage)
+	log.Info("page ", searchDto.Page, " count video ", searchDto.Count)
 	countAllVideos, ok := c.userRepository.GetCountVideos(userId)
 	if !ok {
 		c.BaseController.WriteResponse(&writer, http.StatusOK, false, "Failed get page countVideoOnPage")
 		return
 	}
 
-	videos, err := c.videoRepository.FindUserVideos(userId, page, countVideoOnPage)
+	videos, err := c.videoRepository.FindUserVideos(userId, searchDto)
 	if err != nil {
 		log.Error(err.Error())
 		c.BaseController.WriteResponse(&writer, http.StatusOK, false, err.Error())

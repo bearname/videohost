@@ -17,7 +17,7 @@ func main() {
 	//	fmt.Println("unable setup log file" + err.Error())
 	//}
 
-	var connector connector.MysqlConnector
+	var connector connector.ConnectorImpl
 	err := connector.Connect()
 	if err != nil {
 		log.Error("unable to connect to connector" + err.Error())
@@ -38,7 +38,7 @@ func main() {
 	}
 
 	defer connector.Close()
-	videoRepo := mysql.NewMysqlVideoRepository(connector)
+	videoRepo := mysql.NewMysqlVideoRepository(&connector)
 	messageBroker := amqp.NewRabbitMqService("guest", "guest", "localhost", 5672)
 	qualities := []domain.Quality{domain.Q1440p, domain.Q1080p, domain.Q720p, domain.Q480p, domain.Q320p}
 	scalerService := service.NewScalerService(messageBroker, videoRepo)

@@ -1,15 +1,14 @@
 package publisher
 
 import (
-	"database/sql"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
+	"github.com/bearname/videohost/pkg/common/database"
 	"github.com/bearname/videohost/pkg/thumbgenerator/domain/model"
 	log "github.com/sirupsen/logrus"
 )
 
-func PublishTask(db *sql.DB) *model.Task {
+func PublishTask(db database.Connector) *model.Task {
 	var task model.Task
-	err := db.QueryRow("SELECT id_video, url FROM video WHERE status=?;", model.NotProcessed).Scan(
+	err := db.GetDb().QueryRow("SELECT id_video, url FROM video WHERE status=?;", model.NotProcessed).Scan(
 		&task.Id,
 		&task.Url,
 	)
@@ -20,11 +19,8 @@ func PublishTask(db *sql.DB) *model.Task {
 	}
 	log.Info("found not processed task " + task.Id)
 
-	err = mysql.ExecTransaction(
-		db,
-		"UPDATE video SET status=? WHERE id_video=?;", model.Processing,
-		task.Id,
-	)
+	query := "UPDATE video SET status=? WHERE id_video=?;"
+	err = db.ExecTransaction(query, model.Processing, task.Id)
 
 	if err != nil {
 		log.Error(err.Error())

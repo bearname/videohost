@@ -1,10 +1,10 @@
 package amqp
 
-type ConsumerHandler interface {
+type ConsumerVisitor interface {
 	Handle(message string) error
 }
 
 type MessageBroker interface {
 	Publish(exchange string, routingKey string, body string) error
-	Consume(exchange string, routingKey string, handler ConsumerHandler)
+	Consume(exchange string, routingKey string, handler ConsumerVisitor)
 }

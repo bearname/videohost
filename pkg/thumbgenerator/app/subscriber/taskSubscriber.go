@@ -1,14 +1,13 @@
 package subscriber
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/bearname/videohost/pkg/common/caching"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
+	"github.com/bearname/videohost/pkg/common/database"
 	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/thumbgenerator/domain/model"
-	model2 "github.com/bearname/videohost/pkg/videoserver/domain/model"
+	videoModel "github.com/bearname/videohost/pkg/videoserver/domain/model"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"path/filepath"
@@ -16,7 +15,7 @@ import (
 	"strings"
 )
 
-func HandleTask(task *model.Task, db *sql.DB, cache caching.Cache) {
+func HandleTask(task *model.Task, connector database.Connector, cache caching.Cache) {
 	url := task.Url
 	thumbUrl := filepath.Join(filepath.Dir(url), util.ThumbFileName)
 	log.Info("HandleTask" + task.Id + task.Url)
@@ -38,19 +37,18 @@ func HandleTask(task *model.Task, db *sql.DB, cache caching.Cache) {
 		return
 	}
 
-	err = mysql.ExecTransaction(
-		db,
-		"UPDATE video SET status=?, duration=?, thumbnail_url=? WHERE id_video=?;",
+	query := "UPDATE video SET status=?, duration=?, thumbnail_url=? WHERE id_video=?;"
+	err = connector.ExecTransaction(
+		query,
 		model.Processed,
 		duration,
 		thumbUrl,
 		task.Id,
 	)
 
-	var video model2.Video
-
-	query := "SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views, owner_id, status FROM video WHERE id_video=?;"
-	row := db.QueryRow(query, task.Id)
+	var video videoModel.Video
+	query = "SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views, owner_id, status FROM video WHERE id_video=?;"
+	row := connector.GetDb().QueryRow(query, task.Id)
 
 	err = row.Scan(
 		&video.Id,

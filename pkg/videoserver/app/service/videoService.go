@@ -15,12 +15,11 @@ import (
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/ftp"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	"mime/multipart"
 	"path/filepath"
 	"strconv"
 )
 
-type VideoService struct {
+type VideoServiceImpl struct {
 	videoRepo     repository.VideoRepository
 	messageBroker amqp.MessageBroker
 	cache         caching.Cache
@@ -28,8 +27,8 @@ type VideoService struct {
 
 const videoCachePrefix = "video-"
 
-func NewVideoService(videoRepository repository.VideoRepository, messageBroker amqp.MessageBroker, cache caching.Cache) *VideoService {
-	s := new(VideoService)
+func NewVideoService(videoRepository repository.VideoRepository, messageBroker amqp.MessageBroker, cache caching.Cache) *VideoServiceImpl {
+	s := new(VideoServiceImpl)
 
 	s.videoRepo = videoRepository
 	s.messageBroker = messageBroker
@@ -37,7 +36,7 @@ func NewVideoService(videoRepository repository.VideoRepository, messageBroker a
 	return s
 }
 
-func (s *VideoService) FindVideo(videoId string) (*model.Video, error) {
+func (s *VideoServiceImpl) FindVideo(videoId string) (*model.Video, error) {
 	video, err := s.readFromCache(videoId)
 	if err == nil {
 		return video, nil
@@ -51,10 +50,11 @@ func (s *VideoService) FindVideo(videoId string) (*model.Video, error) {
 	return video, nil
 }
 
-func (s *VideoService) UploadVideo(userId string, title string, description string, fileReader multipart.File, header *multipart.FileHeader) (uuid.UUID, error) {
-	contentType := header.Header.Get("Content-Type")
+func (s *VideoServiceImpl) UploadVideo(userId string, videoDto *dto.UploadVideoDto) (uuid.UUID, error) {
+
+	contentType := videoDto.FileHeader.Header.Get("Content-Type")
 	if contentType != util.VideoContentType {
-		return uuid.UUID{}, errors.New("Unexpected content type")
+		return uuid.UUID{}, errors.New("unexpected content type")
 	}
 
 	id, err := uuid.NewUUID()
@@ -63,7 +63,7 @@ func (s *VideoService) UploadVideo(userId string, title string, description stri
 	}
 	videoId := id.String()
 	connection := ftp.NewFtpConnection("localhost:21", "user", "123")
-	err = connection.CopyFile(videoId, fileReader)
+	err = connection.CopyFile(videoId, videoDto.MultipartFile)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -71,8 +71,8 @@ func (s *VideoService) UploadVideo(userId string, title string, description stri
 	err = s.videoRepo.Create(
 		userId,
 		videoId,
-		title,
-		description,
+		videoDto.Title,
+		videoDto.Description,
 		filepath.Join(util.ContentDir, videoId, util.VideoFileName),
 	)
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *VideoService) UploadVideo(userId string, title string, description stri
 	return id, nil
 }
 
-func (s *VideoService) readFromCache(videoId string) (*model.Video, error) {
+func (s *VideoServiceImpl) readFromCache(videoId string) (*model.Video, error) {
 	cacheStr, err := s.cache.Get(videoCachePrefix + videoId)
 	var cacheVideo model.Video
 	if err != nil {
@@ -112,7 +112,7 @@ func (s *VideoService) readFromCache(videoId string) (*model.Video, error) {
 	return &cacheVideo, nil
 }
 
-func (s *VideoService) writeToCache(videoId string, video *model.Video) error {
+func (s *VideoServiceImpl) writeToCache(videoId string, video *model.Video) error {
 	cacheByte, err := json.Marshal(video)
 	if err != nil {
 		return err
@@ -121,9 +121,9 @@ func (s *VideoService) writeToCache(videoId string, video *model.Video) error {
 	return s.cache.Set(videoCachePrefix+videoId, string(cacheByte))
 }
 
-func (s *VideoService) UpdateTitleAndDescription(userDto commonDto.UserDto, videoId string, videoDto dto.VideoMetadata) error {
+func (s *VideoServiceImpl) UpdateTitleAndDescription(userDto commonDto.UserDto, videoId string, videoDto dto.VideoMetadata) error {
 	if len(userDto.UserId) == 0 || len(videoId) == 0 || len(videoDto.Title) == 0 || len(videoDto.Description) == 0 {
-		return errors.New("Parameter must be length more than 0")
+		return errors.New("parameter must be length more than 0")
 	}
 
 	video, err := s.checkOwner(userDto, videoId)
@@ -142,14 +142,14 @@ func (s *VideoService) UpdateTitleAndDescription(userDto commonDto.UserDto, vide
 	return err
 }
 
-func (s *VideoService) AddQuality(videoId string, userDto commonDto.UserDto, quality dto.Quality) error {
+func (s *VideoServiceImpl) AddQuality(videoId string, userDto commonDto.UserDto, quality model.Quality) error {
 	video, err := s.checkOwner(userDto, videoId)
 	if err != nil {
 		return err
 	}
 
 	if !domain.IsSupportedQuality(quality.Value) {
-		return errors.New("Unsupported quality")
+		return errors.New("unsupported quality")
 	}
 	err = s.videoRepo.AddVideoQuality(videoId, strconv.Itoa(quality.Value))
 	if err != nil {
@@ -162,7 +162,7 @@ func (s *VideoService) AddQuality(videoId string, userDto commonDto.UserDto, qua
 	return s.writeToCache(videoId, video)
 }
 
-func (s *VideoService) DeleteVideo(userDto commonDto.UserDto, videoId string) error {
+func (s *VideoServiceImpl) DeleteVideo(userDto commonDto.UserDto, videoId string) error {
 
 	video, err := s.checkOwner(userDto, videoId)
 	if err != nil {
@@ -171,7 +171,7 @@ func (s *VideoService) DeleteVideo(userDto commonDto.UserDto, videoId string) er
 
 	connection := ftp.NewFtpConnection("localhost:21", "user", "123")
 	if connection == nil {
-		return errors.New("Failed connect to video store server")
+		return errors.New("failed connect to video store server")
 	}
 	err = connection.RemoveDirRecur(videoId)
 	err = connection.RemoveDir(videoId)
@@ -193,7 +193,7 @@ func (s *VideoService) DeleteVideo(userDto commonDto.UserDto, videoId string) er
 	return err
 }
 
-func (s *VideoService) checkOwner(userDto commonDto.UserDto, videoId string) (*model.Video, error) {
+func (s *VideoServiceImpl) checkOwner(userDto commonDto.UserDto, videoId string) (*model.Video, error) {
 	if len(videoId) == 0 {
 		return &model.Video{}, errors.New("videoId must be length more than 0")
 	}
@@ -212,4 +212,18 @@ func (s *VideoService) checkOwner(userDto commonDto.UserDto, videoId string) (*m
 	}
 
 	return video, err
+}
+
+func (s *VideoServiceImpl) FindVideoOnPage(searchDto *dto.SearchDto) (dto.SearchResultDto, error) {
+	pageCount, ok := s.videoRepo.GetPageCount(searchDto.Count)
+	if !ok {
+		return dto.SearchResultDto{}, errors.New("failed get page count")
+	}
+
+	videos, err := s.videoRepo.FindVideosByPage(searchDto.Page, searchDto.Count)
+	if err != nil {
+		return dto.SearchResultDto{}, err
+	}
+
+	return dto.SearchResultDto{PageCount: pageCount, Videos: videos}, nil
 }

@@ -4,13 +4,29 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport"
-	"github.com/bearname/videohost/pkg/common/util"
+	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 )
 
 type BaseController struct {
+}
+
+func (c *BaseController) ParseMuxVariable(request *http.Request, keys []string) ([]string, error) {
+	vars := mux.Vars(request)
+	var result []string
+	var videoId string
+	var ok bool
+
+	for _, key := range keys {
+		if videoId, ok = vars[key]; !ok {
+			return nil, errors.New(key + " not present")
+		}
+		result = append(result, videoId)
+	}
+
+	return result, nil
 }
 
 func (c *BaseController) AllowCorsRequest(writer *http.ResponseWriter) {
@@ -42,31 +58,6 @@ func (c *BaseController) WriteResponse(w *http.ResponseWriter, statusCode int, s
 	c.JsonResponse(*w, response)
 }
 
-func (c *BaseController) GetIntRouteParameter(request *http.Request, key string) (int, error) {
-	pageStr, done := c.ParseRouteParameter(request, key)
-	if !done {
-		return 0, errors.New("Invalid " + key + " parameter not found")
-	}
-
-	page, b := c.validate(pageStr)
-	if b {
-		return 0, errors.New("Invalid " + key + " parameter not found")
-	}
-
-	return page, nil
-}
-
-func (c *BaseController) ParseRouteParameter(request *http.Request, key string) (string, bool) {
-	query := request.URL.Query()
-	keys, ok := query[key]
-
-	if !ok || len(keys) != 1 {
-		return "", false
-	}
-
-	return keys[0], true
-}
-
 func (c *BaseController) WriteResponseData(w http.ResponseWriter, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
@@ -81,12 +72,4 @@ func (c *BaseController) WriteResponseData(w http.ResponseWriter, data interface
 	if _, err = io.WriteString(w, string(b)); err != nil {
 		log.WithField("err", err).Error("write response error")
 	}
-}
-
-func (c *BaseController) validate(pageStr string) (int, bool) {
-	page, b := util.StrToInt(pageStr)
-	if !b || page < 0 {
-		return 0, true
-	}
-	return page, false
 }

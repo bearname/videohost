@@ -21,12 +21,12 @@ func main() {
 		port = toInt
 	}
 
-	var connector mysql.MysqlConnector
+	var connector mysql.ConnectorImpl
 	err := connector.Connect()
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
 	}
 	defer connector.Close()
 
-	server.ExecuteServer("userserver", port, router.Router(connector))
+	server.ExecuteServer("userserver", port, router.Router(&connector))
 }

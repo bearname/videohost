@@ -11,13 +11,13 @@ import (
 )
 
 func main() {
-	var connector mysql.MysqlConnector
+	var connector mysql.ConnectorImpl
 	err := connector.Connect()
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
 	}
 	defer connector.Close()
-	rows, err := connector.Database.Query("SELECT id_video FROM video WHERE quality = ''")
+	rows, err := connector.database.Query("SELECT id_video FROM video WHERE quality = ''")
 	videoDirs := make([]string, 0)
 	for rows.Next() {
 		var videoId string

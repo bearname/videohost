@@ -2,8 +2,8 @@ package router
 
 import (
 	"github.com/bearname/videohost/pkg/common/amqp"
+	"github.com/bearname/videohost/pkg/common/database"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/caching"
-	mysql2 "github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/handler"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/middleware"
 	"github.com/bearname/videohost/pkg/common/model"
@@ -15,7 +15,7 @@ import (
 	"net/http"
 )
 
-func Router(connector mysql2.MysqlConnector) http.Handler {
+func Router(connector database.Connector) http.Handler {
 	router := mux.NewRouter()
 	subRouter := router.PathPrefix("/api/v1").Subrouter()
 
@@ -29,10 +29,11 @@ func Router(connector mysql2.MysqlConnector) http.Handler {
 	videoService := service.NewVideoService(videoRepository, messageBroker, cache)
 	videoController := controller.NewVideoController(videoRepository, videoService)
 	if videoController == nil {
-		log.Fatal("failed build videocontroller")
+		log.Fatal("failed build videoController")
+		return nil
 	}
 
-	streamController := controller.NewStreamController(videoRepository)
+	streamController := controller.NewStreamController(*new(service.StreamServiceImpl))
 	router.HandleFunc("/media/{videoId}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)

@@ -21,7 +21,7 @@ func main() {
 		port = toInt
 	}
 
-	var connector mysql.MysqlConnector
+	var connector mysql.ConnectorImpl
 	err := connector.Connect()
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
@@ -29,5 +29,10 @@ func main() {
 	}
 	defer connector.Close()
 
-	server.ExecuteServer("videoserver", port, router.Router(connector))
+	handler := router.Router(&connector)
+	if handler == nil {
+		return
+	}
+
+	server.ExecuteServer("videoserver", port, handler)
 }
