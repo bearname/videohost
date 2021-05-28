@@ -10,12 +10,14 @@ import (
 )
 
 type SendInBlueMailSender struct {
-	apiKey string
+	apiKey            string
+	sendInBlueAddress string
 }
 
-func NewSendInBlueMailSender(apiKey string) *SendInBlueMailSender {
+func NewSendInBlueMailSender(apiKey string, sendInBlueAddress string) *SendInBlueMailSender {
 	s := new(SendInBlueMailSender)
 	s.apiKey = apiKey
+	s.sendInBlueAddress = sendInBlueAddress
 	return s
 }
 
@@ -31,7 +33,7 @@ func (s *SendInBlueMailSender) Send(from domain.User, to domain.User, subject st
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	request, err := http.NewRequest("POST", "https://api.sendinblue.com/v3/smtp/email", bytes.NewBuffer(body))
+	request, err := http.NewRequest("POST", s.sendInBlueAddress+"/v3/smtp/email", bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Println(err.Error())
 		return err

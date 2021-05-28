@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	commonDto "github.com/bearname/videohost/pkg/common/dto"
-	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/user/app/dto"
 	"github.com/bearname/videohost/pkg/user/domain/model"
 	"github.com/bearname/videohost/pkg/user/domain/repository"
+	"github.com/bearname/videohost/pkg/video-scaler/domain"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
@@ -31,29 +31,29 @@ func NewAuthService(userRepository repository.UserRepository) *AuthServiceImpl {
 	return v
 }
 
-func (a *AuthServiceImpl) CreateUser(requestBody io.ReadCloser) (util.Token, error, int) {
+func (a *AuthServiceImpl) CreateUser(requestBody io.ReadCloser) (domain.Token, error, int) {
 	var newUser dto.SignupUserDto
 	err := json.NewDecoder(requestBody).Decode(&newUser)
 	if err != nil {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("cannot decode request"), http.StatusBadRequest
+		return domain.Token{}, errors.New("cannot decode request"), http.StatusBadRequest
 	}
 
 	if !a.isEmailValid(newUser.Email) {
-		return util.Token{}, errors.New("user email not valid"), http.StatusBadRequest
+		return domain.Token{}, errors.New("user email not valid"), http.StatusBadRequest
 	}
 
 	userFromDb, err := a.userRepo.FindByUserName(newUser.Username)
 	if (err == nil && userFromDb.Username == newUser.Username) || (err != nil && err.Error() != "sql: no rows in result set") {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("user already exists"), http.StatusBadRequest
+		return domain.Token{}, errors.New("user already exists"), http.StatusBadRequest
 	}
 	log.Println(userFromDb.Username == newUser.Username)
 
 	userKey, err := uuid.NewUUID()
 	if err != nil {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("failed generate id"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("failed generate id"), http.StatusInternalServerError
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
@@ -61,47 +61,47 @@ func (a *AuthServiceImpl) CreateUser(requestBody io.ReadCloser) (util.Token, err
 	accessToken, err := CreateToken(userKey.String(), newUser.Username, role)
 	if err != nil {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("cannot create accessToken"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("cannot create accessToken"), http.StatusInternalServerError
 	}
 
 	refreshToken, err := CreateTokenWithDuration(userKey.String(), newUser.Username, role, time.Hour*24*365*10)
 	if err != nil {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("cannot create refreshToken"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("cannot create refreshToken"), http.StatusInternalServerError
 	}
 
 	err = a.userRepo.CreateUser(userKey.String(), newUser.Username, passwordHash, newUser.Email, newUser.IsSubscribed, role, accessToken, refreshToken)
 	if err != nil {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("failed save user"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("failed save user"), http.StatusInternalServerError
 	}
 
-	return util.Token{
+	return domain.Token{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil, http.StatusOK
 }
 
-func (a *AuthServiceImpl) Login(requestBody io.ReadCloser) (util.Token, error, int) {
+func (a *AuthServiceImpl) Login(requestBody io.ReadCloser) (domain.Token, error, int) {
 	var userDto dto.LoginUserDto
 	err := json.NewDecoder(requestBody).Decode(&userDto)
 	if err != nil {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("cannot decode username/password struct"), http.StatusBadRequest
+		return domain.Token{}, errors.New("cannot decode username/password struct"), http.StatusBadRequest
 	}
 	userFromDb, err := a.userRepo.FindByUserName(userDto.Username)
 	if (err == nil && userFromDb.Username != userDto.Username) || err != nil {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("user not exist"), http.StatusBadRequest
+		return domain.Token{}, errors.New("user not exist"), http.StatusBadRequest
 	}
 
 	err = bcrypt.CompareHashAndPassword(userFromDb.Password, []byte(userDto.Password))
 	if err != nil {
 		log.Error(err.Error())
-		return util.Token{}, errors.New("wrong password"), http.StatusUnauthorized
+		return domain.Token{}, errors.New("wrong password"), http.StatusUnauthorized
 	}
 
-	return util.Token{
+	return domain.Token{
 		AccessToken:  userFromDb.AccessToken,
 		RefreshToken: userFromDb.RefreshToken,
 	}, nil, http.StatusOK
@@ -137,44 +137,44 @@ func (a *AuthServiceImpl) ValidateToken(authorizationHeader string) (commonDto.U
 		Token:  tokenString}, http.StatusOK
 }
 
-func (a *AuthServiceImpl) RefreshToken(request *http.Request) (util.Token, error, int) {
+func (a *AuthServiceImpl) RefreshToken(request *http.Request) (domain.Token, error, int) {
 	username, ok := context.Get(request, "username").(string)
 	if !ok {
-		return util.Token{}, errors.New("cannot check username"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("cannot check username"), http.StatusInternalServerError
 	}
 	userKey, ok := context.Get(request, "userId").(string)
 	if !ok {
-		return util.Token{}, errors.New("cannot check userId"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("cannot check userId"), http.StatusInternalServerError
 	}
 
 	userFromDb, err := a.userRepo.FindByUserName(username)
 	if (err == nil && userFromDb.Username != username) || err != nil {
-		return util.Token{}, errors.New("unauthorized, user not exists"), http.StatusUnauthorized
+		return domain.Token{}, errors.New("unauthorized, user not exists"), http.StatusUnauthorized
 	}
 	token, ok := context.Get(request, "token").(string)
 	if !ok {
-		return util.Token{}, errors.New("token to preset on context by token checker"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("token to preset on context by token checker"), http.StatusInternalServerError
 	}
 
 	if userFromDb.RefreshToken != token {
-		return util.Token{}, errors.New("invalid Refresh token"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("invalid Refresh token"), http.StatusInternalServerError
 	}
 	user, err := a.userRepo.FindByUserName(username)
 	if err != nil {
-		return util.Token{}, errors.New("unknown user"), http.StatusBadRequest
+		return domain.Token{}, errors.New("unknown user"), http.StatusBadRequest
 	}
 
 	accessToken, err := CreateToken(userKey, username, user.Role)
 	if err != nil {
-		return util.Token{}, errors.New("cannot create accessToken"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("cannot create accessToken"), http.StatusInternalServerError
 	}
 
 	ok = a.userRepo.UpdateAccessToken(username, accessToken)
 	if !ok {
-		return util.Token{}, errors.New("failed update accessToken"), http.StatusInternalServerError
+		return domain.Token{}, errors.New("failed update accessToken"), http.StatusInternalServerError
 	}
 
-	return util.Token{
+	return domain.Token{
 		AccessToken:  accessToken,
 		RefreshToken: userFromDb.RefreshToken,
 	}, nil, http.StatusOK

@@ -15,17 +15,23 @@ import (
 
 type VideoController struct {
 	controller.BaseController
-	videoRepository repository.VideoRepository
-	messageBroker   amqp.MessageBroker
-	videoService    service.VideoServiceImpl
+	videoRepository   repository.VideoRepository
+	messageBroker     amqp.MessageBroker
+	videoService      service.VideoServiceImpl
+	authServerAddress string
 }
 
-func NewVideoController(videoRepository repository.VideoRepository, videoService *service.VideoServiceImpl) *VideoController {
+func NewVideoController(videoRepository repository.VideoRepository,
+	videoService *service.VideoServiceImpl,
+	messageBroker amqp.MessageBroker,
+	authServerAddress string,
+) *VideoController {
 	v := new(VideoController)
 
 	v.videoRepository = videoRepository
 	v.videoService = *videoService
-	v.messageBroker = amqp.NewRabbitMqService("guest", "guest", "localhost", 5672)
+	v.messageBroker = messageBroker
+	v.authServerAddress = authServerAddress
 	if v.messageBroker == nil {
 		return nil
 	}
@@ -101,7 +107,7 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 		authorization := request.Header.Get("Authorization")
-		userDto, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		userDto, ok := util.ValidateToken(authorization, c.authServerAddress)
 		if !ok {
 			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
@@ -139,7 +145,7 @@ func (c *VideoController) UpdateTitleAndDescription() func(http.ResponseWriter, 
 		}
 
 		authorization := request.Header.Get("Authorization")
-		userDto, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		userDto, ok := util.ValidateToken(authorization, c.authServerAddress)
 		if !ok {
 			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
@@ -179,7 +185,7 @@ func (c *VideoController) DeleteVideo() func(http.ResponseWriter, *http.Request)
 		}
 
 		authorization := request.Header.Get("Authorization")
-		userDto, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		userDto, ok := util.ValidateToken(authorization, c.authServerAddress)
 		if !ok {
 			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
@@ -280,7 +286,7 @@ func (c VideoController) AddQuality() func(http.ResponseWriter, *http.Request) {
 		}
 
 		authorization := request.Header.Get("Authorization")
-		userDto, ok := util.ValidateToken(authorization, "http://localhost:8001")
+		userDto, ok := util.ValidateToken(authorization, c.authServerAddress)
 		if !ok {
 			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
 			return

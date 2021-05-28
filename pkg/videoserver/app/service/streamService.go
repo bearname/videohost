@@ -8,6 +8,10 @@ import (
 type StreamServiceImpl struct {
 }
 
+func NewStreamServiceImpl() StreamServiceImpl {
+	return *new(StreamServiceImpl)
+}
+
 func (s *StreamServiceImpl) ServeHlsM3u8(w http.ResponseWriter, r *http.Request, videoId string, m3u8Name string) {
 	mediaBase := s.getMediaBase(videoId)
 

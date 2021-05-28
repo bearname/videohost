@@ -45,6 +45,9 @@ func HandleTask(task *model.Task, connector database.Connector, cache caching.Ca
 		thumbUrl,
 		task.Id,
 	)
+	if err != nil {
+		log.Error("Failed set status processed" + err.Error())
+	}
 
 	var video videoModel.Video
 	query = "SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views, owner_id, status FROM video WHERE id_video=?;"
@@ -66,11 +69,10 @@ func HandleTask(task *model.Task, connector database.Connector, cache caching.Ca
 	if err == nil {
 		marshal, err := json.Marshal(video)
 		if err == nil {
-			err = cache.Set(task.Id, string(marshal))
+			err = cache.Set("video-"+task.Id, string(marshal))
+			if err != nil {
+				log.Error("Failed update cache" + err.Error())
+			}
 		}
-	}
-
-	if err != nil {
-		log.Error("Failed set status processed" + err.Error())
 	}
 }

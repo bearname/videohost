@@ -8,7 +8,8 @@ import (
 
 func PublishTask(db database.Connector) *model.Task {
 	var task model.Task
-	err := db.GetDb().QueryRow("SELECT id_video, url FROM video WHERE status=?;", model.NotProcessed).Scan(
+	query := "SELECT id_video, url FROM video WHERE status=?;"
+	err := db.GetDb().QueryRow(query, model.NotProcessed).Scan(
 		&task.Id,
 		&task.Url,
 	)
@@ -19,7 +20,7 @@ func PublishTask(db database.Connector) *model.Task {
 	}
 	log.Info("found not processed task " + task.Id)
 
-	query := "UPDATE video SET status=? WHERE id_video=?;"
+	query = "UPDATE video SET status=? WHERE id_video=?;"
 	err = db.ExecTransaction(query, model.Processing, task.Id)
 
 	if err != nil {

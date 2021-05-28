@@ -2,37 +2,32 @@ package main
 
 import (
 	"fmt"
+	"github.com/bearname/videohost/cmd/videoserver/config"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
-	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport/router"
 	_ "github.com/go-sql-driver/mysql"
-	"os"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	port := 8000
-	if len(os.Args) > 1 {
-		toInt, ok := util.StrToInt(os.Args[1])
-		if !ok {
-			fmt.Println("Invalid port")
-			return
-		}
-		port = toInt
+	config, err := config.ParseConfig()
+	if err != nil {
+		log.WithError(err).Fatal("failed to parse config")
 	}
 
-	var connector mysql.ConnectorImpl
-	err := connector.Connect()
+	connector := mysql.ConnectorImpl{}
+	err = connector.Connect(config.DbUser, config.DbPassword, config.DbAddress, config.DbName)
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
 		return
 	}
 	defer connector.Close()
 
-	handler := router.Router(&connector)
+	handler := router.Router(&connector, config.MessageBrokerAddress, config.AuthServerAddress, config.RedisAddress, config.RedisPassword)
 	if handler == nil {
 		return
 	}
 
-	server.ExecuteServer("videoserver", port, handler)
+	server.ExecuteServer("videoserver", config.Port, handler)
 }

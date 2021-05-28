@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/bearname/videohost/pkg/common/database"
+	mysqlConnector "github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/video-scaler/app/service"
 	"github.com/bearname/videohost/pkg/video-scaler/domain"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/mysql"
@@ -11,16 +11,16 @@ import (
 )
 
 func main() {
-	var connector database.Connector
+	var connector mysqlConnector.ConnectorImpl
 	err := connector.Connect()
 	if err != nil {
-		fmt.Println("unable to connect to connector" + err.Error())
+		fmt.Println("unable to connect to mysqlConnector" + err.Error())
 	}
 
 	defer connector.Close()
 
-	videoRepo := mysql.NewMysqlVideoRepository(connector)
-	scalerService := service.NewScalerService(nil, videoRepo)
+	videoRepo := mysql.NewMysqlVideoRepository(&connector)
+	scalerService := service.NewVideoScaleService(nil, videoRepo, "", "")
 	qualities := []domain.Quality{domain.Q1080p, domain.Q720p, domain.Q480p, domain.Q320p}
 	videos, err := videoRepo.FindVideosByPage(0, 100)
 	for _, video := range videos {

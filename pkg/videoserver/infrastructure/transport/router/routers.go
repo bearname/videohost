@@ -15,25 +15,25 @@ import (
 	"net/http"
 )
 
-func Router(connector database.Connector) http.Handler {
+func Router(connector database.Connector, messageBrokerAddress string, authServerAddress string, redisAddress string, redisPassword string) http.Handler {
 	router := mux.NewRouter()
 	subRouter := router.PathPrefix("/api/v1").Subrouter()
 
 	videoRepository := mysql.NewMysqlVideoRepository(connector)
-	messageBroker := amqp.NewRabbitMqService("guest", "guest", "localhost", 5672)
+	messageBroker := amqp.NewRabbitMqService(messageBrokerAddress)
 	if messageBroker == nil {
 		return nil
 	}
 
-	cache := caching.NewRedisCache(model.NewDsn("localhost:6379", "", "", ""))
+	cache := caching.NewRedisCache(model.NewDsn(redisAddress, "", redisPassword, ""))
 	videoService := service.NewVideoService(videoRepository, messageBroker, cache)
-	videoController := controller.NewVideoController(videoRepository, videoService)
+	videoController := controller.NewVideoController(videoRepository, videoService, messageBroker, authServerAddress)
 	if videoController == nil {
 		log.Fatal("failed build videoController")
 		return nil
 	}
 
-	streamController := controller.NewStreamController(*new(service.StreamServiceImpl))
+	streamController := controller.NewStreamController(service.NewStreamServiceImpl())
 	router.HandleFunc("/media/{videoId}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)

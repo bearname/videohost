@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/bearname/videohost/cmd/thumbgenerator/config"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/caching"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
@@ -22,9 +23,11 @@ func main() {
 		log.SetOutput(file)
 		defer file.Close()
 	}
+	parseConfig := config.ParseConfig()
+
 	log.Info("Started")
 	var connector mysql.ConnectorImpl
-	err = connector.Connect()
+	err = connector.Connect(parseConfig.DbUser, parseConfig.DbPassword, parseConfig.DbAddress, parseConfig.DbName)
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
 	}
@@ -34,8 +37,7 @@ func main() {
 	stopChan := make(chan struct{})
 
 	killChan := server.GetKillSignalChan()
-	cache := caching.NewRedisCache(model.NewDsn("localhost:6379", "", "", ""))
-
+	cache := caching.NewRedisCache(model.NewDsn(parseConfig.RedisAddress, "", parseConfig.RedisPassword, ""))
 	waitGroup := worker.PoolOfWorker(stopChan, &connector, cache)
 
 	server.WaitForKillSignal(killChan)

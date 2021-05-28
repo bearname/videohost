@@ -21,7 +21,7 @@ func (q Quality) Values() int {
 }
 
 func IsSupportedQuality(quality int) bool {
-	values := []int{1440, 1080, 720, 480, 360}
+	values := []int{2160, 440, 1080, 720, 480, 360}
 	for _, a := range values {
 		if a == quality {
 			return true
@@ -50,4 +50,16 @@ func QualityToResolution(quality Quality) Resolution {
 	}
 
 	return m[quality]
+}
+
+type Token struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+func NewToken(accessToken string, refreshToken string) *Token {
+	t := new(Token)
+	t.AccessToken = accessToken
+	t.RefreshToken = refreshToken
+	return t
 }

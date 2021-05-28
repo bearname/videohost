@@ -9,20 +9,27 @@ type ConnectorImpl struct {
 	database *sql.DB
 }
 
-const user = "root"
-const password = "123"
-const databaseName = "video"
+func NewConnectorImpl() ConnectorImpl {
+	return *new(ConnectorImpl)
+}
 
 func (c *ConnectorImpl) GetDb() *sql.DB {
 	return c.database
 }
 
-func (c *ConnectorImpl) Connect() error {
+func (c *ConnectorImpl) Connect(user string, password string, dbAddress string, dbName string) error {
 	if c.database != nil {
 		log.Info("Already connected")
 	}
 
-	db, err := sql.Open("mysql", user+":"+password+"@/"+databaseName+"?parseTime=true")
+	dataSourceName := user + ":" + password + "@"
+	if len(dbAddress) != 0 {
+		dataSourceName += dbAddress
+	}
+
+	dataSourceName += "/" + dbName + "?parseTime=true"
+
+	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Error(err)
 		return err

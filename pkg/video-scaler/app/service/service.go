@@ -7,7 +7,7 @@ import (
 	"github.com/bearname/videohost/pkg/common/amqp"
 	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/video-scaler/domain"
-	"github.com/bearname/videohost/pkg/videoserver/domain/repository"
+	"github.com/bearname/videohost/pkg/videoserver/domain/model"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -16,22 +16,24 @@ import (
 	"strings"
 )
 
-type ScalerServiceImpl struct {
-	videoRepo     repository.VideoRepository
-	messageBroker *amqp.RabbitMqService
-	token         *util.Token
+type VideoScaleServiceImpl struct {
+	messageBroker      *amqp.RabbitMqService
+	token              *domain.Token
+	videoServerAddress string
+	authServerAddress  string
 }
 
-func NewScalerService(service *amqp.RabbitMqService, videoRepository repository.VideoRepository) *ScalerServiceImpl {
-	s := new(ScalerServiceImpl)
-	s.videoRepo = videoRepository
+func NewVideoScaleService(service *amqp.RabbitMqService, videoServerAddress string, authServerAddress string) *VideoScaleServiceImpl {
+	s := new(VideoScaleServiceImpl)
 	s.messageBroker = service
-	s.token = util.NewToken("", "")
+	s.token = domain.NewToken("", "")
+	s.videoServerAddress = videoServerAddress
+	s.authServerAddress = authServerAddress
 
 	return s
 }
 
-func (s *ScalerServiceImpl) PrepareToStream(videoId string, inputVideoPath string, allNeededQualities []domain.Quality, ownerId string) bool {
+func (s *VideoScaleServiceImpl) PrepareToStream(videoId string, inputVideoPath string, allNeededQualities []domain.Quality, ownerId string) bool {
 	const extension = ".mp4"
 
 	log.Info(inputVideoPath)
@@ -52,8 +54,19 @@ func (s *ScalerServiceImpl) PrepareToStream(videoId string, inputVideoPath strin
 		log.Error("Not supported quality")
 		return false
 	}
-	video, err := s.videoRepo.Find(videoId)
+
+	client := &http.Client{}
+	token, ok := util.InitAccessToken(client, s.authServerAddress)
+	if !ok {
+		return false
+	}
+	s.token = token
+
+	response, err := util.GetRequest(s.videoServerAddress+"/api/v1/videos/"+videoId, s.token.RefreshToken)
+	var video model.Video
+	err = json.Unmarshal(response, &video)
 	if err != nil {
+		log.Error(err)
 		return false
 	}
 
@@ -80,7 +93,7 @@ func (s *ScalerServiceImpl) PrepareToStream(videoId string, inputVideoPath strin
 	return true
 }
 
-func (s *ScalerServiceImpl) prepareToStreamByQuality(videoId string, inputVideoPath string, extension string, quality domain.Quality, ownerId string) {
+func (s *VideoScaleServiceImpl) prepareToStreamByQuality(videoId string, inputVideoPath string, extension string, quality domain.Quality, ownerId string) {
 	err := s.scaleVideoToQuality(inputVideoPath, extension, quality)
 	if err != nil {
 		log.Error("Failed prepare to stream file " + inputVideoPath + " in quality " + quality.String() + "p")
@@ -97,7 +110,7 @@ func (s *ScalerServiceImpl) prepareToStreamByQuality(videoId string, inputVideoP
 	}
 }
 
-func (s *ScalerServiceImpl) addVideoQuality(videoId string, quality domain.Quality) bool {
+func (s *VideoScaleServiceImpl) addVideoQuality(videoId string, quality domain.Quality) bool {
 	buf := struct {
 		Quality int `json:"quality"`
 	}{Quality: quality.Values()}
@@ -107,20 +120,18 @@ func (s *ScalerServiceImpl) addVideoQuality(videoId string, quality domain.Quali
 		return false
 	}
 
-	request, err := http.NewRequest("PUT", "http://localhost:8000/api/v1/videos/"+videoId+"/add-quality", bytes.NewBuffer(marshal))
+	request, err := http.NewRequest("PUT", s.videoServerAddress+"/api/v1/videos/"+videoId+"/add-quality", bytes.NewBuffer(marshal))
 	if err != nil {
 		log.Error(err)
 		return false
 	}
+
 	client := &http.Client{}
-	if s.token.AccessToken == "" {
-		token, err := util.GetAdminAccessToken(client, "http://localhost:8001")
-		if err != nil {
-			log.Error(err)
-			return false
-		}
-		s.token = token
+	token, ok := util.InitAccessToken(client, s.authServerAddress)
+	if !ok {
+		return false
 	}
+	s.token = token
 
 	request.Header.Add("Authorization", "Bearer "+s.token.AccessToken)
 	response, err := client.Do(request)
@@ -132,7 +143,7 @@ func (s *ScalerServiceImpl) addVideoQuality(videoId string, quality domain.Quali
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusUnauthorized {
-		token, err := util.GetAdminAccessToken(client, "http://localhost:8001")
+		token, err := util.GetAdminAccessToken(client, s.authServerAddress)
 		if err != nil {
 			log.Error(err)
 			return false
@@ -144,11 +155,10 @@ func (s *ScalerServiceImpl) addVideoQuality(videoId string, quality domain.Quali
 		log.Error("failed get id of owner of the video ")
 		return false
 	}
-	log.Info(s.getResultMessage(true))
 	return true
 }
 
-func (s *ScalerServiceImpl) getResultMessage(quality bool) string {
+func (s *VideoScaleServiceImpl) getResultMessage(quality bool) string {
 	message := "Add video quality "
 	if quality {
 		message += "success"
@@ -157,7 +167,7 @@ func (s *ScalerServiceImpl) getResultMessage(quality bool) string {
 	}
 	return message
 }
-func (s *ScalerServiceImpl) scaleVideoToQuality(inputVideoPath string, extension string, quality domain.Quality) error {
+func (s *VideoScaleServiceImpl) scaleVideoToQuality(inputVideoPath string, extension string, quality domain.Quality) error {
 	outputVideoPath := s.getOutputVideoPath(inputVideoPath, extension, quality)
 	log.Info("prepare video to stream on quality " + quality.String() + "p")
 	root := outputVideoPath[0 : strings.LastIndex(outputVideoPath, "\\")+1]
@@ -179,14 +189,11 @@ func (s *ScalerServiceImpl) scaleVideoToQuality(inputVideoPath string, extension
 		return err
 	}
 	_, err = file.WriteString(data)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
-func (s *ScalerServiceImpl) getDimension(split []string, key string) (int, bool) {
+func (s *VideoScaleServiceImpl) getDimension(split []string, key string) (int, bool) {
 	value := strings.Split(split[1], "=")
 	if value[0] != key {
 		return 0, false
@@ -202,13 +209,13 @@ func (s *ScalerServiceImpl) getDimension(split []string, key string) (int, bool)
 	return atoi, true
 }
 
-func (s *ScalerServiceImpl) prepareToStream(videoPath string, output string, quality domain.Quality) error {
+func (s *VideoScaleServiceImpl) prepareToStream(videoPath string, output string, quality domain.Quality) error {
 	resolution := domain.QualityToResolution(quality)
 	fmt.Println(resolution)
 	return exec.Command(`ffmpeg`, `-i`, videoPath, `-profile:v`, `baseline`, `-level`, `3.0`, `-s`, resolution.String(),
 		`-start_number`, `0`, `-hls_time`, `10`, `-hls_list_size`, `0`, `-f`, `hls`, output).Run()
 }
 
-func (s *ScalerServiceImpl) getOutputVideoPath(videoPath string, extension string, quality domain.Quality) string {
+func (s *VideoScaleServiceImpl) getOutputVideoPath(videoPath string, extension string, quality domain.Quality) string {
 	return videoPath[0:len(videoPath)-len(extension)] + "-" + quality.String() + "p" + extension
 }

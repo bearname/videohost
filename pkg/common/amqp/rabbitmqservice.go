@@ -3,16 +3,14 @@ package amqp
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
-	"strconv"
 )
 
 type RabbitMqService struct {
 	url string
 }
 
-func NewRabbitMqService(user string, password string, host string, port int) *RabbitMqService {
+func NewRabbitMqService(url string) *RabbitMqService {
 	rabbitMqService := new(RabbitMqService)
-	url := "amqp://" + user + ":" + password + "@" + host + ":" + strconv.Itoa(port) + "/"
 	log.Info("amqp " + url)
 	rabbitMqService.url = url
 	return rabbitMqService
@@ -20,12 +18,12 @@ func NewRabbitMqService(user string, password string, host string, port int) *Ra
 
 func (r *RabbitMqService) Publish(exchange string, routingKey string, body string) error {
 	conn, err := amqp.Dial(r.url)
-	failOnError(err, "Failed to connect to RabbitMQ")
+	failOnError(err, "failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
-		log.Fatalf("%s: %s", "Failed to open a channel", err)
+		log.Fatalf("%s: %s", "failed to open a channel", err)
 		return err
 	}
 	defer ch.Close()
@@ -40,7 +38,7 @@ func (r *RabbitMqService) Publish(exchange string, routingKey string, body strin
 		nil,
 	)
 	if err != nil {
-		log.Fatalf("%s: %s", "Failed to declare an exchange", err)
+		log.Fatalf("%s: %s", "ffailed to declare an exchange", err)
 		return err
 	}
 
@@ -65,11 +63,11 @@ func (r *RabbitMqService) Publish(exchange string, routingKey string, body strin
 
 func (r *RabbitMqService) Consume(exchange string, routingKey string, handler ConsumerVisitor) {
 	conn, err := amqp.Dial(r.url)
-	failOnError(err, "Failed to connect to RabbitMQ")
+	failOnError(err, "failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	channel, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	failOnError(err, "failed to open a channel")
 	defer channel.Close()
 
 	err = channel.ExchangeDeclare(
@@ -81,7 +79,7 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 		false,
 		nil,
 	)
-	failOnError(err, "Failed to declare an exchange")
+	failOnError(err, "failed to declare an exchange")
 
 	queue, err := channel.QueueDeclare(
 		"",
@@ -91,7 +89,7 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 		false,
 		nil,
 	)
-	failOnError(err, "Failed to declare a queue")
+	failOnError(err, "failed to declare a queue")
 
 	log.Printf("Binding queue %s to exchange %s with routing key %s", queue.Name, exchange, routingKey)
 
@@ -101,7 +99,7 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 		exchange,
 		false,
 		nil)
-	failOnError(err, "Failed to bind a queue")
+	failOnError(err, "failed to bind a queue")
 
 	messages, err := channel.Consume(
 		queue.Name,
@@ -112,11 +110,11 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 		false,
 		nil,
 	)
-	failOnError(err, "Failed to register a consumer")
+	failOnError(err, "failed to register a consumer")
 	forever := make(chan bool)
 	go func() {
 		for data := range messages {
-			r.handleMessage(data, handler)
+			r.handleMessage(string(data.Body), handler)
 		}
 	}()
 
@@ -124,8 +122,7 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 	<-forever
 }
 
-func (r *RabbitMqService) handleMessage(data amqp.Delivery, handler ConsumerVisitor) {
-	message := string(data.Body)
+func (r *RabbitMqService) handleMessage(message string, handler ConsumerVisitor) {
 	err := handler.Handle(message)
 
 	var args string

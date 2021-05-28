@@ -6,6 +6,7 @@ import (
 	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/notifier/domain"
 	"github.com/bearname/videohost/pkg/user/domain/model"
+	commonDomain "github.com/bearname/videohost/pkg/video-scaler/domain"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -13,14 +14,17 @@ import (
 )
 
 type EmailSendConsumer struct {
-	mailSender domain.MailSender
-	token      *util.Token
+	mailSender        domain.MailSender
+	token             *commonDomain.Token
+	authServerAddress string
 }
 
-func NewEmailSendConsumer(sender domain.MailSender) *EmailSendConsumer {
+func NewEmailSendConsumer(sender domain.MailSender, authServerAddress string) *EmailSendConsumer {
 	e := new(EmailSendConsumer)
 	e.mailSender = sender
-	e.token = util.NewToken("", "")
+	e.token = commonDomain.NewToken("", "")
+	e.authServerAddress = authServerAddress
+
 	return e
 }
 
@@ -35,14 +39,14 @@ func (c *EmailSendConsumer) Handle(message string) error {
 	ownerId := split[2]
 	client := &http.Client{}
 	if c.token.AccessToken == "" {
-		token, err := util.GetAdminAccessToken(client, "http://localhost:8001")
+		token, err := util.GetAdminAccessToken(client, c.authServerAddress)
 		if err != nil {
 			return err
 		}
 		c.token = token
 	}
 
-	req, err := http.NewRequest("GET", "http://localhost:8001"+"/api/v1/users/"+ownerId, nil)
+	req, err := http.NewRequest("GET", c.authServerAddress+"/api/v1/users/"+ownerId, nil)
 	if err != nil {
 		log.Error(err.Error())
 		return err
