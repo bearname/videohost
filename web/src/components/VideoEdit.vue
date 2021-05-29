@@ -30,13 +30,13 @@ export default {
     }
   },
   methods: {
-    updateTitleAndDescription() {
+    async updateTitleAndDescription() {
       const video = {
         videoId: this.id,
         name: this.name,
         description: this.description,
       };
-      this.$store.dispatch("video/updateTitleAndDescription", video)
+      await this.$store.dispatch("video/updateTitleAndDescription", video)
       const getter = this.$store.getters["video/getStatus"];
       console.log(getter)
     }

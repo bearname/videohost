@@ -9,19 +9,23 @@ import * as Cookies from 'js-cookie'
 
 Vue.use(Vuex)
 
+const modules = {
+    video: videoModule,
+    auth: authModule,
+    user: userModule
+};
+
+const plugins = [
+    createPersistedState({
+        getState: (key) => Cookies.getJSON(key),
+        setState: (key, state) => Cookies.set(key, state, {expires: 3, secure: true})
+    })
+];
+
 export default new Vuex.Store({
     state: {},
     mutations: {},
     actions: {},
-    modules: {
-        video: videoModule,
-        auth: authModule,
-        user: userModule
-    },
-    plugins: [
-        createPersistedState({
-            getState: (key) => Cookies.getJSON(key),
-            setState: (key, state) => Cookies.set(key, state, {expires: 3, secure: true})
-        })
-    ]
+    modules: modules,
+    plugins: plugins
 })

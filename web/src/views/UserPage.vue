@@ -44,17 +44,15 @@ export default {
     }),
     ...mapGetters({
       getUserVideos: "video/getUserVideos",
-      getUser: "user/getUser",
+      getUser: "user/getCurrentUser",
       isLoggedIn: "auth/isLoggedIn",
       getCurrentUser: "auth/getCurrentUser"
     }),
-    getAsyncVideos() {
-      this.fetchUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
-          .then(() => {
-            const result = this.getUserVideos()
-            this.videos = result.videos
-            this.countAllVideos = result.countAllVideos
-          })
+    async getAsyncVideos() {
+      await this.fetchUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
+      const result = this.getUserVideos()
+      this.videos = result.videos
+      this.countAllVideos = result.countAllVideos
     }
   },
 }

@@ -49,24 +49,23 @@ export default {
     toggleLogin() {
       this.loginSelected = !this.loginSelected;
     },
-    onLoginButtonClick() {
-      let promise;
-      if (this.loginSelected) {
-        promise = this.login({username: this.username, password: this.password});
-      } else {
-        promise = this.signup({
-          username: this.username,
-          password: this.password,
-          email: this.email,
-          isSubscribed: this.isSubscribed
-        });
-      }
+    async onLoginButtonClick() {
+      try {
+        if (this.loginSelected) {
+          await this.login({username: this.username, password: this.password});
+        } else {
+          await this.signup({
+            username: this.username,
+            password: this.password,
+            email: this.email,
+            isSubscribed: this.isSubscribed
+          });
+        }
 
-      promise.then(() => [
-        this.$router.push({name: "home"})
-      ]).catch(error => {
+        await this.$router.push({name: "home"})
+      } catch (error) {
         this.error = error;
-      });
+      }
     }
   },
   computed: {

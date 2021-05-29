@@ -203,7 +203,7 @@ export default {
 
     this.initPlayer()
     this.initKeyHandler()
-    this.fetchVideosByPage(0, 10)
+    // this.fetchVideosByPage(0, 10)
   },
   updated() {
     this.initPlayer()
@@ -217,12 +217,10 @@ export default {
       getPageCount: "video/getPageCount"
     }),
     async fetchVideosByPage(page, countVideoOnPage) {
-      await this.getVideoOnPage(page, countVideoOnPage)
-          .then(() => {
-            this.videos = this.getVideos()
-            console.log(this.videos)
-            this.countPage = this.getPageCount()
-          })
+      await this.getVideoOnPage(page, countVideoOnPage);
+      this.videos = this.getVideos();
+      console.log(this.videos);
+      this.countPage = this.getPageCount();
     },
     onClickBufferedRange(event) {
       this.videoElement.currentTime = this.getEventMouseTime(event);
@@ -337,7 +335,7 @@ export default {
       if (Hls.isSupported()) {
         this.prepareHls(this.id, this.selectedQuality);
       } else if (this.videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-        this.videoElement.src = process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + this.id + '/stream/';
+        this.videoElement.src = process.env.VUE_APP_VIDEO_API + '/media/' + this.id + '/stream/';
         this.videoElement.addEventListener('loadedmetadata', function () {
           this.video.play();
         });
@@ -353,7 +351,7 @@ export default {
       }
       console.log(quality)
       this.hls = new Hls();
-      this.hls.loadSource(process.env.VUE_APP_VIDEO_SERVER_ADDRESS + '/media/' + id + '/stream/');
+      this.hls.loadSource(process.env.VUE_APP_VIDEO_API + '/media/' + id + '/stream/');
       this.hls.attachMedia(this.videoElement);
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
         this.play();
@@ -478,7 +476,6 @@ export default {
         this.playbackRate = this.previousPlaybackSpeed
       } else {
         this.previousPlaybackSpeed = this.playbackRate;
-
         this.playbackRate = 0.25
       }
     },
@@ -498,7 +495,7 @@ export default {
         }
 
         const children = this.playbackSpeed.children;
-        children.forEach(function (part, index) {
+        children.forEach((part, index) => {
           const optionElement = this[index];
           const attribute = optionElement.getAttribute('selected');
           if (attribute !== null) {
@@ -546,18 +543,18 @@ export default {
     },
     toggleMute() {
       if (this.videoElement.muted) {
-        this.videoElement.volume = 1
-        this.videoElement.muted = false
-        this.changeButtonType(this.volumeMuteElement, 'mute')
-        this.volumeChangerElement.value = this.videoElement.volume
+        this.videoElement.volume = 1;
+        this.videoElement.muted = false;
+        this.changeButtonType(this.volumeMuteElement, 'mute');
+        this.volumeChangerElement.value = this.videoElement.volume;
       } else {
-        this.volumePrevious = this.videoElement.volume
-        this.videoElement.muted = true
-        this.changeButtonType(this.volumeMuteElement, 'unmute')
-        this.volumeChangerElement.value = 0
+        this.volumePrevious = this.videoElement.volume;
+        this.videoElement.muted = true;
+        this.changeButtonType(this.volumeMuteElement, 'unmute');
+        this.volumeChangerElement.value = 0;
       }
 
-      this.handleVolumeChange()
+      this.handleVolumeChange();
     },
     changeButtonType(btn, value) {
       btn.title = value;
@@ -568,18 +565,19 @@ export default {
       let seekTime = this.getEventMouseTime(event);
 
       const number = parseInt(seekTime);
-      // if (this.prevSeekTime === number) {
-      //   return
-      // }
+      console.log(number);
+      if (this.prevSeekTime === number) {
+        return;
+      }
 
       let boundingClientRect = this.progressBarWrapperElement.getBoundingClientRect();
       let x = event.x - boundingClientRect.x;
       this.prevSeekTime = number;
-
       const thumbnail = this.thumbnails[parseInt(number / 25)];
       const seconds = number % 25;
       const thumbY = parseInt(seconds / 5);
       const thumbX = parseInt(seconds % 5);
+      console.log(thumbY + " " + thumbX);
 
       this.thumbnailElement.style.transform = 'translate(-' + 256 * thumbX + 'px, -' + 144 * thumbY + 'px);'
       this.thumbnailElement.src = thumbnail;
@@ -649,22 +647,12 @@ export default {
       this.copyTextToClipboard(document.URL);
     },
     copyVideoPathWithTime() {
-      let string = document.URL.split('?')[0];
+      const string = document.URL.split('?')[0];
       this.copyTextToClipboard(string + "?time=" + this.videoElement.currentTime);
     },
     showStatsOfNerds() {
-      let hls = this.hls;
-      const boundingClientRect = this.videoElement.getBoundingClientRect();
-      const innerHtml = '<p>Video ID' + this.videoId + '</p>' +
-          '<p>Viewport ' + boundingClientRect.width + 'x' + boundingClientRect.height + '</p>' +
-          '<p>Volume ' + this.videoElement.volume * 100 + '%</p>' +
-          '<p>Codecs ' + hls.levels[hls.currentLevel].videoCodec + '</p>' +
-          '<p>Latency / Bandwidth Estimated ' + hls.latency.toFixed(3) + '  ' + hls.bandwidthEstimate + '</p>' +
-          '<p>Max Latency: ' + this.hls.maxLatency + '</p>' +
-          '<p>Target Latency: ' + this.hls.targetLatency.toFixed(3) + '</p>' +
-          '<p>Bitrate: ' + Math.round(hls.levels[hls.currentLevel].bitrate / 1000) + '</p>' +
-          '<p>Latency: ' + this.hls.latency.toFixed(3) + '</p>' +
-          '<p>Drift: ' + this.hls.drift.toFixed(3) + '  (edge advance rate)</p>';
+      const innerHtml = this.getDebugInfo();
+
       this.toggleShowPopup(this.submenuShowElement, innerHtml);
     },
     showKeyboardHelp() {
@@ -766,7 +754,7 @@ export default {
               const number = parseInt(keyElement);
               console.log(number / 10);
               const shift = this.duration * (number / 10);
-              console.log('shfit');
+              console.log('shift');
               console.log(shift);
               this.setCurrentTime(shift);
             }
@@ -775,6 +763,21 @@ export default {
         }
       }
     },
+    getDebugInfo() {
+      const hls = this.hls;
+      const boundingClientRect = this.videoElement.getBoundingClientRect();
+
+      return '<p>Video ID' + this.videoId + '</p>' +
+          '<p>Viewport ' + boundingClientRect.width + 'x' + boundingClientRect.height + '</p>' +
+          '<p>Volume ' + this.videoElement.volume * 100 + '%</p>' +
+          '<p>Codecs ' + hls.levels[hls.currentLevel].videoCodec + '</p>' +
+          '<p>Latency / Bandwidth Estimated ' + hls.latency.toFixed(3) + '  ' + hls.bandwidthEstimate + '</p>' +
+          '<p>Max Latency: ' + this.hls.maxLatency + '</p>' +
+          '<p>Target Latency: ' + this.hls.targetLatency.toFixed(3) + '</p>' +
+          '<p>Bitrate: ' + Math.round(hls.levels[hls.currentLevel].bitrate / 1000) + '</p>' +
+          '<p>Latency: ' + this.hls.latency.toFixed(3) + '</p>' +
+          '<p>Drift: ' + this.hls.drift.toFixed(3) + '  (edge advance rate)</p>';
+    }
   },
 }
 </script>

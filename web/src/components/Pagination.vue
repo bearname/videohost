@@ -4,13 +4,14 @@
       max-width="1000"
   >
     <div v-if="videos !== null">
-      <VideoList :videos="videos" :current-user-id="currentUserId" :show-status="showStatus" :user-page="userPage"  :key="pageNumber"/>
+      <VideoList :videos="videos" :current-user-id="currentUserId" :show-status="showStatus" :user-page="userPage"
+                 :key="pageNumber"/>
       <v-btn class="v-btn"
              :disabled="pageNumber === 0"
              @click="previousPage">
         Previous
       </v-btn>
-      <v-btn>{{ pageNumber + 1 }} of {{countPage + 1}}</v-btn>
+      <v-btn>{{ pageNumber + 1 }} of {{ countPage + 1 }}</v-btn>
       <v-btn class="v-btn"
              :disabled="pageNumber >= countPage"
              @click="nextPage">
@@ -73,16 +74,14 @@ export default {
         await this.fetchVideosByPage(this.pageNumber, this.countVideoOnPage)
       }
     },
-    async fetchVideosByPage(page , countVideoOnPage) {
+    async fetchVideosByPage(page, countVideoOnPage) {
       await this.getVideoOnPage(page, countVideoOnPage)
-          .then(() => {
-            this.videos = this.getVideos()
-            this.countPage = this.getPageCount()
-          })
+      this.videos = this.getVideos()
+      this.countPage = this.getPageCount()
     }
   },
-  mounted() {
-    this.fetchVideosByPage(this.pageNumber, this.countVideoOnPage)
+  async mounted() {
+    await this.fetchVideosByPage(this.pageNumber, this.countVideoOnPage)
   }
 }
 </script>

@@ -46,7 +46,7 @@ export default {
     }),
     ...mapGetters({
       isLogged: "auth/isLoggedIn",
-      getUser: "user/getUser",
+      getUser: "user/getCurrentUser",
       getCurrentUser: "auth/getCurrentUser"
     }),
     logoutUser() {

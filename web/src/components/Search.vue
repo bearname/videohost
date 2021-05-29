@@ -17,6 +17,8 @@
 <script>
 import VideoList from "./VideoList";
 import axios from "axios";
+import logError from "../util/logger";
+import {updateThumbnail} from "../store/videoStore/video";
 
 export default {
   name: "Search",
@@ -34,7 +36,7 @@ export default {
     }
   },
   async created() {
-    this.searchVideos(this.search)
+    await this.searchVideos(this.search)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Slash') {
         let searchBoxElement = document.getElementById('searchBox');
@@ -56,37 +58,30 @@ export default {
     //   await this.searchVideosByQuery({searchString: this.search});
     //   this.videos = this.getVideos();
     // },
-    searchVideo() {
-      this.searchVideos(this.search)
+    async searchVideo() {
+      await this.searchVideos(this.search)
     },
-    searchVideos(searchString, page = '1', countVideoOnPage = '10') {
+    async searchVideos(searchString, page = '1', countVideoOnPage = '10') {
+      try {
+        const videoServerAddress = process.env.VUE_APP_VIDEO_API;
+        const url = videoServerAddress + '/api/v1/videos/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
+        const response = await axios.get(url);
+        const data = response.data;
 
-      const videoServerAddress = process.env.VUE_APP_VIDEO_SERVER_ADDRESS;
-      let url = videoServerAddress + '/api/v1/videos/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
-      axios.get(url)
-          .then(response => {
-            console.log(response.data)
-            if (Object.keys(response.data).includes("pageCount")) {
-              this.countPage = response.data.pageCount
-            }
-            if (Object.keys(response.data).includes("videos")) {
-              this.videos = response.data.videos
-              this.videos.forEach(function (part, index) {
-                this[index].thumbnail = videoServerAddress + this[index].thumbnail
-              }, this.videos)
-            }
-          })
-          .catch(function (error) {
-            if (error.response) {
-              console.log(error.response.data);
-              console.log(error.response.status);
-              console.log(error.response.headers);
-            } else if (error.request) {
-              console.log(error.request);
-            } else {
-              console.log('Error', error.message);
-            }
-          });
+        console.log(data)
+
+        if (Object.keys(data).includes("pageCount")) {
+          this.countPage = data.pageCount
+        }
+        if (Object.keys(data).includes("videos")) {
+          this.videos = data.videos
+          this.videos.forEach((part, index) => {
+            updateThumbnail(part, index)
+          }, this.videos);
+        }
+      } catch (error) {
+        logError(error)
+      }
     }
   }
 }
