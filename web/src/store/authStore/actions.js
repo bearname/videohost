@@ -5,7 +5,7 @@ import jwt_decode from "jwt-decode";
 const actions = {
     async login(context, {username, password}) {
         try {
-            const loginResponse = await fetch(process.env.VUE_APP_VIDEO_API + "/api/v1/auth/login", {
+            const loginResponse = await fetch(process.env.VUE_APP_USER_API + "/api/v1/auth/login", {
                 method: "POST",
                 body: JSON.stringify({username: username, password: password})
             });
@@ -59,7 +59,7 @@ const actions = {
                 }),
             };
 
-            const response = await fetch(process.env.VUE_APP_VIDEO_API + "/api/v1/auth/create-user", config);
+            const response = await fetch(process.env.VUE_APP_USER_API + "/api/v1/auth/create-user", config);
             if (!response.ok) {
                 throw new Error("Cannot signup!");
             }
@@ -103,7 +103,7 @@ const actions = {
                     }
                 };
 
-                const response = await fetch(process.env.VUE_APP_VIDEO_API + "/api/v1/auth/token", config);
+                const response = await fetch(process.env.VUE_APP_USER_API + "/api/v1/auth/token", config);
                 if (!response.ok) {
                     throw new Error("Cannot get token!");
                 }

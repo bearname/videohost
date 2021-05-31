@@ -7,9 +7,8 @@
         <h4 v-if="video === null">
           Video unavailable
         </h4>
-
         <div class="text-align-left" v-else>
-          <div v-if="video.status === '3'">
+          <div v-if="video.status === 3">
             <Player :videoId="videoId" :duration="video.duration" :thumbnail="video.thumbnail"
                     :availableQualities="video.quality" :key="key"/>
           </div>
@@ -17,7 +16,7 @@
         </div>
       </v-col>
     </v-row>
-    <v-row no-gutters v-if="video === null">
+    <v-row no-gutters v-if="video !== null">
       <v-col
           cols="12"
           sm="8"
@@ -61,7 +60,7 @@ import Player from '../components/Player.vue'
 import {mapActions, mapGetters} from "vuex";
 import Cookie from "../util/cookie";
 import VideoStatus from "../store/videoStore/videoStatus";
-import videos from "../store/videoStore/video"
+import videosUtil from "../store/videoStore/video"
 import logError from "../util/logger";
 
 export default {
@@ -108,14 +107,14 @@ export default {
     }),
     async setVideoId() {
       this.videoId = this.$route.params.videoId
-      await this.fetchVideo(this.videoId)
+      await this.fetchVideo(this.$route.params.videoId)
     },
     async fetchVideo(videoId) {
       try {
-        await this.findVideoById(videoId);
+        await this.findVideoById({videoId: videoId});
         this.video = this.getVideoResult()
         this.videoStatus = VideoStatus.intToStatus(this.video.status)
-        this.video.uploaded = videos.getElapsedString(this.video.uploaded)
+        this.video.uploaded = videosUtil.getElapsedString(this.video.uploaded)
       } catch (error) {
         logError(error)
       }

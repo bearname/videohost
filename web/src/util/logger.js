@@ -8,7 +8,6 @@ const logError = (error) => {
     } else {
         console.log('Error', error.message);
     }
-    this.error = true
 }
 
 export default logError;

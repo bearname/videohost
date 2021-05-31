@@ -1,4 +1,4 @@
-const videos = {
+const videosUtil = {
     getElapsedString(uploadedDate) {
         let elapsed = (Date.now() - Date.parse(uploadedDate)) / 1000;
 
@@ -33,4 +33,4 @@ const videos = {
     },
 };
 
-export default videos
+export default videosUtil

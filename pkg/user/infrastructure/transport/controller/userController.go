@@ -107,7 +107,7 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
 		return
 	}
-	searchDto := result.(*dto.SearchDto)
+	searchDto := result.(dto.SearchDto)
 
 	log.Info("page ", searchDto.Page, " count video ", searchDto.Count)
 	countAllVideos, ok := c.userRepository.GetCountVideos(userId)

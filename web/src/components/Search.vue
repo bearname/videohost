@@ -16,9 +16,10 @@
 
 <script>
 import VideoList from "./VideoList";
-import axios from "axios";
-import logError from "../util/logger";
-import {updateThumbnail} from "../store/videoStore/video";
+// import axios from "axios";
+// import logError from "../util/logger";
+// import {updateThumbnail} from "../store/videoStore/video";
+import {mapActions, mapGetters} from "vuex";
 
 export default {
   name: "Search",
@@ -31,57 +32,60 @@ export default {
       search: this.searchQuery,
       videos: null,
       error: false,
-      page: 1,
+      // page: 1,
       isNeedDisplay: false
     }
   },
   async created() {
-    await this.searchVideos(this.search)
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Slash') {
-        let searchBoxElement = document.getElementById('searchBox');
-        if (searchBoxElement !== null) {
-          searchBoxElement.focus();
+    if (this.search !== undefined) {
+      await this.searchVideos(this.search);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Slash') {
+          let searchBoxElement = document.getElementById('searchBox');
+          if (searchBoxElement !== null) {
+            searchBoxElement.focus();
+          }
         }
-      }
-    })
+      });
+    }
   },
   methods: {
-    // ...mapActions({
-    //   searchVideosByQuery: "video/searchVideos"
-    // }),
-    // ...mapGetters({
-    //   getVideos: "video/getVideos",
-    //   getPageCount: "video/getPageCount"
-    // }),
-    // async searchVideo() {
-    //   await this.searchVideosByQuery({searchString: this.search});
-    //   this.videos = this.getVideos();
-    // },
+    ...mapActions({
+      searchVideosByQuery: "video/searchVideos"
+    }),
+    ...mapGetters({
+      getVideos: "video/getVideos",
+      getPageCount: "video/getPageCount"
+    }),
     async searchVideo() {
-      await this.searchVideos(this.search)
+      await this.searchVideos(this.search);
+      this.videos = this.getVideos();
     },
-    async searchVideos(searchString, page = '1', countVideoOnPage = '10') {
-      try {
-        const videoServerAddress = process.env.VUE_APP_VIDEO_API;
-        const url = videoServerAddress + '/api/v1/videos/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
-        const response = await axios.get(url);
-        const data = response.data;
-
-        console.log(data)
-
-        if (Object.keys(data).includes("pageCount")) {
-          this.countPage = data.pageCount
-        }
-        if (Object.keys(data).includes("videos")) {
-          this.videos = data.videos
-          this.videos.forEach((part, index) => {
-            updateThumbnail(part, index)
-          }, this.videos);
-        }
-      } catch (error) {
-        logError(error)
-      }
+    // async searchVideo() {
+    //   await this.searchVideos(this.search)
+    // },
+    async searchVideos(searchString) {
+      await this.searchVideosByQuery({searchString: searchString});
+      // try {
+      //   const videoServerAddress = process.env.VUE_APP_VIDEO_API;
+      //   const url = videoServerAddress + '/api/v1/videos/search?page=' + page + '&limit=' + countVideoOnPage + '&search=' + searchString;
+      //   const response = await axios.get(url);
+      //   const data = response.data;
+      //
+      //   console.log(data)
+      //
+      //   if (Object.keys(data).includes("pageCount")) {
+      //     this.countPage = data.pageCount
+      //   }
+      //   if (Object.keys(data).includes("videos")) {
+      //     this.videos = data.videos
+      //     this.videos.forEach((part, index) => {
+      //       updateThumbnail(part, index)
+      //     }, this.videos);
+      //   }
+      // } catch (error) {
+      //   logError(error)
+      // }
     }
   }
 }

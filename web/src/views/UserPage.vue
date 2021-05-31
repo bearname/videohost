@@ -49,8 +49,13 @@ export default {
       getCurrentUser: "auth/getCurrentUser"
     }),
     async getAsyncVideos() {
-      await this.fetchUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage})
-      const result = this.getUserVideos()
+      console.log('start');
+      await this.fetchUserVideos({page: this.page, countVideoOnPage: this.countVideoOnPage});
+      console.log('end');
+      const result = this.getUserVideos();
+      console.log(`result`);
+      console.log(result);
+
       this.videos = result.videos
       this.countAllVideos = result.countAllVideos
     }

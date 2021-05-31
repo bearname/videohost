@@ -1,20 +1,25 @@
 import axios from "axios";
-import VideoStatus from "./videoStatus";
-import videos from "./video";
 import Cookie from "../../util/cookie";
+
+import videosUtil from "./video";
+
 import logError from "../../util/logger";
+import makeRequest from "@/api/api";
+import VideoStatus from "./videoStatus";
 
 const actions = {
     async getVideoById(context, {videoId}) {
         try {
             const url = process.env.VUE_APP_VIDEO_API + '/api/v1/videos/' + videoId;
             const response = await axios.get(url);
-
+            if (response.status !== 200) {
+                throw new Error("failed get video by id")
+            }
             const data = response.data;
             console.log(data);
             context.state.video = data;
             context.state.videoStatus = VideoStatus.intToStatus(data.status);
-            context.state.video.uploaded = videos.getElapsedString(data.uploaded);
+            context.state.video.uploaded = videosUtil.getElapsedString(data.uploaded);
         } catch (error) {
             logError(error);
         }
@@ -22,14 +27,14 @@ const actions = {
     async uploadVideo(context, {file, title, description}) {
         try {
             await context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
-            await this.submitFile(context, file, title, description);
+            await this._submitFile(context, file, title, description);
         } catch (error) {
             context.state.isProcessing = false;
             console.error(error);
             console.log('FAILURE!!');
         }
     },
-    async submitFile(context, file, title, description) {
+    async _submitFile(context, file, title, description) {
         const formData = new FormData();
         formData.append("file", file)
         formData.append("title", title)
@@ -78,7 +83,7 @@ const actions = {
     async getUserVideos(context, {page, countVideoOnPage}) {
         try {
             await context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
-            const url = process.env.VUE_APP_VIDEO_API + "/api/v1/users/" + Cookie.getCookie("username") + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
+            const url = process.env.VUE_APP_USER_API + "/api/v1/users/" + Cookie.getCookie("username") + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
             console.log(url)
 
             const config = {
@@ -87,15 +92,18 @@ const actions = {
                 }
             };
 
-            const data = await this.makeRequest(context, url, config)
-            console.log(data)
+            const data = await makeRequest(context, url, config);
+            console.log('data');
+            console.log(data);
             const {videos, countAllVideos} = data;
-            context.state.userVideos = videos
-            context.state.userVideos.forEach(videos.updateThumbnail, context.state.userVideos)
-            context.state.countUserVideos = countAllVideos
+            context.state.userVideos = videos;
+            context.state.userVideos.forEach(videosUtil.updateThumbnail, context.state.userVideos);
+            context.state.countUserVideos = countAllVideos;
+            console.log('inner end');
         } catch (error) {
-            console.log(error)
-            throw error
+            console.log(error);
+            context.state.success = false;
+            throw error;
         }
     },
     async updateTitleAndDescription(context, {videoId, name, description}) {
@@ -110,28 +118,17 @@ const actions = {
                 body: JSON.stringify({"title": name, "description": description})
             };
 
-            const data = await this.makeRequest(context, url, config)
+            const data = await makeRequest(context, url, config);
 
-            console.log(data)
+            console.log(data);
             const {success, message} = data;
-            context.state.success = success
-            context.state.message = message
+            context.state.success = success;
+            context.state.message = message;
         } catch (error) {
-            console.log(error)
-            context.state.success = false
-            throw error
+            console.log(error);
+            context.state.success = false;
+            throw error;
         }
-    },
-    async makeRequest(context, url, config) {
-        const response = await fetch(url, config);
-        if (!response.ok) {
-            if (response.status === 401) {
-                await context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true})
-            } else {
-                throw new Error("Cannot update")
-            }
-        }
-        return response.json();
     },
     async deleteVideoPermanent(context, {videoId}) {
         try {
@@ -143,17 +140,17 @@ const actions = {
                     'Authorization': context.rootGetters["auth/getTokenHeader"]
                 }
             };
-            const data = await this.makeRequest(context, url, config)
+            const data = await makeRequest(context, url, config);
 
-            console.log(data)
+            console.log(data);
             const {success, message} = data;
 
-            context.state.success = !success
-            context.state.message = message
+            context.state.success = !success;
+            context.state.message = message;
         } catch (error) {
-            console.log(error)
-            context.state.success = true
-            throw error
+            console.log(error);
+            context.state.success = false;
+            throw error;
         }
     },
     async searchVideos(context, {searchString, page = '1', countVideoOnPage = '10'}) {
@@ -163,15 +160,15 @@ const actions = {
             const response = await axios.get(url);
 
             let data = response.data;
-            console.log(data)
+            console.log(data);
 
             if (Object.keys(data).includes("pageCount")) {
-                this.countPage = data.pageCount
+                this.countPage = data.pageCount;
             }
             if (Object.keys(data).includes("videos")) {
-                context.state.userVideos = data.videos
-                context.state.userVideos.forEach(videos.updateThumbnail, context.state.userVideos)
-                context.state.countUserVideos = data.countAllVideos
+                context.state.userVideos = data.videos;
+                context.state.userVideos.forEach(videosUtil.updateThumbnail, context.state.userVideos);
+                context.state.countUserVideos = data.countAllVideos;
             }
         } catch (error) {
             logError(error);

@@ -328,6 +328,7 @@ export default {
           window.event.returnValue = false;
         });
       }
+      this.videoWrapperElement.addEventListener('click', this.togglePlayPause, false);
       this.statsOfNerdsElement.addEventListener('click', this.showStatsOfNerds, false)
       this.keyboardHelpElement.addEventListener('click', this.showKeyboardHelp, false)
     },

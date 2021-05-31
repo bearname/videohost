@@ -151,7 +151,7 @@ func (r *VideoRepository) IncrementViews(id string) bool {
 	return true
 }
 
-func (r *VideoRepository) FindUserVideos(userId string, dto *dto.SearchDto) ([]model.VideoListItem, error) {
+func (r *VideoRepository) FindUserVideos(userId string, dto dto.SearchDto) ([]model.VideoListItem, error) {
 	offset := (dto.Page) * dto.Count
 	query := "SELECT video.id_video, title, duration, thumbnail_url, uploaded, views, status, quality FROM video  WHERE owner_id=?  LIMIT ?, ?;"
 	rows, err := r.connector.GetDb().Query(query, userId, offset, dto.Count)

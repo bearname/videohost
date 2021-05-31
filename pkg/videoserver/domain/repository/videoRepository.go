@@ -10,7 +10,7 @@ type VideoRepository interface {
 	Save(video *model.Video) error
 	Find(videoId string) (*model.Video, error)
 	FindVideosByPage(page int, count int) ([]model.VideoListItem, error)
-	FindUserVideos(userId string, dto *dto.SearchDto) ([]model.VideoListItem, error)
+	FindUserVideos(userId string, dto dto.SearchDto) ([]model.VideoListItem, error)
 	Update(videoId string, title string, description string) error
 	Delete(videoId string) error
 	GetPageCount(countVideoOnPage int) (int, bool)

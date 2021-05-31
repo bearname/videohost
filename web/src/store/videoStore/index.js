@@ -8,7 +8,6 @@ const state = {
     error: false,
     video: null,
     videos: null,
-
     userVideos: null,
     pageCount: 0,
     countUserVideos: 0,
