@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS video.schema_migrations;
