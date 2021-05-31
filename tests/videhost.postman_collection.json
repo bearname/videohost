@@ -1,0 +1,464 @@
+{
+	"info": {
+		"_postman_id": "26641df9-b305-490f-bdd5-d0c749324f16",
+		"name": "videhost",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "validate token",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2MjIzMjcyMTIsInJvbGUiOjAsInVzZXJJZCI6IjJiM2QxYjc2LWJjNmEtMTFlYi04YjM0LWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoiYWRtaW4ifQ.jdjyqazXmuklpHGyv351lljlqPnUTQXs3jaZrHdGe5U",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8001/api/v1/auth/token/validate",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"token",
+						"validate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get new token",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzcyMDQ5NzQsInJvbGUiOjEsInVzZXJJZCI6IjJiM2QxYjc2LWJjNmEtMTFlYi04YjM0LWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoiYWRtaW4ifQ.AIJnoxwVudeqFuI8EkB61kp5Nawisl_y8AL8H5Seij8",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8001/api/v1/auth/token",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get user videos",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2MjE0NzEzMTEsInJvbGUiOjEsInVzZXJJZCI6IjEyM2Y1MjNkLWI5MDItMTFlYi05ZjA2LWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.iP3D-lTCMMgpxiB_EMQ1_XUVBIYqk5ciHzRmn1PidTM",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/api/v1/users/mikha/videos?page=1&countVideoOnPage=10",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"mikha",
+						"videos"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "countVideoOnPage",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getUser",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2MjE4OTk3NjQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.ekyxkr_qDyB5TSQ935yZyb83TqDO3NF_objeOCjXHwU",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8001/api/v1/users/cfaff592-b933-11eb-b073-e4e74940035b",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"cfaff592-b933-11eb-b073-e4e74940035b"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"admin\",\r\n    \"password\": \"admin\",\r\n    \"email\": \"admin@gmail.com\",\r\n    \"isSbuscribed\": false\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8001/api/v1/auth/create-user",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"create-user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getUserToken",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"admin\",\r\n    \"password\": \"admin\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8001/api/v1/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "updatePassword",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2MjE0NjkzMjksInJvbGUiOjEsInVzZXJJZCI6IjVhYmI3OWI0LWI4ZmQtMTFlYi1hMTM4LWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.qmAviDm7Z_PfA6XSt49SISTp9nzzQd0oNr5mPry3MEc",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"mikha\",\r\n    \"oldPassword\": \"123\",\r\n    \"newPassword\": \"mikha\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8001/api/v1/auth/updatePassword",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"updatePassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get video",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/v1/videos/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"videos",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "upload video",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/C:/Users/mikha/Downloads/Black Mirror _ Season 4 Episode Titles _ Netflix.mp4"
+						},
+						{
+							"key": "title",
+							"value": "black mirror season 4 episode titles",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "black mirror season 4 episode titles",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/v1/videos/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"videos",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update title and description",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2MjIyNDUzMTksInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.XD15i6o3R7oiBzC41htPzJXGgIE8ceEBvcXkbiQ3j7c",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"title\": \"Black Mirror trailer season 4\",\r\n    \"description\": \"In an abstrusely dystopian future, several individuals grapple with the manipulative effects of cutting edge technology in their personal lives and behaviours.\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/v1/videos/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"videos",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add quality",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzcyMDQ5NzQsInJvbGUiOjEsInVzZXJJZCI6IjJiM2QxYjc2LWJjNmEtMTFlYi04YjM0LWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoiYWRtaW4ifQ.AIJnoxwVudeqFuI8EkB61kp5Nawisl_y8AL8H5Seij8",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"quality\": \"1080\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/v1/videos/1/add-quality",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"videos",
+						"1",
+						"add-quality"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete video",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/api/v1/videos/bd5c7cd4-bf71-11eb-b944-e4e74940035b",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"videos",
+						"bd5c7cd4-bf71-11eb-b944-e4e74940035b"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "search video",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/v1/videos/search?page=1&limit=10&search=black",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"videos",
+						"search"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "limit",
+							"value": "10"
+						},
+						{
+							"key": "search",
+							"value": "black"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "https://video-host-bucket-1.s3-eu-north-1.amazonaws.com/Black",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://video-host-bucket-1.s3-eu-north-1.amazonaws.com/Black",
+					"protocol": "https",
+					"host": [
+						"video-host-bucket-1",
+						"s3-eu-north-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"Black"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
