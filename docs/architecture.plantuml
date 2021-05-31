@@ -1,0 +1,529 @@
+@startuml
+namespace amqp {
+    interface ConsumerVisitor  {
+        + Handle(message string) error
+
+    }
+    interface MessageBroker  {
+        + Publish(exchange string, routingKey string, body string) error
+        + Consume(exchange string, routingKey string, handler ConsumerVisitor) 
+
+    }
+    class RabbitMqService << (S,Aquamarine) >> {
+        - url string
+
+        - handleMessage(data amqp.Delivery, handler ConsumerVisitor) 
+
+        + Publish(exchange string, routingKey string, body string) error
+        + Consume(exchange string, routingKey string, handler ConsumerVisitor) 
+
+    }
+}
+
+"amqp.MessageBroker" <|-- "amqp.RabbitMqService"
+
+namespace caching {
+    interface Cache  {
+        + Get(key string) (string, error)
+        + Set(key string, value string) error
+        + Del(key string) error
+
+    }
+    class RedisCache << (S,Aquamarine) >> {
+        - client *redis.Client
+
+        + Get(key string) (string, error)
+        + Set(key string, value string) error
+        + Del(key string) error
+
+    }
+}
+
+"caching.Cache" <|-- "caching.RedisCache"
+
+namespace controller {
+    class AuthController << (S,Aquamarine) >> {
+        - authService domain.AuthService
+
+        + CreateUser(writer http.ResponseWriter, request *http.Request) 
+        + Login(writer http.ResponseWriter, request *http.Request) 
+        + RefreshToken(writer http.ResponseWriter, request *http.Request) 
+        + CheckTokenHandler(next http.HandlerFunc) http.HandlerFunc
+        + ValidateToken(writer http.ResponseWriter, request *http.Request) 
+
+    }
+    class BaseController << (S,Aquamarine) >> {
+        + ParseMuxVariable(request *http.Request, keys []string) ([]string, error)
+        + AllowCorsRequest(writer *http.ResponseWriter) 
+        + JsonResponse(writer http.ResponseWriter, data <font color=blue>interface</font>{}) 
+        + WriteResponse(w *http.ResponseWriter, statusCode int, success bool, message string) 
+        + WriteResponseData(w http.ResponseWriter, data <font color=blue>interface</font>{}) 
+
+    }
+    class StreamController << (S,Aquamarine) >> {
+        - streamService service.StreamServiceImpl
+
+        + StreamHandler(writer http.ResponseWriter, request *http.Request) 
+
+    }
+    class UserController << (S,Aquamarine) >> {
+        - userRepository repository.UserRepository
+        - userService service.UserService
+        - videoRepository repository.VideoRepository
+
+        + GetUser(writer http.ResponseWriter, request *http.Request) 
+        + UpdatePassword(writer http.ResponseWriter, request *http.Request) 
+        + GetUserVideos(writer http.ResponseWriter, request *http.Request) 
+
+    }
+    class VideoController << (S,Aquamarine) >> {
+        - videoRepository repository.VideoRepository
+        - messageBroker amqp.MessageBroker
+        - videoService service.VideoServiceImpl
+
+        - responseVideoListItems(writer http.ResponseWriter, pageCount int, videos []model.VideoListItem) 
+
+        + GetVideo() <font color=blue>func</font>(http.ResponseWriter, *http.Request) 
+        + GetVideos() <font color=blue>func</font>(http.ResponseWriter, *http.Request) 
+        + UploadVideo() <font color=blue>func</font>(http.ResponseWriter, *http.Request) 
+        + UpdateTitleAndDescription() <font color=blue>func</font>(http.ResponseWriter, *http.Request) 
+        + DeleteVideo() <font color=blue>func</font>(http.ResponseWriter, *http.Request) 
+        + SearchVideo() <font color=blue>func</font>(http.ResponseWriter, *http.Request) 
+        + IncrementViews() <font color=blue>func</font>(http.ResponseWriter, *http.Request) 
+        + AddQuality() <font color=blue>func</font>(http.ResponseWriter, *http.Request) 
+
+    }
+}
+"controller.BaseController" *-- "controller.AuthController"
+"controller.BaseController" *-- "controller.StreamController"
+"controller.BaseController" *-- "controller.UserController"
+"controller.BaseController" *-- "controller.VideoController"
+
+
+namespace database {
+    interface Connector  {
+        + GetDb() *sql.DB
+        + Connect() error
+        + Close() error
+        + ExecTransaction(query string, args ...<font color=blue>interface</font>{}) error
+
+    }
+}
+
+
+namespace domain {
+    interface AuthService  {
+        + CreateUser(requestBody io.ReadCloser) (util.Token, error, int)
+        + Login(requestBody io.ReadCloser) (util.Token, error, int)
+        + ValidateToken(authorizationHeader string) (dto.UserDto, int)
+        + RefreshToken(request *http.Request) (util.Token, error, int)
+
+    }
+    class MailMessage << (S,Aquamarine) >> {
+        + Sender User
+        + To []User
+        + Subject string
+        + HtmlContent string
+
+    }
+    interface MailSender  {
+        + Send(from User, to User, subject string, body string) error
+
+    }
+    class Quality << (S,Aquamarine) >> {
+        + String() string
+        + Values() int
+
+    }
+    class Resolution << (S,Aquamarine) >> {
+        - width int
+        - height int
+
+        + String() string
+
+    }
+    interface ScalerService  {
+        + PrepareToStream(videoId string, inputVideoPath string, allNeededQualities []Quality, ownerId string) bool
+
+    }
+    interface StreamService  {
+        + ServeHlsM3u8(w http.ResponseWriter, r *http.Request, videoId string, m3u8Name string) 
+        + ServeHlsTs(w http.ResponseWriter, r *http.Request, segName string, videoId string) 
+
+    }
+    class User << (S,Aquamarine) >> {
+        + Name string
+        + Email string
+
+    }
+    interface UserService  {
+        + Find(usernameOrId string) (dto.FindUserDto, error)
+        + UpdatePassword(request *http.Request) error
+
+    }
+    interface VideoService  {
+        + FindVideo(videoId string) (*model.Video, error)
+        + UploadVideo(userId string, videoDto *dto.UploadVideoDto) (uuid.UUID, error)
+        + UpdateTitleAndDescription(userDto dto.UserDto, videoId string, videoDto dto.VideoMetadata) error
+        + AddQuality(videoId string, userDto dto.UserDto, quality model.Quality) error
+        + DeleteVideo(userDto dto.UserDto, videoId string) error
+        + FindVideoOnPage(searchDto *dto.SearchDto) (dto.SearchResultDto, error)
+
+    }
+    class domain.Quality << (T, #FF7700) >>  {
+    }
+}
+
+
+namespace dto {
+    class ChangePasswordUserDto << (S,Aquamarine) >> {
+        + Username string
+        + NewPassword string
+        + OldPassword string
+
+    }
+    class FindUserDto << (S,Aquamarine) >> {
+        + Email string
+        + Username string
+        + IsSubscribed bool
+        + Role int
+
+    }
+    class LoginUserDto << (S,Aquamarine) >> {
+        + Username string
+        + Password string
+
+    }
+    class SearchDto << (S,Aquamarine) >> {
+        + Page int
+        + Count int
+        + SearchString string
+
+    }
+    class SearchResultDto << (S,Aquamarine) >> {
+        + Videos []model.VideoListItem
+        + PageCount int
+
+    }
+    class SignupUserDto << (S,Aquamarine) >> {
+        + Username string
+        + Password string
+        + Email string
+        + IsSubscribed bool
+
+    }
+    class UploadVideoDto << (S,Aquamarine) >> {
+        + Title string
+        + Description string
+        + MultipartFile multipart.File
+        + FileHeader *multipart.FileHeader
+
+    }
+    class UserDto << (S,Aquamarine) >> {
+        + Username string
+        + UserId string
+        + Ok bool
+        + Role int
+        + Token string
+
+    }
+    class VideoMetadata << (S,Aquamarine) >> {
+        + Title string
+        + Description string
+
+    }
+}
+
+
+namespace ftp {
+    class Client << (S,Aquamarine) >> {
+        - client *ftp.ServerConn
+
+        + CopyFile(videoId string, r io.Reader) error
+        + RemoveDirRecur(path string) error
+        + RemoveDir(path string) error
+
+    }
+}
+
+
+namespace intrastructure {
+    class EmailSendConsumer << (S,Aquamarine) >> {
+        - mailSender domain.MailSender
+        - token *util.Token
+
+        + Handle(message string) error
+
+    }
+}
+
+"amqp.ConsumerVisitor" <|-- "intrastructure.EmailSendConsumer"
+
+namespace model {
+    class DSN << (S,Aquamarine) >> {
+        + Address string
+        + Username string
+        + Password string
+        + DB string
+
+    }
+    class Quality << (S,Aquamarine) >> {
+        + Value int
+
+    }
+    class Role << (S,Aquamarine) >> {
+        + String() string
+        + Values() int
+
+    }
+    class Task << (S,Aquamarine) >> {
+        + Id string
+        + Url string
+
+    }
+    class User << (S,Aquamarine) >> {
+        + Id int
+        + Key string
+        + Username string
+        + Password []byte
+        + Email string
+        + IsSubscribed bool
+        + Created string
+        + Role Role
+        + Secret string
+        + AccessToken string
+        + RefreshToken string
+
+    }
+    class Video << (S,Aquamarine) >> {
+        + Id string
+        + Name string
+        + Description string
+        + Duration int
+        + OwnerId string
+        + Thumbnail string
+        + Status string
+        + Url string
+        + Uploaded string
+        + Quality string
+        + Views string
+
+    }
+    class VideoListItem << (S,Aquamarine) >> {
+        + Id string
+        + Name string
+        + Duration int
+        + Thumbnail string
+        + Uploaded string
+        + Views string
+        + Status int
+        + Quality string
+
+    }
+    class model.Role << (T, #FF7700) >>  {
+    }
+}
+
+
+namespace mysql {
+    class ConnectorImpl << (S,Aquamarine) >> {
+        - database *sql.DB
+
+        + GetDb() *sql.DB
+        + Connect() error
+        + Close() error
+        + ExecTransaction(query string, args ...<font color=blue>interface</font>{}) error
+
+    }
+    class UserRepository << (S,Aquamarine) >> {
+        - connector database.Connector
+
+        + CreateUser(key string, username string, password []byte, email string, isSubscribed bool, role model.Role, accessToken string, refreshToken string) error
+        + FindById(userId string) (model.User, error)
+        + FindByUserName(username string) (model.User, error)
+        + UpdatePassword(username string, password []byte) bool
+        + UpdateAccessToken(username string, token string) bool
+        + UpdateRefreshToken(username string, token string) bool
+        + GetCountVideos(userId string) (int, bool)
+
+    }
+    class VideoRepository << (S,Aquamarine) >> {
+        - connector database.Connector
+
+        - getVideoListItem(rows *sql.Rows, err error) ([]model.VideoListItem, error)
+
+        + Create(userId string, videoId string, title string, description string, url string) error
+        + Save(video *model.Video) error
+        + Find(videoId string) (*model.Video, error)
+        + Update(videoId string, title string, description string) error
+        + Delete(videoId string) error
+        + FindVideosByPage(page int, count int) ([]model.VideoListItem, error)
+        + GetPageCount(countVideoOnPage int) (int, bool)
+        + AddVideoQuality(videoId string, quality string) error
+        + SearchVideo(searchString string, page int, count int) ([]model.VideoListItem, error)
+        + IncrementViews(id string) bool
+        + FindUserVideos(userId string, dto *dto.SearchDto) ([]model.VideoListItem, error)
+
+    }
+}
+
+"database.Connector" <|-- "mysql.ConnectorImpl"
+"repository.UserRepository" <|-- "mysql.UserRepository"
+"repository.VideoRepository" <|-- "mysql.VideoRepository"
+
+namespace repository {
+    interface UserRepository  {
+        + CreateUser(key string, username string, password []byte, email string, isSubscribed bool, role model.Role, accessToken string, refreshToken string) error
+        + FindById(userId string) (model.User, error)
+        + FindByUserName(username string) (model.User, error)
+        + UpdatePassword(username string, password []byte) bool
+        + UpdateAccessToken(username string, token string) bool
+        + UpdateRefreshToken(username string, token string) bool
+        + GetCountVideos(userId string) (int, bool)
+
+    }
+    interface VideoRepository  {
+        + Create(userId string, videoId string, title string, description string, url string) error
+        + Save(video *model.Video) error
+        + Find(videoId string) (*model.Video, error)
+        + FindVideosByPage(page int, count int) ([]model.VideoListItem, error)
+        + FindUserVideos(userId string, dto *dto.SearchDto) ([]model.VideoListItem, error)
+        + Update(videoId string, title string, description string) error
+        + Delete(videoId string) error
+        + GetPageCount(countVideoOnPage int) (int, bool)
+        + AddVideoQuality(videoId string, quality string) error
+        + IncrementViews(videoId string) bool
+        + SearchVideo(searchString string, page int, count int) ([]model.VideoListItem, error)
+
+    }
+}
+
+
+namespace service {
+    class AuthServiceImpl << (S,Aquamarine) >> {
+        - userRepo repository.UserRepository
+
+        - parsePayload(ok bool, token *jwt.Token) (string, string, bool)
+        - isEmailValid(e string) bool
+
+        + CreateUser(requestBody io.ReadCloser) (util.Token, error, int)
+        + Login(requestBody io.ReadCloser) (util.Token, error, int)
+        + ValidateToken(authorizationHeader string) (dto.UserDto, int)
+        + RefreshToken(request *http.Request) (util.Token, error, int)
+
+    }
+    class CatalogVideoParser << (S,Aquamarine) >> {
+        + Parse(request *http.Request) (<font color=blue>interface</font>{}, error)
+
+    }
+    interface RequestParser  {
+        + Parse(r *http.Request) (<font color=blue>interface</font>{}, error)
+
+    }
+    class ScalerServiceImpl << (S,Aquamarine) >> {
+        - videoRepo repository.VideoRepository
+        - messageBroker *amqp.RabbitMqService
+        - token *util.Token
+
+        - prepareToStreamByQuality(videoId string, inputVideoPath string, extension string, quality domain.Quality, ownerId string) 
+        - addVideoQuality(videoId string, quality domain.Quality) bool
+        - getResultMessage(quality bool) string
+        - scaleVideoToQuality(inputVideoPath string, extension string, quality domain.Quality) error
+        - getDimension(split []string, key string) (int, bool)
+        - prepareToStream(videoPath string, output string, quality domain.Quality) error
+        - getOutputVideoPath(videoPath string, extension string, quality domain.Quality) string
+
+        + PrepareToStream(videoId string, inputVideoPath string, allNeededQualities []domain.Quality, ownerId string) bool
+
+    }
+    class SearchVideoParser << (S,Aquamarine) >> {
+        + Parse(request *http.Request) (<font color=blue>interface</font>{}, error)
+
+    }
+    class SendInBlueMailSender << (S,Aquamarine) >> {
+        - apiKey string
+
+        + Send(from domain.User, to domain.User, subject string, content string) error
+
+    }
+    class StreamServiceImpl << (S,Aquamarine) >> {
+        - getMediaBase(id string) string
+
+        + ServeHlsM3u8(w http.ResponseWriter, r *http.Request, videoId string, m3u8Name string) 
+        + ServeHlsTs(w http.ResponseWriter, r *http.Request, segName string, videoId string) 
+
+    }
+    class UploadVideoRequestParser << (S,Aquamarine) >> {
+        + Parse(request *http.Request) (<font color=blue>interface</font>{}, error)
+
+    }
+    class UserService << (S,Aquamarine) >> {
+        - userRepo repository.UserRepository
+
+        - isUUID(uuid string) bool
+
+        + Find(usernameOrId string) (dto.FindUserDto, error)
+        + UpdatePassword(request *http.Request) error
+
+    }
+    class VideoScaleVisitor << (S,Aquamarine) >> {
+        - videoScaleService domain.ScalerService
+        - videoRepo repository.VideoRepository
+        - qualities []domain.Quality
+
+        - getResultMessage(ok bool) string
+
+        + Handle(message string) error
+
+    }
+    class VideoServiceImpl << (S,Aquamarine) >> {
+        - videoRepo repository.VideoRepository
+        - messageBroker amqp.MessageBroker
+        - cache caching.Cache
+
+        - readFromCache(videoId string) (*model.Video, error)
+        - writeToCache(videoId string, video *model.Video) error
+        - checkOwner(userDto dto.UserDto, videoId string) (*model.Video, error)
+
+        + FindVideo(videoId string) (*model.Video, error)
+        + UploadVideo(userId string, videoDto *dto.UploadVideoDto) (uuid.UUID, error)
+        + UpdateTitleAndDescription(userDto dto.UserDto, videoId string, videoDto dto.VideoMetadata) error
+        + AddQuality(videoId string, userDto dto.UserDto, quality model.Quality) error
+        + DeleteVideo(userDto dto.UserDto, videoId string) error
+        + FindVideoOnPage(searchDto *dto.SearchDto) (dto.SearchResultDto, error)
+
+    }
+}
+
+"domain.AuthService" <|-- "service.AuthServiceImpl"
+"service.RequestParser" <|-- "service.CatalogVideoParser"
+"domain.ScalerService" <|-- "service.ScalerServiceImpl"
+"service.RequestParser" <|-- "service.SearchVideoParser"
+"domain.MailSender" <|-- "service.SendInBlueMailSender"
+"domain.StreamService" <|-- "service.StreamServiceImpl"
+"service.RequestParser" <|-- "service.UploadVideoRequestParser"
+"domain.UserService" <|-- "service.UserService"
+"amqp.ConsumerVisitor" <|-- "service.VideoScaleVisitor"
+"domain.VideoService" <|-- "service.VideoServiceImpl"
+
+namespace transport {
+    class Response << (S,Aquamarine) >> {
+        + Success bool
+        + Message string
+
+    }
+}
+
+
+namespace util {
+    class Token << (S,Aquamarine) >> {
+        + AccessToken string
+        + RefreshToken string
+
+    }
+}
+
+
+"__builtin__.int" #.. "domain.Quality"
+"__builtin__.int" #.. "model.Role"
+@enduml
