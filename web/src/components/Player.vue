@@ -12,6 +12,7 @@
           </div>
           <div id="progressBarCircle" class="progress-bar-circle"></div>
           <div>
+            <div id="thumbnail-wrapper" class="thumbnail-wrapper hide"><img id="thumbnail" src="" alt="preview"/></div>
             <span id="showHoverTime" class="hide"></span>
             <span class="player-controls-item">
               <button
@@ -91,7 +92,6 @@
         </div>
         <div id="submenu" class="stats-show hide"></div>
       </div>
-      <div class="thumbnail-wrapper"><img id="thumbnail" src="" alt="preview"/></div>
     </div>
     <div v-else>
       Video not available
@@ -121,7 +121,9 @@ const USER_HELP = [
     message: 'Activate full screen. If full screen mode is enabled, activate F again or press escape to exit full screen mode.'
   },
 ]
-
+const PREVIEW_WIDTH = 256;
+const PREVIEW_HEIGHT = 144;
+const TILE_SIZE = {x: 5, y: 5}
 export default {
   name: "Player",
   props: [
@@ -157,8 +159,8 @@ export default {
       hls: null,
       isPause: false,
       videoElement: null,
-      thumbnailElement: null,
-      thumbnails: [],
+      previewImageElement: null,
+      previewImageWrapperElement: null,
       playbackSpeed: null,
       isFullScreen: false,
       bufferingIdx: null,
@@ -194,12 +196,16 @@ export default {
       showSetting: false,
       isLoopedVideo: false,
       prevSeekTime: 0,
+      previousImageIndex: 0,
+      previewImages: [],
     }
   },
-  mounted() {
-    for (let i = 0; i < this.duration / 25; i++) {
-      this.thumbnails.push('http://localhost:8000/content/' + this.videoId + "/output-" + i + ".png")
+  async mounted() {
+    const thumbnails = [];
+    for (let i = 0; i < this.duration / (TILE_SIZE.x * TILE_SIZE.y); i++) {
+      thumbnails.push(process.env.VUE_APP_VIDEO_API + '/content/' + this.videoId + "/output-" + i + ".png");
     }
+    await this.preloadPreviewImages(thumbnails);
 
     this.initPlayer()
     this.initKeyHandler()
@@ -216,6 +222,23 @@ export default {
       getVideos: "video/getVideos",
       getPageCount: "video/getPageCount"
     }),
+    async preloadPreviewImages(array) {
+      if (!this.previewImages) {
+        this.previewImages = [];
+      }
+
+      for (let i = 0; i < array.length; i++) {
+        let img = new Image();
+        img.onload = function () {
+          let index = this.previewImages.indexOf(i);
+          if (index !== -1) {
+            this.previewImages.splice(index, 1);
+          }
+        }
+        this.previewImages.push(img);
+        img.src = array[i];
+      }
+    },
     async fetchVideosByPage(page, countVideoOnPage) {
       await this.getVideoOnPage(page, countVideoOnPage);
       this.videos = this.getVideos();
@@ -238,7 +261,8 @@ export default {
     initVideoElement() {
       this.videoWrapperElement = document.getElementById('videoWrapper');
       this.videoElement = document.getElementById('video');
-      this.thumbnailElement = document.getElementById('thumbnail');
+      this.previewImageElement = document.getElementById('thumbnail');
+      this.previewImageWrapperElement = document.getElementById('thumbnail-wrapper');
       this.seekRequestTime()
     },
     seekRequestTime() {
@@ -294,9 +318,8 @@ export default {
     },
     addEventListenerOnVideoElement() {
       this.videoElement.addEventListener('click', () => {
-        this.contextMenuElement.classList.add('hide')
-        this.submenuShowElement.classList.add('hide')
-        this.submenuShowElement.classList.add('hide')
+        this.hideElement(this.contextMenuElement);
+        this.hideElement(this.submenuShowElement);
         this.togglePlayPause()
       })
 
@@ -312,7 +335,7 @@ export default {
     },
     addEventListenerOnProgressBar() {
       this.progressBarWrapperElement.addEventListener('mousemove', this.onHoverProgressBar, false)
-      this.progressBarWrapperElement.addEventListener('mouseout', this.hideShowTime, false)
+      this.progressBarWrapperElement.addEventListener('mouseout', this.onMouseOutProgressBar, false)
     },
     addEventListenerOnSettingMenu() {
       this.settingButtonElement.addEventListener('click', this.toggleSettingPopup, false)
@@ -415,26 +438,26 @@ export default {
     },
     toggleFullScreenOnVideoElement() {
       if (!this.isFullScreen) {
-        this.changePlayerSizeButton.classList.add('hide')
+        this.hideElement(this.changePlayerSizeButton);
         this.isFullScreen = true;
-        this.toggleFullScreenElement.setAttribute('title', "Full screen")
+        this.toggleFullScreenElement.setAttribute('title', "Full screen");
       } else {
         this.isFullScreen = false;
-        this.changePlayerSizeButton.classList.remove('hide')
+        this.unHideElement(this.changePlayerSizeButton);
         this.toggleFullScreenElement.setAttribute('title', "Exit full screen")
       }
     },
     togglePlayerSize() {
       if (this.isMedium) {
-        this.isMedium = false
-        this.videoWrapperElement.classList.remove('player-medium')
-        this.videoWrapperElement.classList.add('player-big')
-        this.changePlayerSizeButton.setAttribute('title', 'Theater mode')
+        this.isMedium = false;
+        this.removeCss(this.videoWrapperElement, 'player-medium');
+        this.addCss(this.videoWrapperElement, 'player-big');
+        this.changePlayerSizeButton.setAttribute('title', 'Theater mode');
       } else {
-        this.isMedium = true
-        this.videoWrapperElement.classList.add('player-big')
-        this.videoWrapperElement.classList.add('player-medium')
-        this.changePlayerSizeButton.setAttribute('title', 'Default view')
+        this.isMedium = true;
+        this.addCss(this.videoWrapperElement, 'player-medium');
+        this.removeCss(this.videoWrapperElement, 'player-big');
+        this.changePlayerSizeButton.setAttribute('title', 'Default view');
       }
     },
     changeQuality() {
@@ -563,38 +586,30 @@ export default {
       btn.className = value;
     },
     onHoverProgressBar(event) {
-      let seekTime = this.getEventMouseTime(event);
+      const boundingClientRect = this.progressBarWrapperElement.getBoundingClientRect();
 
-      const number = parseInt(seekTime);
-      console.log(number);
-      if (this.prevSeekTime === number) {
+      const seekTime = this.getEventMouseTime(event);
+      if (this.prevSeekTime === seekTime) {
         return;
       }
+      this.setNewPreviewImageIfNeeded(seekTime)
 
-      let boundingClientRect = this.progressBarWrapperElement.getBoundingClientRect();
-      let x = event.x - boundingClientRect.x;
-      this.prevSeekTime = number;
-      const thumbnail = this.thumbnails[parseInt(number / 25)];
-      const seconds = number % 25;
-      const thumbY = parseInt(seconds / 5);
-      const thumbX = parseInt(seconds % 5);
-      console.log(thumbY + " " + thumbX);
+      this.prevSeekTime = seekTime;
+      const offsetX = event.x - boundingClientRect.x;
 
-      this.thumbnailElement.style.transform = 'translate(-' + 256 * thumbX + 'px, -' + 144 * thumbY + 'px);'
-      this.thumbnailElement.src = thumbnail;
+      const point = this.getPreviewImageOffset(seekTime);
+      this.changePreviewImage(point.x, point.y, offsetX, boundingClientRect)
 
-      this.showHoverTimeElement.style.left = x - 15 + 'px';
-      this.showHoverTimeElement.style.top = -20 + 'px';
-      this.showHoverTimeElement.classList.remove('hide');
-      this.showHoverTimeElement.innerText = this.formatTimeString(seekTime);
+      this.changeHoverTimeElement(seekTime, offsetX)
     },
     getEventMouseTime(event) {
-      let boundingClientRect = this.progressBarWrapperElement.getBoundingClientRect();
+      const boundingClientRect = this.progressBarWrapperElement.getBoundingClientRect();
 
-      return (event.pageX - boundingClientRect.left) * this.duration / boundingClientRect.width;
+      return parseInt((event.pageX - boundingClientRect.left) * this.duration / boundingClientRect.width);
     },
-    hideShowTime() {
-      this.showHoverTimeElement.classList.add('hide');
+    onMouseOutProgressBar() {
+      this.hideElement(this.previewImageWrapperElement);
+      this.hideElement(this.showHoverTimeElement)
     },
     onVideoStop() {
       this.videoControlElement.style.transform = 'translateY(-20px)';
@@ -615,9 +630,8 @@ export default {
     },
     toggleSettingPopup() {
       let boundingClientRect = this.settingButtonElement.getBoundingClientRect();
-      this.settingsPopupElement.style.top = boundingClientRect.top - 300;
-      this.settingsPopupElement.style.left = boundingClientRect.left + 100;
-      this.settingsPopupElement.classList.toggle('hide');
+      this.setElemPosition(this.settingsPopupElement, {left:  boundingClientRect.left + 100, top: boundingClientRect.top - 300})
+      this.toggleHideElement(this.settingsPopupElement);
     },
     toggleLoop() {
       if (!this.isLoopedVideo) {
@@ -638,7 +652,7 @@ export default {
     },
     toggleContextMenu(e) {
       e.preventDefault();
-      this.contextMenuElement.classList.toggle('hide');
+      this.toggleHideElement(this.contextMenuElement);
     },
     videoReplay() {
       this.currentTime = 0;
@@ -664,7 +678,7 @@ export default {
       this.toggleShowPopup(this.submenuShowElement, innerHtml);
     },
     toggleShowPopup(element, innerHtml) {
-      element.classList.toggle('hide');
+      this.toggleHideElement(element);
       this.submenuShowElement.innerHTML = innerHtml;
     },
     volumeUp(event) {
@@ -752,9 +766,9 @@ export default {
             console.log(keyElement);
 
             if ((s === 'Numpad' || s === 'Digit') && keyElement >= '0' && keyElement <= '9') {
-              const number = parseInt(keyElement);
-              console.log(number / 10);
-              const shift = this.duration * (number / 10);
+              const percent = parseInt(keyElement);
+              console.log(percent / 10);
+              const shift = this.duration * (percent / 10);
               console.log('shift');
               console.log(shift);
               this.setCurrentTime(shift);
@@ -778,6 +792,71 @@ export default {
           '<p>Bitrate: ' + Math.round(hls.levels[hls.currentLevel].bitrate / 1000) + '</p>' +
           '<p>Latency: ' + this.hls.latency.toFixed(3) + '</p>' +
           '<p>Drift: ' + this.hls.drift.toFixed(3) + '  (edge advance rate)</p>';
+    },
+    setNewPreviewImageIfNeeded(seekTime) {
+      const currentImageIndex = parseInt(seekTime / (TILE_SIZE.x + TILE_SIZE.y));
+      if (this.previousImageIndex !== currentImageIndex) {
+        this.previousImageIndex = currentImageIndex;
+        this.previewImageElement.src = this.previewImages[this.previousImageIndex].src;
+      }
+    },
+    changePreviewImage(thumbX, thumbY, offsetX, boundingRect) {
+      this.previewImageElement.style.transform = "translate(-" + PREVIEW_WIDTH * thumbX + "px, -" + PREVIEW_HEIGHT * thumbY + "px)";
+      const offset = this.calculatePreviewImageOffset(offsetX, boundingRect)
+
+      this.setElemPosition(this.previewImageWrapperElement, {left:   offset.left, top:offset.top })
+
+      this.unHideElement(this.previewImageWrapperElement);
+    },
+    getPreviewImageOffset(seekTime) {
+      const seconds = seekTime % (TILE_SIZE.x + TILE_SIZE.y);
+      const thumbY = parseInt(seconds / TILE_SIZE.y);
+      const thumbX = parseInt(seconds % TILE_SIZE.x);
+      return {x: thumbX, y: thumbY}
+    },
+    changeHoverTimeElement(seekTime, x) {
+      this.showHoverTimeElement.style.left = x - 15 + 'px';
+      this.showHoverTimeElement.style.top = -20 + 'px';
+      this.setElemPosition(this.showHoverTimeElement, {left:  x - 15 + 'px', top:  -20  })
+
+      this.unHideElement(this.showHoverTimeElement);
+      this.showHoverTimeElement.innerText = this.formatTimeString(seekTime);
+    },
+
+    calculatePreviewImageOffset(offsetX, boundingRect) {
+      let x = offsetX;
+      const centerX = PREVIEW_WIDTH/ 2;
+      const leftX = boundingRect.x + centerX - 50;
+      const rightX = boundingRect.x + boundingRect.width - PREVIEW_WIDTH - 50;
+
+      if (x > leftX && x < rightX) {
+        x -= centerX;
+      } else if (x <= leftX) {
+        x += 0;
+      } else if (x >= rightX) {
+        x -= PREVIEW_WIDTH;
+      }
+
+      return {left: x, top: -PREVIEW_HEIGHT - 20}
+    },
+    hideElement(element) {
+      this.addCss(element, 'hide')
+    },
+    unHideElement(element) {
+      this.removeCss(element, 'hide')
+    },
+    toggleHideElement(element) {
+      element.classList.toggle('hide')
+    },
+    addCss(element, cssClassName) {
+      element.classList.add(cssClassName);
+    },
+    removeCss(element, cssClassName) {
+      element.classList.remove(cssClassName);
+    },
+    setElemPosition(element, {left, top}) {
+      element.style.top = top + "px";
+      element.style.left = left + "px";
     }
   },
 }
@@ -877,7 +956,7 @@ select {
   position: relative;
   float: left;
   width: 100%;
-  height: 3px;
+  height: 8px;
   background: rgba(255, 255, 255, 0.4);
   margin-bottom: 14px;
 }
@@ -886,17 +965,12 @@ select {
 .wrapper-bar {
   cursor: pointer;
   position: relative;
-  height: 3px;
   box-sizing: inherit;
 }
 
 .progress-bar {
   background-color: #f00;
   height: 3px;
-}
-
-.wrapper-bar:hover {
-  height: 4px;
 }
 
 .wrapper-bar:hover .progress-bar {
@@ -908,13 +982,13 @@ select {
 }
 
 .progress-bar-circle {
-  border-radius: 50%;
-  width: 14px;
-  height: 14px;
-  background-color: #f00;
   position: absolute;
   top: -5px;
   left: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #f00;
 }
 
 #showHoverTime {
@@ -991,13 +1065,18 @@ select {
 }
 
 .thumbnail-wrapper {
+  position: absolute;
   overflow: hidden;
   width: 256px;
   height: 144px;
+  border: 2px white solid;
+  border-radius: 3%;
 }
 
 .thumbnail-wrapper img {
   width: 1280px;
   height: 720px;
+  position: relative;
+  /*transform: translate(0, 0);*/
 }
 </style>
