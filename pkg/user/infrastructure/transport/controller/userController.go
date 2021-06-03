@@ -6,7 +6,7 @@ import (
 	"github.com/bearname/videohost/pkg/user/domain/repository"
 	"github.com/bearname/videohost/pkg/videoserver/app/dto"
 	videoService "github.com/bearname/videohost/pkg/videoserver/app/service"
-	repository2 "github.com/bearname/videohost/pkg/videoserver/domain/repository"
+	"github.com/bearname/videohost/pkg/videoserver/domain"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -17,10 +17,10 @@ type UserController struct {
 	controller.BaseController
 	userRepository  repository.UserRepository
 	userService     userService.UserService
-	videoRepository repository2.VideoRepository
+	videoRepository domain.VideoRepository
 }
 
-func NewUserController(userRepository repository.UserRepository, videoRepository repository2.VideoRepository) *UserController {
+func NewUserController(userRepository repository.UserRepository, videoRepository domain.VideoRepository) *UserController {
 	v := new(UserController)
 	v.userRepository = userRepository
 	v.videoRepository = videoRepository

@@ -1,4 +1,4 @@
-create table video.video
+create table if not exists video.video
 (
     id_video      varchar(255)                                not null primary key,
     title         varchar(255)                                not null,
@@ -13,8 +13,8 @@ create table video.video
     owner_id      varchar(255)                                not null,
     constraint video_users_key_user_fk
         foreign key (owner_id) references users (key_user)
-)
-    charset = utf8;
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8;
 
 create fulltext index IN_video_title on video.video (title);
 

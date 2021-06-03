@@ -7,11 +7,11 @@ import (
 	"github.com/bearname/videohost/pkg/common/caching"
 	commonDto "github.com/bearname/videohost/pkg/common/dto"
 	"github.com/bearname/videohost/pkg/common/util"
-	model2 "github.com/bearname/videohost/pkg/user/domain/model"
-	"github.com/bearname/videohost/pkg/video-scaler/domain"
+	userModel "github.com/bearname/videohost/pkg/user/domain/model"
+	scaleModel "github.com/bearname/videohost/pkg/video-scaler/domain"
 	"github.com/bearname/videohost/pkg/videoserver/app/dto"
+	"github.com/bearname/videohost/pkg/videoserver/domain"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
-	"github.com/bearname/videohost/pkg/videoserver/domain/repository"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/ftp"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -20,14 +20,14 @@ import (
 )
 
 type VideoServiceImpl struct {
-	videoRepo     repository.VideoRepository
+	videoRepo     domain.VideoRepository
 	messageBroker amqp.MessageBroker
 	cache         caching.Cache
 }
 
 const videoCachePrefix = "video-"
 
-func NewVideoService(videoRepository repository.VideoRepository, messageBroker amqp.MessageBroker, cache caching.Cache) *VideoServiceImpl {
+func NewVideoService(videoRepository domain.VideoRepository, messageBroker amqp.MessageBroker, cache caching.Cache) *VideoServiceImpl {
 	s := new(VideoServiceImpl)
 
 	s.videoRepo = videoRepository
@@ -148,7 +148,7 @@ func (s *VideoServiceImpl) AddQuality(videoId string, userDto commonDto.UserDto,
 		return err
 	}
 
-	if !domain.IsSupportedQuality(quality.Value) {
+	if !scaleModel.IsSupportedQuality(quality.Value) {
 		return errors.New("unsupported quality")
 	}
 	err = s.videoRepo.AddVideoQuality(videoId, strconv.Itoa(quality.Value))
@@ -203,7 +203,7 @@ func (s *VideoServiceImpl) checkOwner(userDto commonDto.UserDto, videoId string)
 		return nil, err
 	}
 
-	if userDto.Role == model2.Admin.Values() {
+	if userDto.Role == userModel.Admin.Values() {
 		return video, nil
 	}
 

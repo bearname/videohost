@@ -1,4 +1,4 @@
-package repository
+package domain
 
 import (
 	"github.com/bearname/videohost/pkg/videoserver/app/dto"
