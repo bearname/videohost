@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/bearname/videohost/pkg/common/util"
 	"github.com/bearname/videohost/pkg/videoserver/app/dto"
@@ -32,12 +33,20 @@ func (p *UploadVideoRequestParser) Parse(request *http.Request) (interface{}, er
 	if err != nil {
 		return nil, errors.New("cannot get file")
 	}
+	chaptersJson := request.FormValue("chapters")
+	var chapters []dto.ChapterDto
+	if len(chaptersJson) != 0 {
+		if err = json.Unmarshal([]byte(chaptersJson), &chapters); err != nil {
+			return nil, errors.New("cannot parse chapter")
+		}
+	}
 
 	return &dto.UploadVideoDto{
 		Title:         title,
 		Description:   description,
 		MultipartFile: fileReader,
 		FileHeader:    header,
+		Chapters: chapters,
 	}, nil
 }
 
