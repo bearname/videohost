@@ -74,14 +74,13 @@ func (s *VideoServiceImpl) UploadVideo(userId string, videoDto *dto.UploadVideoD
 		videoDto.Title,
 		videoDto.Description,
 		filepath.Join(util.ContentDir, videoId, util.VideoFileName),
+		videoDto.Chapters,
 	)
 	if err != nil {
-		return uuid.UUID{}, err
-	}
+		err = connection.RemoveDirRecur(videoId)
+		err = connection.RemoveDir(videoId)
 
-	err = s.messageBroker.Publish("events_topic", "events.video-uploaded", videoId)
-	if err != nil {
-		log.Error("Failed publish event 'video-uploaded")
+		return uuid.UUID{}, err
 	}
 
 	find, err := s.videoRepo.Find(videoId)
@@ -91,6 +90,10 @@ func (s *VideoServiceImpl) UploadVideo(userId string, videoDto *dto.UploadVideoD
 
 	err = s.writeToCache(videoId, find)
 
+	err = s.messageBroker.Publish("events_topic", "events.video-uploaded", videoId)
+	if err != nil {
+		log.Error("Failed publish event 'video-uploaded")
+	}
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -99,10 +102,10 @@ func (s *VideoServiceImpl) UploadVideo(userId string, videoDto *dto.UploadVideoD
 
 func (s *VideoServiceImpl) readFromCache(videoId string) (*model.Video, error) {
 	cacheStr, err := s.cache.Get(videoCachePrefix + videoId)
-	var cacheVideo model.Video
 	if err != nil {
-		return &cacheVideo, err
+		return nil, err
 	}
+	var cacheVideo model.Video
 
 	err = json.Unmarshal([]byte(cacheStr), &cacheVideo)
 	if err != nil {
@@ -113,6 +116,9 @@ func (s *VideoServiceImpl) readFromCache(videoId string) (*model.Video, error) {
 }
 
 func (s *VideoServiceImpl) writeToCache(videoId string, video *model.Video) error {
+	if !s.cache.IsOk() {
+		return caching.ErrCacheUnavailable
+	}
 	cacheByte, err := json.Marshal(video)
 	if err != nil {
 		return err

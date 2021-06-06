@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"encoding/json"
 	"github.com/bearname/videohost/pkg/common/database"
 	"github.com/bearname/videohost/pkg/videoserver/app/dto"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
@@ -18,8 +19,77 @@ func NewMysqlVideoRepository(connector database.Connector) *VideoRepository {
 	return m
 }
 
-func (r *VideoRepository) Create(userId string, videoId string, title string, description string, url string) error {
-	_, err := r.connector.GetDb().Query("INSERT INTO video (id_video, title, description, url, owner_id) VALUE (?, ?, ?, ?, ?);", videoId,
+func (r *VideoRepository) Create(userId string, videoId string, title string, description string, url string, chapters []dto.ChapterDto) error {
+	if chapters == nil || len(chapters) == 0 {
+		return r.insertWithoutChapter(userId, videoId, title, description, url)
+	}
+	return r.insertWithChapter(userId, videoId, title, description, url, chapters)
+}
+
+func (r *VideoRepository) insertWithChapter(userId string, videoId string, title string, description string, url string, chapters []dto.ChapterDto) error {
+	var values []interface{}
+	createChapterQuery := "INSERT INTO video_chapter (id_video, title, start, end) VALUES "
+
+	for _, chapter := range chapters {
+		createChapterQuery += "(?, ?, ?, ?), "
+		values = append(values, videoId, chapter.Title, chapter.Start, chapter.End)
+	}
+	createChapterQuery = createChapterQuery[0 : len(createChapterQuery)-2]
+	createChapterQuery += ";"
+
+	err := WithTransaction(r.connector.GetDb(), func(tx Transaction) error {
+		createVideoQuery := "INSERT INTO video (id_video, title, description, url, owner_id) VALUE (?, ?, ?, ?, ?); "
+		_, err := tx.Exec(createVideoQuery, videoId, title, description, url, userId)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(createChapterQuery, values...)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+type Transaction interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Prepare(query string) (*sql.Stmt, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
+}
+
+type TxFn func(Transaction) error
+
+func WithTransaction(db *sql.DB, fn TxFn) (err error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	err = fn(tx)
+	return err
+}
+func (r *VideoRepository) insertWithoutChapter(userId string, videoId string, title string, description string, url string) error {
+	query := "INSERT INTO video (id_video, title, description, url, owner_id) VALUE (?, ?, ?, ?, ?);"
+	_, err := r.connector.GetDb().Query(query, videoId,
 		title,
 		description,
 		url,
@@ -28,12 +98,12 @@ func (r *VideoRepository) Create(userId string, videoId string, title string, de
 		log.Info(err.Error())
 		return err
 	}
-
 	return nil
 }
 
 func (r *VideoRepository) Save(video *model.Video) error {
-	query := "INSERT INTO video (id_video, title, description, duration, status, thumbnail_url, url, uploaded, quality, owner_id)  VALUE (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	query := `INSERT INTO video (id_video, title, description, duration, status, thumbnail_url, url, uploaded, quality, owner_id) 
+			VALUE (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 	_, err := r.connector.GetDb().Query(query, video.Id,
 		video.Name,
 		video.Description,
@@ -55,8 +125,24 @@ func (r *VideoRepository) Save(video *model.Video) error {
 
 func (r *VideoRepository) Find(videoId string) (*model.Video, error) {
 	var video model.Video
-
-	row := r.connector.GetDb().QueryRow("SELECT id_video, title, description, duration, thumbnail_url, url, uploaded, quality, views, owner_id, status FROM video WHERE id_video=?;", videoId)
+	q := `SELECT id_video,
+       video.title AS  video_title,
+       description AS video_description,
+       duration AS video_duration,
+       thumbnail_url AS video_thumbnail_url,
+       url AS video_url,
+       uploaded AS video_uploaded,
+       quality AS video_quality,
+       views AS video_views,
+       owner_id AS video_owner_id,
+       status AS video_status,
+       GROUP_CONCAT(CONCAT('{"title":"', vc.title, '","start":', vc.start, ',"end":', vc.end, '}') SEPARATOR ',') AS video_chapters
+FROM video
+         LEFT JOIN video_chapter vc ON id_video = vc.video_id
+WHERE id_video = ?
+GROUP BY id_video;`
+	row := r.connector.GetDb().QueryRow(q, videoId)
+	var chapterString sql.NullString
 
 	err := row.Scan(
 		&video.Id,
@@ -70,9 +156,48 @@ func (r *VideoRepository) Find(videoId string) (*model.Video, error) {
 		&video.Views,
 		&video.OwnerId,
 		&video.Status,
+		&chapterString,
 	)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	var chapters []model.Chapter
+
+	if chapterString.Valid {
+		chapters, err = r.parseChapter(chapterString.String, err)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	video.Chapters = chapters
 
 	return &video, err
+}
+
+func (r *VideoRepository) setChapter(chapterString string, err error, video model.Video) (model.Video, error) {
+	var chapters []model.Chapter
+
+	if len(chapterString) > 0 {
+		chapters, err = r.parseChapter(chapterString, err)
+		if err != nil {
+			return video, err
+		}
+
+	}
+
+	video.Chapters = chapters
+	return video, nil
+}
+
+func (r *VideoRepository) parseChapter(chapterString string, err error) ([]model.Chapter, error) {
+	var chapters []model.Chapter
+
+	chapterString = "[" + chapterString + "]"
+	err = json.Unmarshal([]byte(chapterString), &chapters)
+	return chapters, err
 }
 
 func (r *VideoRepository) Update(videoId string, title string, description string) error {
@@ -96,13 +221,15 @@ func (r *VideoRepository) Delete(videoId string) error {
 
 func (r *VideoRepository) FindVideosByPage(page int, count int) ([]model.VideoListItem, error) {
 	offset := (page) * count
-	rows, err := r.connector.GetDb().Query("SELECT id_video, title, duration, thumbnail_url, uploaded, views, status, quality FROM video WHERE status=3 LIMIT ?, ?;", offset, count)
+	query := "SELECT id_video, title, duration, thumbnail_url, uploaded, views, status, quality FROM video WHERE status=3 LIMIT ?, ?;"
+	rows, err := r.connector.GetDb().Query(query, offset, count)
 
 	return r.getVideoListItem(rows, err)
 }
 
 func (r *VideoRepository) GetPageCount(countVideoOnPage int) (int, bool) {
-	rows, err := r.connector.GetDb().Query("SELECT COUNT(id_video) AS countReadyVideo FROM video WHERE status=3;")
+	query := "SELECT COUNT(id_video) AS countReadyVideo FROM video WHERE status=3;"
+	rows, err := r.connector.GetDb().Query(query)
 	if err != nil {
 		return 0, false
 	}
@@ -125,7 +252,8 @@ func (r *VideoRepository) GetPageCount(countVideoOnPage int) (int, bool) {
 }
 
 func (r *VideoRepository) AddVideoQuality(videoId string, quality string) error {
-	rows, err := r.connector.GetDb().Query("UPDATE video SET `quality` = concat(quality,  concat(',',  ?))  WHERE id_video = ?;", quality, videoId)
+	query := "UPDATE video SET `quality` = concat(quality,  concat(',',  ?))  WHERE id_video = ?;"
+	rows, err := r.connector.GetDb().Query(query, quality, videoId)
 	if err != nil {
 		return err
 	}
@@ -136,13 +264,16 @@ func (r *VideoRepository) AddVideoQuality(videoId string, quality string) error 
 func (r *VideoRepository) SearchVideo(searchString string, page int, count int) ([]model.VideoListItem, error) {
 
 	offset := (page - 1) * count
-	rows, err := r.connector.GetDb().Query("SELECT id_video, title, duration, thumbnail_url, uploaded, views, status, quality  FROM video WHERE MATCH(video.title) AGAINST (? IN NATURAL LANGUAGE MODE) AND status=3 LIMIT ?, ?;", searchString, offset, count)
+	query := `SELECT id_video, title, duration, thumbnail_url, uploaded, views, status, quality  FROM video 
+               WHERE MATCH(video.title) AGAINST (? IN NATURAL LANGUAGE MODE) AND status=3 LIMIT ?, ?;`
+	rows, err := r.connector.GetDb().Query(query, searchString, offset, count)
 
 	return r.getVideoListItem(rows, err)
 }
 
 func (r *VideoRepository) IncrementViews(id string) bool {
-	rows, err := r.connector.GetDb().Query("UPDATE video SET video.views = video.views + 1 WHERE id_video=?", id)
+	query := "UPDATE video SET video.views = video.views + 1 WHERE id_video=?"
+	rows, err := r.connector.GetDb().Query(query, id)
 	if err != nil {
 		log.Info(err.Error())
 		return false

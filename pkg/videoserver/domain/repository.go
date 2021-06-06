@@ -6,7 +6,7 @@ import (
 )
 
 type VideoRepository interface {
-	Create(userId string, videoId string, title string, description string, url string) error
+	Create(userId string, videoId string, title string, description string, url string, chapters []dto.ChapterDto) error
 	Save(video *model.Video) error
 	Find(videoId string) (*model.Video, error)
 	FindVideosByPage(page int, count int) ([]model.VideoListItem, error)

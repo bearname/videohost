@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -25,6 +26,7 @@ func ExecuteServer(appName string, port int, router http.Handler) {
 	log.WithFields(log.Fields{"url": serverUrl}).Info("starting the server")
 
 	srv := StartServer(serverUrl, router)
+	fmt.Println(serverUrl)
 	WaitForKillSignal(killSignalChan)
 	err = srv.Shutdown(context.Background())
 	if err != nil {
@@ -33,7 +35,6 @@ func ExecuteServer(appName string, port int, router http.Handler) {
 }
 
 func StartServer(serverUrl string, router http.Handler) *http.Server {
-
 	srv := &http.Server{Addr: serverUrl, Handler: router}
 	go func() {
 		log.Error(srv.ListenAndServe())

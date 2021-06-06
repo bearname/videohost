@@ -10,7 +10,7 @@
         <div class="text-align-left" v-else>
           <div v-if="video.status === 3">
             <Player :videoId="videoId" :duration="video.duration" :thumbnail="video.thumbnail"
-                    :availableQualities="video.quality" :key="key"/>
+                    :availableQualities="video.quality" :chapters="video.chapters" :key="key"/>
           </div>
           <div v-else> status {{ videoStatus }}</div>
         </div>
@@ -106,17 +106,17 @@ export default {
       getVideoResult: "video/getVideo",
     }),
     async setVideoId() {
-      this.videoId = this.$route.params.videoId
-      await this.fetchVideo(this.$route.params.videoId)
+      this.videoId = this.$route.params.videoId;
+      await this.fetchVideo(this.$route.params.videoId);
     },
     async fetchVideo(videoId) {
       try {
         await this.findVideoById({videoId: videoId});
-        this.video = this.getVideoResult()
-        this.videoStatus = VideoStatus.intToStatus(this.video.status)
-        this.video.uploaded = videosUtil.getElapsedString(this.video.uploaded)
+        this.video = this.getVideoResult();
+        this.videoStatus = VideoStatus.intToStatus(this.video.status);
+        this.video.uploaded = videosUtil.getElapsedString(this.video.uploaded);
       } catch (error) {
-        logError(error)
+        logError(error);
       }
     },
     async updateTitleAndDescription() {
@@ -127,7 +127,7 @@ export default {
       };
 
       await this.$store.dispatch("video/updateTitleAndDescription", video);
-      console.log("update status")
+      console.log("update status");
       this.error = this.getStatus();
     },
     async deleteItemPermanent(videoId) {

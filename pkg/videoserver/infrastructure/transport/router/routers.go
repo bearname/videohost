@@ -16,8 +16,6 @@ import (
 )
 
 func Router(connector database.Connector, messageBrokerAddress string, authServerAddress string, redisAddress string, redisPassword string) http.Handler {
-	router := mux.NewRouter()
-	subRouter := router.PathPrefix("/api/v1").Subrouter()
 
 	videoRepository := mysql.NewMysqlVideoRepository(connector)
 	messageBroker := amqp.NewRabbitMqService(messageBrokerAddress)
@@ -34,12 +32,16 @@ func Router(connector database.Connector, messageBrokerAddress string, authServe
 	}
 
 	streamController := controller.NewStreamController(service.NewStreamServiceImpl())
-	router.HandleFunc("/media/{videoId}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
-	router.HandleFunc("/media/{videoId}/{quality}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
-	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
+
+	router := mux.NewRouter()
 	router.HandleFunc("/health", handler.HealthHandler).Methods(http.MethodGet)
 	router.HandleFunc("/ready", handler.ReadyHandler).Methods(http.MethodGet)
 
+	router.HandleFunc("/media/{videoId}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
+	router.HandleFunc("/media/{videoId}/{quality}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
+	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
+
+	subRouter := router.PathPrefix("/api/v1").Subrouter()
 	subRouter.HandleFunc("/videos/", videoController.GetVideos()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/videos/search", videoController.SearchVideo()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/videos/{videoId}", videoController.GetVideo()).Methods(http.MethodGet)

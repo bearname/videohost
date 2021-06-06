@@ -56,7 +56,7 @@ func (c VideoController) GetVideo() func(w http.ResponseWriter, r *http.Request)
 		video, err := c.videoService.FindVideo(result[0])
 		if err != nil {
 			log.Error(err.Error())
-			c.BaseController.WriteResponse(&writer, http.StatusNotFound, false, "401 videoId not present")
+			c.BaseController.WriteResponse(&writer, http.StatusNotFound, false, "404 video not found")
 			return
 		}
 

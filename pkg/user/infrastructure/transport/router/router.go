@@ -13,8 +13,6 @@ import (
 )
 
 func Router(connector database.Connector) http.Handler {
-	router := mux.NewRouter()
-	apiV1Route := router.PathPrefix("/api/v1").Subrouter()
 
 	videoRepo := mysql.NewMysqlVideoRepository(connector)
 	userRepository := userRepo.NewMysqlUserRepository(connector)
@@ -22,9 +20,12 @@ func Router(connector database.Connector) http.Handler {
 	authController := controller.NewAuthController(authService)
 	userController := controller.NewUserController(userRepository, videoRepo)
 
+	router := mux.NewRouter()
+
 	router.HandleFunc("/health", handler.HealthHandler).Methods(http.MethodGet)
 	router.HandleFunc("/ready", handler.ReadyHandler).Methods(http.MethodGet)
 
+	apiV1Route := router.PathPrefix("/api/v1").Subrouter()
 	apiV1Route.HandleFunc("/auth/create-user", authController.CreateUser).Methods(http.MethodPost, http.MethodOptions)
 	apiV1Route.HandleFunc("/auth/login", authController.Login).Methods(http.MethodPost, http.MethodOptions)
 	apiV1Route.HandleFunc("/auth/token", authController.CheckTokenHandler(authController.RefreshToken)).Methods(http.MethodGet, http.MethodOptions)

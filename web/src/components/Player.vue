@@ -7,12 +7,18 @@
           <!--                 src="http://localhost:8000/content/afe67012-bc76-11eb-afc7-e4e74940035b/subtitle.srt" default>-->
         </video>
         <div id="videoControls" class="player-controls">
+          <!--          <div id="stopRecord">stop record</div>-->
           <div id="progressBarWrapper" class="wrapper-bar" v-on:click="onClickBufferedRange($event);">
-            <div id="progressBar" class="progress-bar"></div>
+            <div id="progressBar" class="progress-bar">
+              <div id="chapterContainer"></div>
+            </div>
           </div>
           <div id="progressBarCircle" class="progress-bar-circle"></div>
           <div>
-            <div id="thumbnail-wrapper" class="thumbnail-wrapper hide"><img id="thumbnail" src="" alt="preview"/></div>
+            <div id="chapterHover"></div>
+            <div id="thumbnail-wrapper" class="thumbnail-wrapper hide">
+              <img id="thumbnail" alt="preview" src="image.png"/>
+            </div>
             <span id="showHoverTime" class="hide"></span>
             <span class="player-controls-item">
               <button
@@ -34,6 +40,9 @@
             <span>
               <span id="currentTime"></span>
               <span> / {{ videoDuration }}</span>
+            </span>
+            <span>
+              <span id="chapterTitle" class="chapter-title"></span>
             </span>
             <div class="float-right right-control">
               <span id="settingButton" class="gear player-controls-item" title="Setting"></span>
@@ -92,13 +101,16 @@
         </div>
         <div id="submenu" class="stats-show hide"></div>
       </div>
+      <div id="chapterPopup" class="hide"></div>
     </div>
     <div v-else>
       Video not available
     </div>
-    <ul id="videoList" v-if="videos !== null">
-      <li v-for="video in videos" :key="video.id" :data-videoId="video.src">{{ video.name }}</li>
-    </ul>
+    <div v-if="videos !== null">
+      <ul id="videoList">
+        <li v-for="video in videos" :key="video.id" :data-videoId="video.src">{{ video.name }}</li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -131,17 +143,21 @@ export default {
     'availableQualities',
     'duration',
     'thumbnail',
+    'chapters',
   ],
   created() {
     this.qualities = this.availableQualities.split(",");
-    console.log(this.qualities)
+    console.log(this.qualities);
     if (this.qualities.length === 0 && this.qualities[0] === "") {
-      this.qualities = null
+      this.qualities = null;
     }
-    this.qualities.reverse()
+    this.qualities.reverse();
     this.qualities = this.qualities.filter(quality => {
-      return quality.length !== 0
+      return quality.length !== 0;
     })
+    if (this.chapters !== null) {
+      this.chaptersList = this.chapters;
+    }
     console.log("this.qualities");
   },
   data() {
@@ -149,6 +165,7 @@ export default {
       id: this.videoId,
       selectedQuality: '1080',
       qualities: null,
+      chaptersList: null,
       videoDuration: this.formatTimeString(this.duration),
       isMedium: true,
       previousVolume: 1,
@@ -159,13 +176,14 @@ export default {
       hls: null,
       isPause: false,
       videoElement: null,
-      previewImageElement: null,
       previewImageWrapperElement: null,
+      previewImageElement: null,
       playbackSpeed: null,
       isFullScreen: false,
       bufferingIdx: null,
       lastStartPosition: 0,
       poster: this.thumbnail,
+      stopRecordElement: null,
       videoControlElement: null,
       playButton: null,
       pauseButton: null,
@@ -173,11 +191,15 @@ export default {
       selectQualityElement: null,
       videoWrapperElement: null,
       currentTimeElement: null,
+      chapterTitleElement: null,
+      chapterPopupElement: null,
       volumeMuteElement: null,
       showHoverTimeElement: null,
       progressBarWrapperElement: null,
       progressBarElement: null,
       progressBarCircleElement: null,
+      chapterContainerElement: null,
+      chapterHoverElement: null,
       volumeChangerElement: null,
       settingButtonElement: null,
       toggleFullScreenElement: null,
@@ -198,6 +220,7 @@ export default {
       prevSeekTime: 0,
       previousImageIndex: 0,
       previewImages: [],
+      arrayRecord: [],
     }
   },
   async mounted() {
@@ -230,13 +253,13 @@ export default {
       for (let i = 0; i < array.length; i++) {
         let img = new Image();
         img.onload = function () {
-          let index = this.previewImages.indexOf(i);
+          let index = this.previewImages[i];
           if (index !== -1) {
             this.previewImages.splice(index, 1);
           }
         }
-        this.previewImages.push(img);
         img.src = array[i];
+        this.previewImages.push(img);
       }
     },
     async fetchVideosByPage(page, countVideoOnPage) {
@@ -287,8 +310,12 @@ export default {
       this.submenuShowElement = document.getElementById('submenu');
     },
     initVideoControlsItem() {
+      // this.stopRecordElement = document.getElementById('stopRecord');
       this.videoControlElement = document.getElementById('videoControls');
       this.currentTimeElement = document.getElementById('currentTime');
+      this.chapterPopupElement = document.getElementById('chapterPopup');
+      this.chapterTitleElement = document.getElementById('chapterTitle');
+
       this.volume = document.getElementById('volume');
       this.playButton = document.getElementById('playButton');
       this.pauseButton = document.getElementById('pauseButton');
@@ -300,8 +327,10 @@ export default {
     initProgressBar() {
       this.progressBarWrapperElement = document.getElementById('progressBarWrapper');
       this.progressBarElement = document.getElementById('progressBar');
-      this.showHoverTimeElement = document.getElementById('showHoverTime');
       this.progressBarCircleElement = document.getElementById('progressBarCircle');
+      this.chapterContainerElement = document.getElementById('chapterContainer');
+      this.chapterHoverElement = document.getElementById('chapterHover');
+      this.showHoverTimeElement = document.getElementById('showHoverTime');
     },
     initSettingElement() {
       this.settingButtonElement = document.getElementById('settingButton');
@@ -329,19 +358,23 @@ export default {
       // document.getElementById('video').addEventListener('loadeddata', this.generateThumbnails, false);
     },
     addEventListenerOnVideoControlItems() {
+      // this.stopRecordElement.addEventListener('click', this.stopRecord, false)
+
       this.volumeMuteElement.addEventListener('click', this.toggleMute, false)
       this.volumeChangerElement.addEventListener('change', this.handleVolumeChange, false)
-      this.volumeChangerElement.addEventListener('mousemove', this.handleVolumeChange, false)
+      this.volumeChangerElement.addEventListener('mousemove', this.handleVolumeChange, false);
+
+      this.chapterTitleElement.addEventListener('click', this.handleShowChapter, false);
     },
     addEventListenerOnProgressBar() {
-      this.progressBarWrapperElement.addEventListener('mousemove', this.onHoverProgressBar, false)
-      this.progressBarWrapperElement.addEventListener('mouseout', this.onMouseOutProgressBar, false)
+      this.progressBarWrapperElement.addEventListener('mousemove', this.onHoverProgressBar, false);
+      this.progressBarWrapperElement.addEventListener('mouseout', this.onMouseOutProgressBar, false);
     },
     addEventListenerOnSettingMenu() {
-      this.settingButtonElement.addEventListener('click', this.toggleSettingPopup, false)
-      this.toggleLoopButtonElement.addEventListener('click', this.toggleLoop, false)
-      this.copyVideoElement.addEventListener('click', this.copyVideoPath, false)
-      this.copyVideoURLWithCurrentTimeElement.addEventListener('click', this.copyVideoPathWithTime, false)
+      this.settingButtonElement.addEventListener('click', this.toggleSettingPopup, false);
+      this.toggleLoopButtonElement.addEventListener('click', this.toggleLoop, false);
+      this.copyVideoElement.addEventListener('click', this.copyVideoPath, false);
+      this.copyVideoURLWithCurrentTimeElement.addEventListener('click', this.copyVideoPathWithTime, false);
     },
     addEventListenerOnContextMenu() {
       if (this.videoWrapperElement.addEventListener) {
@@ -352,16 +385,39 @@ export default {
         });
       }
       this.videoWrapperElement.addEventListener('click', this.togglePlayPause, false);
-      this.statsOfNerdsElement.addEventListener('click', this.showStatsOfNerds, false)
-      this.keyboardHelpElement.addEventListener('click', this.showKeyboardHelp, false)
+      this.statsOfNerdsElement.addEventListener('click', this.showStatsOfNerds, false);
+      this.keyboardHelpElement.addEventListener('click', this.showKeyboardHelp, false);
+    },
+    handleShowChapter() {
+      this.toggleHideElement(this.chapterPopupElement);
+      let html = `<h3>Chapter</h3>`
+      for (let chapter in this.chaptersList) {
+        console.log(chapter);
+        const point = this.getPreviewImageOffset(chapter.start);
+        const imageIndex = this.getImageIndex(chapter.start);
+        const previewImage = this.previewImages[imageIndex];
+        console.log(this.previewImage);
+        const img = '<div class="thumbnail-wrapper">' +
+            '<img style="transform:translate(-' + PREVIEW_WIDTH * point.x + 'px, -' + PREVIEW_HEIGHT * point.y + 'px);" ' +
+            'src="'+  previewImage.src +'" alt="chapter ' + chapter.title + ' prevew"/>' +
+            '</div>';
+        console.log(img);
+
+        html += img;
+        html += `<p>` + chapter.title + `</p><button type="button" data-start="`+ chapter.start+`">` + chapter.start + `</button>`;
+        // const chapterItem = document.createElement("div");
+        // chapterItem.innerText = chapter.
+      }
+      console.log(html);
+      this.chapterPopupElement.innerHTML = html;
     },
     initHls() {
       if (Hls.isSupported()) {
         this.prepareHls(this.id, this.selectedQuality);
       } else if (this.videoElement.canPlayType('application/vnd.apple.mpegurl')) {
         this.videoElement.src = process.env.VUE_APP_VIDEO_API + '/media/' + this.id + '/stream/';
+        this.video.play();
         this.videoElement.addEventListener('loadedmetadata', function () {
-          this.video.play();
         });
       } else {
         let videoWrapper = document.getElementById('videoWrapper');
@@ -374,13 +430,68 @@ export default {
         this.hls = null;
       }
       console.log(quality)
+      // let dataStream = {
+      //   'video': [],
+      //   'audio': []
+      // };
+
       this.hls = new Hls();
       this.hls.loadSource(process.env.VUE_APP_VIDEO_API + '/media/' + id + '/stream/');
       this.hls.attachMedia(this.videoElement);
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
         this.play();
+        // this.hls.on(Hls.Events.BUFFER_APPENDING, function (event, data) {
+        //   console.log("apending");
+        // dataStream[data.type].push(data.data);
+        // });
       });
+      // this.arrayRecord.push({
+      //   hls: this.hls,
+      //   data: dataStream
+      // });
+      // this.videoElement.onended = function () {
+      //   this.stopRecord()
+      // };
     },
+    // stopRecord() {
+    //   this.arrayRecord.forEach((item) => {
+    //     console.log(item.data);
+    //     // this.download(item.data['video'], "video.mp4");
+    //     // this.download(item.data['audio'], "audio.mp4");
+    //     // item.hls.destroy();
+    //     return false;
+    //   })
+    // },
+    // download(data, filename) {
+    //   console.log('downloading...');
+    //   const blob = new Blob([this.arrayConcat(data)], {
+    //     type: 'application/octet-stream'
+    //   });
+    //   this.saveAs(blob, filename);
+    // },
+    // arrayConcat(inputArray) {
+    //   let totalLength = inputArray.reduce((prev, cur) => {
+    //     return prev + cur.length
+    //   }, 0);
+    //   let result = new Uint8Array(totalLength);
+    //   let offset = 0;
+    //   inputArray.forEach((element) => {
+    //     result.set(element, offset);
+    //     offset += element.length;
+    //   });
+    //
+    //   return result;
+    // },
+    // saveAs(blob, filename) {
+    //   let url = URL.createObjectURL(blob);
+    //   let a = document.createElement("a");
+    //   document.body.appendChild(a);
+    //   a.style = 'display: none';
+    //   a.href = url;
+    //   a.download = filename;
+    //   a.click();
+    //   window.URL.revokeObjectURL(url);
+    // },
     initKeyHandler() {
       window.addEventListener("keydown", this.handleKeyDownEvent, false);
     },
@@ -597,10 +708,27 @@ export default {
       this.prevSeekTime = seekTime;
       const offsetX = event.x - boundingClientRect.x;
 
-      const point = this.getPreviewImageOffset(seekTime);
-      this.changePreviewImage(point.x, point.y, offsetX, boundingClientRect)
-
+      this.changePreviewImage(seekTime, offsetX, boundingClientRect)
       this.changeHoverTimeElement(seekTime, offsetX)
+
+      this.setElemPosition(this.chapterHoverElement, {left: offsetX - 15, top: -40})
+
+      this.unHideElement(this.chapterHoverElement);
+      const chapter = this.getCurrentChapter(seekTime);
+      console.log('chapter');
+      console.log(chapter);
+      this.chapterHoverElement.innerText = chapter.title;
+      this.chapterTitleElement.innerText = " * " + chapter.title + " > ";
+    },
+    getCurrentChapter(seekTime) {
+      for (let i = 0; i < this.chaptersList.length; i++) {
+        const chapter = this.chaptersList[i];
+        if (seekTime > chapter.start && seekTime < chapter.end) {
+          return chapter;
+        }
+      }
+
+      return null;
     },
     getEventMouseTime(event) {
       const boundingClientRect = this.progressBarWrapperElement.getBoundingClientRect();
@@ -610,6 +738,7 @@ export default {
     onMouseOutProgressBar() {
       this.hideElement(this.previewImageWrapperElement);
       this.hideElement(this.showHoverTimeElement)
+      this.hideElement(this.chapterHoverElement)
     },
     onVideoStop() {
       this.videoControlElement.style.transform = 'translateY(-20px)';
@@ -630,7 +759,10 @@ export default {
     },
     toggleSettingPopup() {
       let boundingClientRect = this.settingButtonElement.getBoundingClientRect();
-      this.setElemPosition(this.settingsPopupElement, {left:  boundingClientRect.left + 100, top: boundingClientRect.top - 300})
+      this.setElemPosition(this.settingsPopupElement, {
+        left: boundingClientRect.left + 100,
+        top: boundingClientRect.top - 300
+      })
       this.toggleHideElement(this.settingsPopupElement);
     },
     toggleLoop() {
@@ -794,17 +926,21 @@ export default {
           '<p>Drift: ' + this.hls.drift.toFixed(3) + '  (edge advance rate)</p>';
     },
     setNewPreviewImageIfNeeded(seekTime) {
-      const currentImageIndex = parseInt(seekTime / (TILE_SIZE.x + TILE_SIZE.y));
+      const currentImageIndex = this.getImageIndex(seekTime);
       if (this.previousImageIndex !== currentImageIndex) {
         this.previousImageIndex = currentImageIndex;
         this.previewImageElement.src = this.previewImages[this.previousImageIndex].src;
       }
     },
-    changePreviewImage(thumbX, thumbY, offsetX, boundingRect) {
-      this.previewImageElement.style.transform = "translate(-" + PREVIEW_WIDTH * thumbX + "px, -" + PREVIEW_HEIGHT * thumbY + "px)";
+    getImageIndex(seekTime) {
+      return parseInt(seekTime / (TILE_SIZE.x * TILE_SIZE.y));
+    },
+    changePreviewImage(seekTime, offsetX, boundingRect) {
+      const point = this.getPreviewImageOffset(seekTime);
+      this.previewImageElement.style.transform = "translate(-" + PREVIEW_WIDTH * point.x + "px, -" + PREVIEW_HEIGHT * point.y + "px)";
       const offset = this.calculatePreviewImageOffset(offsetX, boundingRect)
 
-      this.setElemPosition(this.previewImageWrapperElement, {left:   offset.left, top:offset.top })
+      this.setElemPosition(this.previewImageWrapperElement, {left: offset.left, top: offset.top})
 
       this.unHideElement(this.previewImageWrapperElement);
     },
@@ -812,20 +948,17 @@ export default {
       const seconds = seekTime % (TILE_SIZE.x + TILE_SIZE.y);
       const thumbY = parseInt(seconds / TILE_SIZE.y);
       const thumbX = parseInt(seconds % TILE_SIZE.x);
+
       return {x: thumbX, y: thumbY}
     },
     changeHoverTimeElement(seekTime, x) {
-      this.showHoverTimeElement.style.left = x - 15 + 'px';
-      this.showHoverTimeElement.style.top = -20 + 'px';
-      this.setElemPosition(this.showHoverTimeElement, {left:  x - 15 + 'px', top:  -20  })
-
+      this.setElemPosition(this.showHoverTimeElement, {left: x - 15, top: -20})
       this.unHideElement(this.showHoverTimeElement);
       this.showHoverTimeElement.innerText = this.formatTimeString(seekTime);
     },
-
     calculatePreviewImageOffset(offsetX, boundingRect) {
       let x = offsetX;
-      const centerX = PREVIEW_WIDTH/ 2;
+      const centerX = PREVIEW_WIDTH / 2;
       const leftX = boundingRect.x + centerX - 50;
       const rightX = boundingRect.x + boundingRect.width - PREVIEW_WIDTH - 50;
 
@@ -837,7 +970,12 @@ export default {
         x -= PREVIEW_WIDTH;
       }
 
-      return {left: x, top: -PREVIEW_HEIGHT - 20}
+      let top = -PREVIEW_HEIGHT - 20;
+      if (this.chaptersList !== null) {
+        top -= 20;
+      }
+
+      return {left: x, top: top};
     },
     hideElement(element) {
       this.addCss(element, 'hide')
@@ -878,11 +1016,11 @@ select {
 }
 
 .player-big {
-  max-width: 95%;
+  max-width: 100%;
 }
 
 .player-medium {
-  max-width: 992px;
+  max-width: 1280px;
 }
 
 .player-wrapper:fullscreen .player-video {
@@ -991,10 +1129,12 @@ select {
   background-color: #f00;
 }
 
-#showHoverTime {
+#showHoverTime,
+#chapterHover {
   position: absolute;
   z-index: 10;
   color: #e8dbdb;
+  font-size: 14px;
   text-shadow: #9c9b9b;
 }
 
@@ -1078,5 +1218,9 @@ select {
   height: 720px;
   position: relative;
   /*transform: translate(0, 0);*/
+}
+
+.chapter-title {
+  cursor: pointer;
 }
 </style>

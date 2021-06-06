@@ -18,7 +18,9 @@ func NewRabbitMqService(url string) *RabbitMqService {
 
 func (r *RabbitMqService) Publish(exchange string, routingKey string, body string) error {
 	conn, err := amqp.Dial(r.url)
-	failOnError(err, "failed to connect to RabbitMQ")
+	if err != nil {
+		log.Error("failed to connect to RabbitMQ: %s", err)
+	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
@@ -38,7 +40,7 @@ func (r *RabbitMqService) Publish(exchange string, routingKey string, body strin
 		nil,
 	)
 	if err != nil {
-		log.Fatalf("%s: %s", "ffailed to declare an exchange", err)
+		log.Error("%s: %s", "ffailed to declare an exchange", err)
 		return err
 	}
 
@@ -69,7 +71,6 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 	channel, err := conn.Channel()
 	failOnError(err, "failed to open a channel")
 	defer channel.Close()
-
 	err = channel.ExchangeDeclare(
 		exchange,
 		"topic",
@@ -104,7 +105,7 @@ func (r *RabbitMqService) Consume(exchange string, routingKey string, handler Co
 	messages, err := channel.Consume(
 		queue.Name,
 		"",
-		true,
+		false,
 		false,
 		false,
 		false,
@@ -137,6 +138,6 @@ func (r *RabbitMqService) handleMessage(message string, handler ConsumerVisitor)
 
 func failOnError(err error, msg string) {
 	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
+		log.Error("%s: %s", msg, err)
 	}
 }

@@ -11,23 +11,23 @@ import (
 )
 
 func main() {
-	config, err := config.ParseConfig()
+	parseConfig, err := config.ParseConfig()
 	if err != nil {
-		log.WithError(err).Fatal("failed to parse config")
+		log.WithError(err).Fatal("failed to parse parseConfig")
 	}
 
 	connector := mysql.ConnectorImpl{}
-	err = connector.Connect(config.DbUser, config.DbPassword, config.DbAddress, config.DbName)
+	err = connector.Connect(parseConfig.DbUser, parseConfig.DbPassword, parseConfig.DbAddress, parseConfig.DbName)
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
 		return
 	}
 	defer connector.Close()
 
-	handler := router.Router(&connector, config.MessageBrokerAddress, config.AuthServerAddress, config.RedisAddress, config.RedisPassword)
+	handler := router.Router(&connector, parseConfig.MessageBrokerAddress, parseConfig.AuthServerAddress, parseConfig.RedisAddress, parseConfig.RedisPassword)
 	if handler == nil {
 		return
 	}
 
-	server.ExecuteServer("videoserver", config.Port, handler)
+	server.ExecuteServer("videoserver", parseConfig.Port, handler)
 }
