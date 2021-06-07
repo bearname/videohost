@@ -126,21 +126,22 @@ func (r *VideoRepository) Save(video *model.Video) error {
 func (r *VideoRepository) Find(videoId string) (*model.Video, error) {
 	var video model.Video
 	q := `SELECT id_video,
-       video.title AS  video_title,
-       description AS video_description,
-       duration AS video_duration,
-       thumbnail_url AS video_thumbnail_url,
-       url AS video_url,
-       uploaded AS video_uploaded,
-       quality AS video_quality,
-       views AS video_views,
-       owner_id AS video_owner_id,
-       status AS video_status,
-       GROUP_CONCAT(CONCAT('{"title":"', vc.title, '","start":', vc.start, ',"end":', vc.end, '}') SEPARATOR ',') AS video_chapters
-FROM video
-         LEFT JOIN video_chapter vc ON id_video = vc.video_id
-WHERE id_video = ?
-GROUP BY id_video;`
+			   video.title AS  video_title,
+			   description AS video_description,
+			   duration AS video_duration,
+			   thumbnail_url AS video_thumbnail_url,
+			   url AS video_url,
+			   uploaded AS video_uploaded,
+			   quality AS video_quality,
+			   views AS video_views,
+			   owner_id AS video_owner_id,
+			   status AS video_status,
+			   GROUP_CONCAT(CONCAT('{"title":"', vc.title, '","start":', vc.start, ',"end":', vc.end, '}') SEPARATOR ',') AS video_chapters
+			FROM video
+					 LEFT JOIN video_chapter vc ON id_video = vc.video_id
+			WHERE id_video = ?
+			GROUP BY id_video;`
+
 	row := r.connector.GetDb().QueryRow(q, videoId)
 	var chapterString sql.NullString
 

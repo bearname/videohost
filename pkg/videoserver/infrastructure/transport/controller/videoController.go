@@ -9,6 +9,7 @@ import (
 	"github.com/bearname/videohost/pkg/videoserver/app/service"
 	"github.com/bearname/videohost/pkg/videoserver/domain"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
+	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -74,7 +75,7 @@ func (c VideoController) GetVideos() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		parser := service.NewCatalogVideoParser()
+		parser := transport.NewCatalogVideoParser()
 		result, err := parser.Parse(request)
 		if err != nil {
 			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
@@ -113,7 +114,7 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		parser := service.NewUploadVideoRequestParser()
+		parser := transport.NewUploadVideoRequestParser()
 		uploadVideoDto, err := parser.Parse(request)
 		if err != nil {
 			log.Error(err.Error())
@@ -125,7 +126,7 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 		videoId, err := c.videoService.UploadVideo(userDto.UserId, videoDto)
 		if err != nil {
 			log.Error(err.Error())
-			http.Error(writer, "Failed upload video", http.StatusInternalServerError)
+			http.Error(writer, "Failed upload http", http.StatusInternalServerError)
 			return
 		}
 
@@ -203,7 +204,6 @@ func (c *VideoController) DeleteVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		writer.WriteHeader(http.StatusOK)
 		c.BaseController.WriteResponse(&writer, http.StatusOK, true, "success delete video with id "+videoId)
 	}
 }
@@ -218,7 +218,7 @@ func (c *VideoController) SearchVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		parser := service.NewSearchVideoParser()
+		parser := transport.NewSearchVideoParser()
 		result, err := parser.Parse(request)
 		if err != nil {
 			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())

@@ -1,9 +1,8 @@
 <template>
   <v-card
-      color="grey lighten-4"
       flat
       tile
-      class="fixed"
+      class="mx-auto overflow-hidden fixed"
   >
     <v-toolbar dense>
       <v-toolbar-title class="mr-16">
@@ -12,7 +11,7 @@
       <v-toolbar-title>
         <router-link :to="{ name: 'uploadVideo'}">Загрузить видео</router-link>
       </v-toolbar-title>
-<!--      <SearchRow/>-->
+      <!--      <SearchRow/>-->
       <v-toolbar-title class="float-right">
         <router-link :to="{ name: 'user'}">User {{ currentUsername }}</router-link>
       </v-toolbar-title>
@@ -24,6 +23,7 @@
           <v-btn v-on:click="logoutUser()">logout</v-btn>
         </div>
       </v-toolbar-title>
+
     </v-toolbar>
   </v-card>
 </template>
@@ -37,7 +37,7 @@ export default {
   // components: {SearchRow},
   data() {
     return {
-      userid: {type: String, default: ""}
+      userid: {type: String, default: ""},
     }
   },
   methods: {

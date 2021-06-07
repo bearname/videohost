@@ -1,4 +1,4 @@
-package service
+package transport
 
 import (
 	"encoding/json"
@@ -46,7 +46,7 @@ func (p *UploadVideoRequestParser) Parse(request *http.Request) (interface{}, er
 		Description:   description,
 		MultipartFile: fileReader,
 		FileHeader:    header,
-		Chapters: chapters,
+		Chapters:      chapters,
 	}, nil
 }
 

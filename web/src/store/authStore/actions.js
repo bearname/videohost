@@ -114,6 +114,7 @@ const actions = {
 
                 return response;
             } catch (error) {
+                console.log('updateAuthorizationIfNeeded')
                 console.log(error)
                 if (error.message === 'Invalid res') {
                     await context.dispatch("logout");

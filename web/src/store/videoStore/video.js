@@ -31,6 +31,7 @@ const videosUtil = {
     updateThumbnail(part, index) {
         this[index].thumbnail = process.env.VUE_APP_VIDEO_API + "/" + this[index].thumbnail
     },
+
 };
 
 export default videosUtil

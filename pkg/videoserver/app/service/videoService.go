@@ -94,9 +94,7 @@ func (s *VideoServiceImpl) UploadVideo(userId string, videoDto *dto.UploadVideoD
 	if err != nil {
 		log.Error("Failed publish event 'video-uploaded")
 	}
-	if err != nil {
-		return uuid.UUID{}, err
-	}
+
 	return id, nil
 }
 
@@ -142,10 +140,11 @@ func (s *VideoServiceImpl) UpdateTitleAndDescription(userDto commonDto.UserDto, 
 
 	err = s.videoRepo.Update(videoId, videoDto.Title, videoDto.Description)
 	if err == nil {
-		err = s.writeToCache(videoId, video)
+		return err
 	}
-
-	return err
+	err = s.writeToCache(videoId, video)
+	log.Error(err)
+	return nil
 }
 
 func (s *VideoServiceImpl) AddQuality(videoId string, userDto commonDto.UserDto, quality model.Quality) error {
@@ -191,7 +190,7 @@ func (s *VideoServiceImpl) DeleteVideo(userDto commonDto.UserDto, videoId string
 	}
 	_, err = s.cache.Get(videoId)
 	if err == nil {
-		err := s.cache.Del(videoCachePrefix + videoId)
+		err = s.cache.Del(videoCachePrefix + videoId)
 		if err != nil {
 			return err
 		}

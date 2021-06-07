@@ -2,27 +2,27 @@
   <layout>
     <div>
       <Navigation/>
-      <Search/>
       <h1>Pretty player</h1>
+      <Search/>
       <Pagination :show-status="false" :user-page="false"/>
     </div>
   </layout>
 </template>
 
 <script>
-import Pagination from './components/Pagination.vue'
-import Navigation from './components/Navigation.vue'
-import Layout from './layouts/LayoutDefault.vue'
+import Layout from './layouts/LayoutDefault.vue';
+import Navigation from './components/Navigation.vue';
 import Search from "./components/Search";
+import Pagination from './components/Pagination.vue';
 
 export default {
   name: 'App',
   components: {
-    Search,
     Layout,
     Navigation,
+    Search,
     Pagination
-  }
+  },
 }
 </script>
 

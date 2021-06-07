@@ -42,7 +42,7 @@
               <span> / {{ videoDuration }}</span>
             </span>
             <span>
-              <span id="chapterTitle" class="chapter-title"></span>
+              <span id="chapterTitle" class="chapter-title">{{ chaptersList[0].title }}</span>
             </span>
             <div class="float-right right-control">
               <span id="settingButton" class="gear player-controls-item" title="Setting"></span>
@@ -106,6 +106,7 @@
     <div v-else>
       Video not available
     </div>
+
     <div v-if="videos !== null">
       <ul id="videoList">
         <li v-for="video in videos" :key="video.id" :data-videoId="video.src">{{ video.name }}</li>
@@ -136,6 +137,7 @@ const USER_HELP = [
 const PREVIEW_WIDTH = 256;
 const PREVIEW_HEIGHT = 144;
 const TILE_SIZE = {x: 5, y: 5}
+
 export default {
   name: "Player",
   props: [
@@ -146,8 +148,8 @@ export default {
     'chapters',
   ],
   created() {
+    console.log(`this.qualities`);
     this.qualities = this.availableQualities.split(",");
-    console.log(this.qualities);
     if (this.qualities.length === 0 && this.qualities[0] === "") {
       this.qualities = null;
     }
@@ -159,6 +161,7 @@ export default {
       this.chaptersList = this.chapters;
     }
     console.log("this.qualities");
+    console.log(this.qualities);
   },
   data() {
     return {
@@ -193,6 +196,7 @@ export default {
       currentTimeElement: null,
       chapterTitleElement: null,
       chapterPopupElement: null,
+      chapterSeekTimeItems: [],
       volumeMuteElement: null,
       showHoverTimeElement: null,
       progressBarWrapperElement: null,
@@ -224,18 +228,14 @@ export default {
     }
   },
   async mounted() {
-    const thumbnails = [];
-    for (let i = 0; i < this.duration / (TILE_SIZE.x * TILE_SIZE.y); i++) {
-      thumbnails.push(process.env.VUE_APP_VIDEO_API + '/content/' + this.videoId + "/output-" + i + ".png");
-    }
-    await this.preloadPreviewImages(thumbnails);
-
-    this.initPlayer()
-    this.initKeyHandler()
+    console.log('mounted');
+    this.initPlayer();
+    this.initKeyHandler();
+    await this.preloadPreviewImages();
     // this.fetchVideosByPage(0, 10)
   },
   updated() {
-    this.initPlayer()
+    this.initPlayer();
   },
   methods: {
     ...mapActions({
@@ -245,20 +245,24 @@ export default {
       getVideos: "video/getVideos",
       getPageCount: "video/getPageCount"
     }),
-    async preloadPreviewImages(array) {
+    async preloadPreviewImages() {
+      const thumbnails = [];
+      for (let i = 0; i < this.duration / (TILE_SIZE.x * TILE_SIZE.y); i++) {
+        thumbnails.push(process.env.VUE_APP_VIDEO_API + '/content/' + this.videoId + "/output-" + i + ".png");
+      }
       if (!this.previewImages) {
         this.previewImages = [];
       }
 
-      for (let i = 0; i < array.length; i++) {
+      for (let i = 0; i < thumbnails.length; i++) {
         let img = new Image();
-        img.onload = function () {
+        img.onload = () => {
           let index = this.previewImages[i];
           if (index !== -1) {
             this.previewImages.splice(index, 1);
           }
         }
-        img.src = array[i];
+        img.src = thumbnails[i];
         this.previewImages.push(img);
       }
     },
@@ -272,8 +276,8 @@ export default {
       this.videoElement.currentTime = this.getEventMouseTime(event);
     },
     initPlayer() {
-      this.initElements()
-      this.addToElementEventListeners()
+      this.initElements();
+      this.addToElementEventListeners();
       this.initHls();
     },
     initElements() {
@@ -286,7 +290,7 @@ export default {
       this.videoElement = document.getElementById('video');
       this.previewImageElement = document.getElementById('thumbnail');
       this.previewImageWrapperElement = document.getElementById('thumbnail-wrapper');
-      this.seekRequestTime()
+      this.seekRequestTime();
     },
     seekRequestTime() {
       let time = this.$route.query.time;
@@ -295,7 +299,7 @@ export default {
       }
     },
     initVideoControls() {
-      this.initVideoControlsItem()
+      this.initVideoControlsItem();
       this.initProgressBar();
       this.initSettingElement();
     },
@@ -349,19 +353,19 @@ export default {
       this.videoElement.addEventListener('click', () => {
         this.hideElement(this.contextMenuElement);
         this.hideElement(this.submenuShowElement);
-        this.togglePlayPause()
+        this.togglePlayPause();
       })
 
-      this.videoElement.addEventListener('dblclick', this.toggleFullScreen, false)
-      this.videoElement.addEventListener('timeupdate', this.handleTimeUpdate, false)
-      this.videoElement.addEventListener('stop', this.onVideoStop, false)
+      this.videoElement.addEventListener('dblclick', this.toggleFullScreen, false);
+      this.videoElement.addEventListener('timeupdate', this.handleTimeUpdate, false);
+      this.videoElement.addEventListener('stop', this.onVideoStop, false);
       // document.getElementById('video').addEventListener('loadeddata', this.generateThumbnails, false);
     },
     addEventListenerOnVideoControlItems() {
       // this.stopRecordElement.addEventListener('click', this.stopRecord, false)
 
-      this.volumeMuteElement.addEventListener('click', this.toggleMute, false)
-      this.volumeChangerElement.addEventListener('change', this.handleVolumeChange, false)
+      this.volumeMuteElement.addEventListener('click', this.toggleMute, false);
+      this.volumeChangerElement.addEventListener('change', this.handleVolumeChange, false);
       this.volumeChangerElement.addEventListener('mousemove', this.handleVolumeChange, false);
 
       this.chapterTitleElement.addEventListener('click', this.handleShowChapter, false);
@@ -390,26 +394,33 @@ export default {
     },
     handleShowChapter() {
       this.toggleHideElement(this.chapterPopupElement);
-      let html = `<h3>Chapter</h3>`
-      for (let chapter in this.chaptersList) {
+      let html = `<h3>Chapter</h3><button id="toggleChapter">X</button>`;
+      console.log(this.chaptersList);
+      this.chaptersList.forEach((chapter) => {
         console.log(chapter);
         const point = this.getPreviewImageOffset(chapter.start);
         const imageIndex = this.getImageIndex(chapter.start);
         const previewImage = this.previewImages[imageIndex];
-        console.log(this.previewImage);
-        const img = '<div class="thumbnail-wrapper">' +
-            '<img style="transform:translate(-' + PREVIEW_WIDTH * point.x + 'px, -' + PREVIEW_HEIGHT * point.y + 'px);" ' +
-            'src="'+  previewImage.src +'" alt="chapter ' + chapter.title + ' prevew"/>' +
-            '</div>';
-        console.log(img);
+        console.log(previewImage);
 
-        html += img;
-        html += `<p>` + chapter.title + `</p><button type="button" data-start="`+ chapter.start+`">` + chapter.start + `</button>`;
-        // const chapterItem = document.createElement("div");
-        // chapterItem.innerText = chapter.
-      }
-      console.log(html);
+        html += `<div style="overflow: hidden; width: 256px; height: 144px;">
+             <img style="transform:translate(-${PREVIEW_WIDTH * point.x}px, -${PREVIEW_HEIGHT * point.y}px);"
+            src="${previewImage.src}" alt="chapter ${chapter.title}  prevew"/>' +
+            </div>
+            <p>${chapter.title}</p><button type="button" data-start="${chapter.start}">${chapter.start} seconds</button>`;
+      });
       this.chapterPopupElement.innerHTML = html;
+
+      const toggleChapter = document.getElementById('toggleChapter');
+      toggleChapter.addEventListener('click', () => {
+        this.hideElement(this.chapterPopupElement);
+      });
+      this.chapterSeekTimeItems = document.querySelectorAll("[data-start]");
+      this.chapterSeekTimeItems.forEach(item => {
+        item.addEventListener('click', this.seekVideo, false);
+        console.log('item');
+        console.log(item);
+      })
     },
     initHls() {
       if (Hls.isSupported()) {
@@ -421,7 +432,7 @@ export default {
         });
       } else {
         let videoWrapper = document.getElementById('videoWrapper');
-        videoWrapper.innerText = "Not support streaming video"
+        videoWrapper.innerText = "Not support streaming video";
       }
     },
     prepareHls(id, quality) {
@@ -429,7 +440,7 @@ export default {
         this.hls.destroy();
         this.hls = null;
       }
-      console.log(quality)
+      console.log(quality);
       // let dataStream = {
       //   'video': [],
       //   'audio': []
@@ -440,6 +451,7 @@ export default {
       this.hls.attachMedia(this.videoElement);
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
         this.play();
+
         // this.hls.on(Hls.Events.BUFFER_APPENDING, function (event, data) {
         //   console.log("apending");
         // dataStream[data.type].push(data.data);
@@ -505,46 +517,46 @@ export default {
       }
     },
     play() {
-      this.videoElement.play()
-      this.isPause = false
-      this.playButton.innerText = '❚ ❚'
+      this.videoElement.play();
+      this.isPause = false;
+      this.playButton.innerText = '❚ ❚';
     },
     pause() {
-      this.videoElement.pause()
-      this.isPause = true
-      this.playButton.textContent = '►'
-      this.videoControlElement.style.transform = 'translateY(-10px)'
+      this.videoElement.pause();
+      this.isPause = true;
+      this.playButton.textContent = '►';
+      this.videoControlElement.style.transform = 'translateY(-10px)';
     },
     toggleFullScreen() {
       if (!this.isFullScreen) {
-        this.openFullscreen()
+        this.openFullscreen();
       } else {
-        this.closeFullscreen()
+        this.closeFullscreen();
       }
     },
     openFullscreen() {
       let elem = this.videoWrapperElement;
       if (elem.requestFullscreen) {
         elem.requestFullscreen();
-        this.toggleFullScreenOnVideoElement()
+        this.toggleFullScreenOnVideoElement();
       } else if (elem.webkitRequestFullscreen) { /* Safari */
         elem.webkitRequestFullscreen();
-        this.toggleFullScreenOnVideoElement()
+        this.toggleFullScreenOnVideoElement();
       } else if (elem.msRequestFullscreen) { /* IE11 */
         elem.msRequestFullscreen();
-        this.toggleFullScreenOnVideoElement()
+        this.toggleFullScreenOnVideoElement();
       }
     },
     closeFullscreen() {
       if (document.exitFullscreen) {
         document.exitFullscreen();
-        this.toggleFullScreenOnVideoElement()
+        this.toggleFullScreenOnVideoElement();
       } else if (document.webkitExitFullscreen) { /* Safari */
         document.webkitExitFullscreen();
-        this.toggleFullScreenOnVideoElement()
+        this.toggleFullScreenOnVideoElement();
       } else if (document.msExitFullscreen) { /* IE11 */
         document.msExitFullscreen();
-        this.toggleFullScreenOnVideoElement()
+        this.toggleFullScreenOnVideoElement();
       }
     },
     toggleFullScreenOnVideoElement() {
@@ -555,7 +567,7 @@ export default {
       } else {
         this.isFullScreen = false;
         this.unHideElement(this.changePlayerSizeButton);
-        this.toggleFullScreenElement.setAttribute('title', "Exit full screen")
+        this.toggleFullScreenElement.setAttribute('title', "Exit full screen");
       }
     },
     togglePlayerSize() {
@@ -572,11 +584,11 @@ export default {
       }
     },
     changeQuality() {
-      console.log(this.hls)
+      console.log(this.hls);
 
       let loadLevelNumber = this.selectQualityElement.value;
       console.log(loadLevelNumber);
-      this.hls.loadLevel = parseInt(loadLevelNumber)
+      this.hls.loadLevel = parseInt(loadLevelNumber);
     },
     formatTimeString(seconds) {
       let date = new Date(0);
@@ -585,14 +597,14 @@ export default {
       let timeString = date.toISOString().substr(11, 8);
 
       if (seconds < 3600) {
-        timeString = timeString.substring(3, timeString.length)
+        timeString = timeString.substring(3, timeString.length);
       }
 
-      return timeString
+      return timeString;
     },
     copyTextToClipboard(text) {
       if (!navigator.clipboard) {
-        console.log("failed copy")
+        console.log("failed copy");
         return;
       }
       navigator.clipboard.writeText(text).then(function () {
@@ -608,10 +620,10 @@ export default {
     },
     toggleSlowMotion() {
       if (this.playbackRate === 0.25) {
-        this.playbackRate = this.previousPlaybackSpeed
+        this.playbackRate = this.previousPlaybackSpeed;
       } else {
         this.previousPlaybackSpeed = this.playbackRate;
-        this.playbackRate = 0.25
+        this.playbackRate = 0.25;
       }
     },
     setPlaybackSpeed(playbackRate) {
@@ -646,7 +658,7 @@ export default {
             const number = parseFloat(value);
             console.log(number);
             if (number === defaultPlaybackRate) {
-              children[i].setAttribute('selected', 'selected')
+              children[i].setAttribute('selected', 'selected');
               break;
             }
           }
@@ -654,27 +666,27 @@ export default {
       }
     },
     shiftCurrentTime(shift) {
-      this.videoElement.currentTime += shift
+      this.videoElement.currentTime += shift;
     },
     setCurrentTime(time) {
-      this.videoElement.currentTime = time
+      this.videoElement.currentTime = time;
     },
     updateVolumeText() {
-      this.volumeChangerElement.value = this.videoElement.volume
-      this.volume.innerText = Math.ceil(this.videoElement.volume * 100) + '%'
+      this.volumeChangerElement.value = this.videoElement.volume;
+      this.volume.innerText = Math.ceil(this.videoElement.volume * 100) + '%';
     },
     handleTimeUpdate() {
-      this.updateTime()
-      this.updateProgressBar()
+      this.updateTime();
+      this.updateProgressBar();
     },
     updateTime() {
-      this.currentTimeElement.innerText = this.formatTimeString(this.videoElement.currentTime)
+      this.currentTimeElement.innerText = this.formatTimeString(this.videoElement.currentTime);
     },
     updateProgressBar() {
       let boundingClientRect = this.videoElement.getBoundingClientRect();
       let size = parseInt(this.videoElement.currentTime * boundingClientRect.width / this.duration);
       this.progressBarElement.style.width = size + 'px';
-      this.progressBarCircleElement.style.left = size + 'px'
+      this.progressBarCircleElement.style.left = size + 'px';
     },
     toggleMute() {
       if (this.videoElement.muted) {
@@ -703,28 +715,33 @@ export default {
       if (this.prevSeekTime === seekTime) {
         return;
       }
-      this.setNewPreviewImageIfNeeded(seekTime)
+      this.setNewPreviewImageIfNeeded(seekTime);
 
       this.prevSeekTime = seekTime;
       const offsetX = event.x - boundingClientRect.x;
 
-      this.changePreviewImage(seekTime, offsetX, boundingClientRect)
-      this.changeHoverTimeElement(seekTime, offsetX)
+      this.changePreviewImage(seekTime, offsetX, boundingClientRect);
+      this.changeHoverTimeElement(seekTime, offsetX);
 
-      this.setElemPosition(this.chapterHoverElement, {left: offsetX - 15, top: -40})
+      this.setElemPosition(this.chapterHoverElement, {left: offsetX - 15, top: -40});
 
       this.unHideElement(this.chapterHoverElement);
+
       const chapter = this.getCurrentChapter(seekTime);
-      console.log('chapter');
-      console.log(chapter);
-      this.chapterHoverElement.innerText = chapter.title;
-      this.chapterTitleElement.innerText = " * " + chapter.title + " > ";
+      if (chapter !== null) {
+        console.log('chapter');
+        console.log(chapter);
+        this.chapterHoverElement.innerText = chapter.title;
+        this.chapterTitleElement.innerText = " * " + chapter.title + " > ";
+      }
     },
     getCurrentChapter(seekTime) {
-      for (let i = 0; i < this.chaptersList.length; i++) {
-        const chapter = this.chaptersList[i];
-        if (seekTime > chapter.start && seekTime < chapter.end) {
-          return chapter;
+      if (this.chaptersList !== null && this.chaptersList.le) {
+        for (let i = 0; i < this.chaptersList.length; i++) {
+          const chapter = this.chaptersList[i];
+          if (seekTime > chapter.start && seekTime < chapter.end) {
+            return chapter;
+          }
         }
       }
 
@@ -737,8 +754,8 @@ export default {
     },
     onMouseOutProgressBar() {
       this.hideElement(this.previewImageWrapperElement);
-      this.hideElement(this.showHoverTimeElement)
-      this.hideElement(this.chapterHoverElement)
+      this.hideElement(this.showHoverTimeElement);
+      this.hideElement(this.chapterHoverElement);
     },
     onVideoStop() {
       this.videoControlElement.style.transform = 'translateY(-20px)';
@@ -762,7 +779,7 @@ export default {
       this.setElemPosition(this.settingsPopupElement, {
         left: boundingClientRect.left + 100,
         top: boundingClientRect.top - 300
-      })
+      });
       this.toggleHideElement(this.settingsPopupElement);
     },
     toggleLoop() {
@@ -784,6 +801,8 @@ export default {
     },
     toggleContextMenu(e) {
       e.preventDefault();
+      console.log('this.contextMenuElement');
+      console.log(this.contextMenuElement);
       this.toggleHideElement(this.contextMenuElement);
     },
     videoReplay() {
@@ -815,7 +834,7 @@ export default {
     },
     volumeUp(event) {
       if (this.videoElement.volume + 0.05 <= 1) {
-        event.preventDefault()
+        event.preventDefault();
         this.videoElement.volume += 0.05;
         this.updateVolumeText();
       }
@@ -887,7 +906,7 @@ export default {
         default: {
           const eventCode = e.code;
 
-          console.log(eventCode)
+          console.log(eventCode);
           if (eventCode === 'Space') {
             e.preventDefault();
             this.togglePlayPause();
@@ -938,9 +957,9 @@ export default {
     changePreviewImage(seekTime, offsetX, boundingRect) {
       const point = this.getPreviewImageOffset(seekTime);
       this.previewImageElement.style.transform = "translate(-" + PREVIEW_WIDTH * point.x + "px, -" + PREVIEW_HEIGHT * point.y + "px)";
-      const offset = this.calculatePreviewImageOffset(offsetX, boundingRect)
+      const offset = this.calculatePreviewImageOffset(offsetX, boundingRect);
 
-      this.setElemPosition(this.previewImageWrapperElement, {left: offset.left, top: offset.top})
+      this.setElemPosition(this.previewImageWrapperElement, {left: offset.left, top: offset.top});
 
       this.unHideElement(this.previewImageWrapperElement);
     },
@@ -949,10 +968,10 @@ export default {
       const thumbY = parseInt(seconds / TILE_SIZE.y);
       const thumbX = parseInt(seconds % TILE_SIZE.x);
 
-      return {x: thumbX, y: thumbY}
+      return {x: thumbX, y: thumbY};
     },
     changeHoverTimeElement(seekTime, x) {
-      this.setElemPosition(this.showHoverTimeElement, {left: x - 15, top: -20})
+      this.setElemPosition(this.showHoverTimeElement, {left: x - 15, top: -20});
       this.unHideElement(this.showHoverTimeElement);
       this.showHoverTimeElement.innerText = this.formatTimeString(seekTime);
     },
@@ -978,13 +997,13 @@ export default {
       return {left: x, top: top};
     },
     hideElement(element) {
-      this.addCss(element, 'hide')
+      this.addCss(element, 'hide');
     },
     unHideElement(element) {
-      this.removeCss(element, 'hide')
+      this.removeCss(element, 'hide');
     },
     toggleHideElement(element) {
-      element.classList.toggle('hide')
+      element.classList.toggle('hide');
     },
     addCss(element, cssClassName) {
       element.classList.add(cssClassName);
@@ -995,6 +1014,12 @@ export default {
     setElemPosition(element, {left, top}) {
       element.style.top = top + "px";
       element.style.left = left + "px";
+    },
+    seekVideo(event) {
+      const seekTime = parseInt(event.target.getAttribute("data-start"));
+
+      console.log('seek time: ' + seekTime);
+      this.videoElement.currentTime = seekTime;
     }
   },
 }

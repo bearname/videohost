@@ -16,7 +16,7 @@ func NewFtpConnection(address string, username string, password string) *Client 
 		return nil
 	}
 
-	if err := client.Login(username, password); err != nil {
+	if err = client.Login(username, password); err != nil {
 		return nil
 	}
 	connection := new(Client)
@@ -36,11 +36,7 @@ func (f *Client) CopyFile(videoId string, r io.Reader) error {
 		return err
 	}
 
-	if err := f.client.Quit(); err != nil {
-		return err
-	}
-
-	return nil
+	return f.client.Quit()
 }
 
 func (f *Client) RemoveDirRecur(path string) error {

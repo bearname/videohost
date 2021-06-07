@@ -4,16 +4,20 @@
       <v-col
           cols="12"
       >
-        <h4 v-if="video === null">
-          Video unavailable
-        </h4>
-        <div class="text-align-left" v-else>
+        <div v-if="video !== null" class="text-align-left">
           <div v-if="video.status === 3">
             <Player :videoId="videoId" :duration="video.duration" :thumbnail="video.thumbnail"
                     :availableQualities="video.quality" :chapters="video.chapters" :key="key"/>
           </div>
           <div v-else> status {{ videoStatus }}</div>
         </div>
+        <h4 v-else>
+          <v-text-field
+              color="success"
+              loading
+              disabled
+          ></v-text-field>
+        </h4>
       </v-col>
     </v-row>
     <v-row no-gutters v-if="video !== null">
@@ -113,6 +117,9 @@ export default {
       try {
         await this.findVideoById({videoId: videoId});
         this.video = this.getVideoResult();
+        if (!('chapters' in this.video)) {
+          this.video.chapters = [];
+        }
         this.videoStatus = VideoStatus.intToStatus(this.video.status);
         this.video.uploaded = videosUtil.getElapsedString(this.video.uploaded);
       } catch (error) {

@@ -5,7 +5,7 @@
   >
     <div v-if="videos !== null">
       <VideoList :videos="videos" :current-user-id="currentUserId" :show-status="showStatus" :user-page="userPage"
-                 :key="pageNumber"/>
+                 :key="videos[0].id"/>
       <v-btn class="v-btn"
              :disabled="pageNumber === 0"
              @click="previousPage">
@@ -13,7 +13,7 @@
       </v-btn>
       <v-btn>{{ pageNumber + 1 }} of {{ countPage + 1 }}</v-btn>
       <v-btn class="v-btn"
-             :disabled="pageNumber >= countPage"
+             :disabled="pageNumber >= countPage - 1"
              @click="nextPage">
         Next
       </v-btn>
@@ -42,7 +42,7 @@ export default {
   data() {
     return {
       error: false,
-      pageNumber: 1,
+      pageNumber: 0,
       videos: null,
       countVideoOnPage: 16,
       countPage: null,
@@ -64,13 +64,13 @@ export default {
     }),
     async previousPage() {
       if (this.pageNumber > 0) {
-        this.pageNumber--;
+        --this.pageNumber;
         await this.fetchVideosByPage(this.pageNumber, this.countVideoOnPage)
       }
     },
     async nextPage() {
       if (this.pageNumber < this.countPage) {
-        this.pageNumber++;
+        ++this.pageNumber;
         await this.fetchVideosByPage(this.pageNumber, this.countVideoOnPage)
       }
     },

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strconv"
@@ -11,6 +11,14 @@ import (
 )
 
 func main() {
+	logFile := "videoprocessor.log"
+	log.SetFormatter(&log.JSONFormatter{})
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err == nil {
+		log.SetOutput(file)
+		defer file.Close()
+	}
+
 	if len(os.Args) < 3 {
 		fmt.Println("Usage videoprocessor.exe <video file path> <output thumbnail path> <outputPath>")
 	}
@@ -18,7 +26,7 @@ func main() {
 	duration, err := getVideoDuration(videoPath)
 	if err != nil {
 		fmt.Println("Failed get Video Duration")
-		log.Fatal(err)
+		log.Fatal("Failed get Video Duration" + err.Error())
 	}
 
 	fmt.Printf("%f", duration)
@@ -28,7 +36,7 @@ func main() {
 	err = createVideoThumbnail(videoPath, thumbnailPath, int64(duration)/2)
 	if err != nil {
 		fmt.Println("Failed createVideoThumbnail")
-		log.Fatal(err)
+		log.Fatal("Failed createVideoThumbnail" + err.Error())
 	}
 }
 

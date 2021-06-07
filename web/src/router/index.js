@@ -1,10 +1,11 @@
 import VueRouter from 'vue-router'
+import store from "../store/index.js";
+
 import HomePage from '../views/CatalogPage.vue'
-import StreamPage from '../views/VideoPage.vue'
+import VideoPage from '../views/VideoPage.vue'
 import UploadVideo from "../views/UploadVideoPage";
 import LoginPage from "../views/LoginPage";
 import UserPage from "../views/UserPage";
-import store from "../store/index.js";
 import SearchPage from "../views/SearchPage";
 
 const routes = {
@@ -40,7 +41,7 @@ const routes = {
     videoStream: {
         name: 'videoStream',
         path: '/videos/:videoId?',
-        component: StreamPage
+        component: VideoPage
     },
     search: {
         name: 'search',

@@ -20,12 +20,14 @@ func HandleTask(task *model.Task, connector database.Connector, cache caching.Ca
 	thumbUrl := filepath.Join(filepath.Dir(url), util.ThumbFileName)
 	log.Info("HandleTask" + task.Id + task.Url)
 	fmt.Println("HandleTask" + task.Id + task.Url)
-	outputHls := url[0 : strings.LastIndex(url, "\\")+1]
+	outputHlsDirectory := url[0 : strings.LastIndex(url, "\\")+1]
 	url = strings.ReplaceAll(url, "\\", "\\")
 	root := "C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoserver\\"
 	url = root + strings.ReplaceAll(url, "\\", "\\")
-	outputHls = root + strings.ReplaceAll(outputHls, "\\", "\\")
-	out, err := exec.Command("C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoprocessor\\videoprocessor.exe", url, root+strings.ReplaceAll(thumbUrl, "\\", "\\"), outputHls).Output()
+	outputHlsDirectory = root + strings.ReplaceAll(outputHlsDirectory, "\\", "\\")
+	name := "C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoprocessor\\videoprocessor.exe"
+	inputVideoFilePath := root + strings.ReplaceAll(thumbUrl, "\\", "\\")
+	out, err := exec.Command(name, url, inputVideoFilePath, outputHlsDirectory).Output()
 	if err != nil {
 		log.Error(err.Error())
 		return
@@ -67,7 +69,8 @@ func HandleTask(task *model.Task, connector database.Connector, cache caching.Ca
 		&video.Status,
 	)
 	if err == nil {
-		marshal, err := json.Marshal(video)
+		var marshal []byte
+		marshal, err = json.Marshal(video)
 		if err == nil {
 			err = cache.Set("video-"+task.Id, string(marshal))
 			if err != nil {

@@ -1,10 +1,8 @@
 import axios from "axios";
 import Cookie from "../../util/cookie";
-
 import videosUtil from "./video";
-
 import logError from "../../util/logger";
-import makeRequest from "@/api/api";
+import makeRequest from "../../api/api";
 import VideoStatus from "./videoStatus";
 
 const actions = {
@@ -27,41 +25,68 @@ const actions = {
     async uploadVideo(context, {file, title, description}) {
         try {
             await context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
-            await this._submitFile(context, file, title, description);
+            console.log(title, description)
+            const formData = new FormData();
+            formData.append("file", file)
+            formData.append("title", title)
+            formData.append("description", description)
+
+            const config = {
+                headers: {
+                    'Content-Type': 'video/mp4',
+                    'Authorization': context.rootGetters["auth/getTokenHeader"]
+                }
+            }
+
+            const url = process.env.VUE_APP_VIDEO_API + "/api/v1/videos/";
+            console.log('upload video' + url)
+
+            const response = await axios.post(url, formData, config);
+            console.log(response);
+            const status = response.status
+            if (status !== 200) {
+                context.state.isProcessing = false
+                throw new Error('Failed upload video')
+            } else {
+
+                console.log('SUCCESS!!')
+                context.state.isProcessing = true
+                context.state.videoId = response.data
+            }
         } catch (error) {
             context.state.isProcessing = false;
             console.error(error);
             console.log('FAILURE!!');
         }
     },
-    async _submitFile(context, file, title, description) {
-        const formData = new FormData();
-        formData.append("file", file)
-        formData.append("title", title)
-        formData.append("description", description)
-
-        const config = {
-            headers: {
-                'Content-Type': 'video/mp4',
-                'Authorization': context.rootGetters["auth/getTokenHeader"]
-            }
-        }
-
-        const url = process.env.VUE_APP_VIDEO_API + "/api/v1/videos/";
-        console.log('upload video' + url)
-
-        const response = await axios.post(url, formData, config);
-        console.log(response);
-        const status = response.status
-        if (status !== 200) {
-            context.state.isProcessing = false
-            throw new Error('Failed upload video')
-        } else {
-            console.log('SUCCESS!!')
-            context.state.isProcessing = true
-            context.state.videoId = response.data
-        }
-    },
+    // async sendFIle(context, file, title, description) {
+        // const formData = new FormData();
+        // formData.append("file", file)
+        // formData.append("title", title)
+        // formData.append("description", description)
+        //
+        // const config = {
+        //     headers: {
+        //         'Content-Type': 'video/mp4',
+        //         'Authorization': context.rootGetters["auth/getTokenHeader"]
+        //     }
+        // }
+        //
+        // const url = process.env.VUE_APP_VIDEO_API + "/api/v1/videos/";
+        // console.log('upload video' + url)
+        //
+        // const response = await axios.post(url, formData, config);
+        // console.log(response);
+        // const status = response.status
+        // if (status !== 200) {
+        //     context.state.isProcessing = false
+        //     throw new Error('Failed upload video')
+        // } else {
+        //     console.log('SUCCESS!!')
+        //     context.state.isProcessing = true
+        //     context.state.videoId = response.data
+        // }
+    // },
     async getVideoOnPage(context, page = '1', countVideoOnPage = '10') {
         try {
             const url = process.env.VUE_APP_VIDEO_API + '/api/v1/videos/?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
@@ -160,14 +185,15 @@ const actions = {
             const response = await axios.get(url);
 
             let data = response.data;
+            console.log('response.data');
             console.log(data);
 
             if (Object.keys(data).includes("pageCount")) {
                 this.countPage = data.pageCount;
             }
             if (Object.keys(data).includes("videos")) {
-                context.state.userVideos = data.videos;
-                context.state.userVideos.forEach(videosUtil.updateThumbnail, context.state.userVideos);
+                context.state.videos = data.videos;
+                context.state.videos.forEach(videosUtil.updateThumbnail, context.state.videos);
                 context.state.countUserVideos = data.countAllVideos;
             }
         } catch (error) {
