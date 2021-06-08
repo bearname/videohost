@@ -33,7 +33,7 @@ func (c *AuthController) CreateUser(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	c.JsonResponse(writer, token)
+	c.WriteJsonResponse(writer, token)
 }
 
 func (c *AuthController) Login(writer http.ResponseWriter, request *http.Request) {
@@ -50,7 +50,7 @@ func (c *AuthController) Login(writer http.ResponseWriter, request *http.Request
 		http.Error(writer, err.Error(), code)
 	}
 
-	c.JsonResponse(writer, token)
+	c.WriteJsonResponse(writer, token)
 }
 
 func (c *AuthController) RefreshToken(writer http.ResponseWriter, request *http.Request) {
@@ -67,7 +67,7 @@ func (c *AuthController) RefreshToken(writer http.ResponseWriter, request *http.
 		http.Error(writer, err.Error(), code)
 	}
 
-	c.JsonResponse(writer, token)
+	c.WriteJsonResponse(writer, token)
 }
 
 func (c *AuthController) CheckTokenHandler(next http.HandlerFunc) http.HandlerFunc {
@@ -117,5 +117,5 @@ func (c *AuthController) ValidateToken(writer http.ResponseWriter, request *http
 		return
 	}
 
-	c.BaseController.JsonResponse(writer, userDto)
+	c.BaseController.WriteJsonResponse(writer, userDto)
 }

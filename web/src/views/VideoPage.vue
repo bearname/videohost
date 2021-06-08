@@ -29,6 +29,8 @@
         <p class="subtitle-1">Watch video {{ video.description }}</p>
         <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
         <p class="subtitle-2">{{ video.views }} views</p>
+        <v-btn v-on:click="likeVideo(true)">like {{ video.countLikes }}</v-btn>
+        <v-btn v-on:click="likeVideo(false)">dislike {{ video.countDisLikes }}</v-btn>
         <div v-if="isCurrentUserOwner">
           <v-btn v-on:click="toggleEdit" :data-id="video.id">edit</v-btn>
           <div v-if="showEdit">
@@ -66,6 +68,7 @@ import Cookie from "../util/cookie";
 import VideoStatus from "../store/videoStore/videoStatus";
 import videosUtil from "../store/videoStore/video"
 import logError from "../util/logger";
+import RESPONSE_CODES from "@/store/videoStore/responseCode";
 
 export default {
   name: "StreamPage",
@@ -80,6 +83,7 @@ export default {
       video: null,
       currentUserId: null,
       error: null,
+      code: null,
       videoStatus: null,
       userVideos: null,
       showEdit: false,
@@ -103,8 +107,9 @@ export default {
   },
   methods: {
     ...mapActions({
-      deleteVideoPermanent: "video/deleteVideoPermanent",
       findVideoById: "video/getVideoById",
+      deleteVideoPermanent: "video/deleteVideoPermanent",
+      likeVideoRequest: "video/likeVideo",
     }),
     ...mapGetters({
       getVideoResult: "video/getVideo",
@@ -142,8 +147,34 @@ export default {
       this.error = this.getStatus();
     },
     toggleEdit() {
-      this.showEdit = !this.showEdit
+      this.showEdit = !this.showEdit;
     },
+    async likeVideo(isLike) {
+      await this.likeVideoRequest({videoId: this.videoId, isLike: isLike, ownerId: this.video.ownerId});
+      this.code = this.getCode();
+      switch (this.code) {
+        case RESPONSE_CODES.SuccessAddLike: {
+          this.video.countLikes++;
+          break;
+        }
+        case RESPONSE_CODES.SuccessAddDislike: {
+          this.video.countDisLikes++;
+          break;
+        }
+        case RESPONSE_CODES.SuccessDeleteLike: {
+          this.video.countLikes--;
+          break;
+        }
+        case RESPONSE_CODES.SuccessDeleteDisLike: {
+          this.video.countDisLikes--;
+          break;
+        }
+        default: {
+          break
+        }
+      }
+      this.error = this.getStatus();
+    }
   },
 }
 </script>

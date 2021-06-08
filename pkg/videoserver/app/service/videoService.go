@@ -9,8 +9,8 @@ import (
 	"github.com/bearname/videohost/pkg/common/util"
 	userModel "github.com/bearname/videohost/pkg/user/domain/model"
 	scaleModel "github.com/bearname/videohost/pkg/video-scaler/domain"
-	"github.com/bearname/videohost/pkg/videoserver/app/dto"
 	"github.com/bearname/videohost/pkg/videoserver/domain"
+	dto2 "github.com/bearname/videohost/pkg/videoserver/domain/dto"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
 	"github.com/bearname/videohost/pkg/videoserver/infrastructure/ftp"
 	"github.com/google/uuid"
@@ -50,7 +50,7 @@ func (s *VideoServiceImpl) FindVideo(videoId string) (*model.Video, error) {
 	return video, nil
 }
 
-func (s *VideoServiceImpl) UploadVideo(userId string, videoDto *dto.UploadVideoDto) (uuid.UUID, error) {
+func (s *VideoServiceImpl) UploadVideo(userId string, videoDto *dto2.UploadVideoDto) (uuid.UUID, error) {
 
 	contentType := videoDto.FileHeader.Header.Get("Content-Type")
 	if contentType != util.VideoContentType {
@@ -125,7 +125,7 @@ func (s *VideoServiceImpl) writeToCache(videoId string, video *model.Video) erro
 	return s.cache.Set(videoCachePrefix+videoId, string(cacheByte))
 }
 
-func (s *VideoServiceImpl) UpdateTitleAndDescription(userDto commonDto.UserDto, videoId string, videoDto dto.VideoMetadata) error {
+func (s *VideoServiceImpl) UpdateTitleAndDescription(userDto commonDto.UserDto, videoId string, videoDto dto2.VideoMetadata) error {
 	if len(userDto.UserId) == 0 || len(videoId) == 0 || len(videoDto.Title) == 0 || len(videoDto.Description) == 0 {
 		return errors.New("parameter must be length more than 0")
 	}
@@ -219,16 +219,25 @@ func (s *VideoServiceImpl) checkOwner(userDto commonDto.UserDto, videoId string)
 	return video, err
 }
 
-func (s *VideoServiceImpl) FindVideoOnPage(searchDto *dto.SearchDto) (dto.SearchResultDto, error) {
+func (s *VideoServiceImpl) FindVideoOnPage(searchDto *dto2.SearchDto) (dto2.SearchResultDto, error) {
 	pageCount, ok := s.videoRepo.GetPageCount(searchDto.Count)
 	if !ok {
-		return dto.SearchResultDto{}, errors.New("failed get page count")
+		return dto2.SearchResultDto{}, errors.New("failed get page count")
 	}
 
 	videos, err := s.videoRepo.FindVideosByPage(searchDto.Page, searchDto.Count)
 	if err != nil {
-		return dto.SearchResultDto{}, err
+		return dto2.SearchResultDto{}, err
 	}
 
-	return dto.SearchResultDto{PageCount: pageCount, Videos: videos}, nil
+	return dto2.SearchResultDto{PageCount: pageCount, Videos: videos}, nil
+}
+
+func (s *VideoServiceImpl) LikeVideo(like model.Like) (model.Action, error) {
+	_, err := s.videoRepo.Find(like.IdVideo)
+	if err != nil {
+		return 0, domain.ErrVideoNotFound
+	}
+
+	return s.videoRepo.Like(like)
 }

@@ -2,7 +2,7 @@ package domain
 
 import (
 	commonDto "github.com/bearname/videohost/pkg/common/dto"
-	"github.com/bearname/videohost/pkg/videoserver/app/dto"
+	dto2 "github.com/bearname/videohost/pkg/videoserver/domain/dto"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
 	"github.com/google/uuid"
 	"net/http"
@@ -15,9 +15,10 @@ type StreamService interface {
 
 type VideoService interface {
 	FindVideo(videoId string) (*model.Video, error)
-	UploadVideo(userId string, videoDto *dto.UploadVideoDto) (uuid.UUID, error)
-	UpdateTitleAndDescription(userDto commonDto.UserDto, videoId string, videoDto dto.VideoMetadata) error
+	UploadVideo(userId string, videoDto *dto2.UploadVideoDto) (uuid.UUID, error)
+	UpdateTitleAndDescription(userDto commonDto.UserDto, videoId string, videoDto dto2.VideoMetadata) error
 	AddQuality(videoId string, userDto commonDto.UserDto, quality model.Quality) error
 	DeleteVideo(userDto commonDto.UserDto, videoId string) error
-	FindVideoOnPage(searchDto *dto.SearchDto) (dto.SearchResultDto, error)
+	FindVideoOnPage(searchDto *dto2.SearchDto) (dto2.SearchResultDto, error)
+	LikeVideo(like model.Like) (model.Action, error)
 }

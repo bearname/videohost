@@ -50,6 +50,7 @@ func Router(connector database.Connector, messageBrokerAddress string, authServe
 	subRouter.HandleFunc("/videos/{videoId}/add-quality", videoController.AddQuality()).Methods(http.MethodPut, http.MethodOptions)
 	subRouter.HandleFunc("/videos/{videoId}", videoController.DeleteVideo()).Methods(http.MethodDelete, http.MethodOptions)
 	subRouter.HandleFunc("/videos/{videoId}/increment", videoController.IncrementViews()).Methods(http.MethodPost, http.MethodOptions)
+	subRouter.HandleFunc("/videos/{videoId}/like/{isLike:[0-1]}", middleware.AllowCors(middleware.AuthMiddleware(videoController.LikeVideo(), authServerAddress))).Methods(http.MethodPost, http.MethodOptions)
 
 	var imgServer = http.FileServer(http.Dir("C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoserver\\content"))
 	router.PathPrefix("/content/").Handler(http.StripPrefix("/content/", imgServer))

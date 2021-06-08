@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/bearname/videohost/pkg/common/database"
-	"github.com/bearname/videohost/pkg/videoserver/app/dto"
+	"github.com/bearname/videohost/pkg/videoserver/domain"
+	dto2 "github.com/bearname/videohost/pkg/videoserver/domain/dto"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,14 +20,14 @@ func NewMysqlVideoRepository(connector database.Connector) *VideoRepository {
 	return m
 }
 
-func (r *VideoRepository) Create(userId string, videoId string, title string, description string, url string, chapters []dto.ChapterDto) error {
+func (r *VideoRepository) Create(userId string, videoId string, title string, description string, url string, chapters []dto2.ChapterDto) error {
 	if chapters == nil || len(chapters) == 0 {
 		return r.insertWithoutChapter(userId, videoId, title, description, url)
 	}
 	return r.insertWithChapter(userId, videoId, title, description, url, chapters)
 }
 
-func (r *VideoRepository) insertWithChapter(userId string, videoId string, title string, description string, url string, chapters []dto.ChapterDto) error {
+func (r *VideoRepository) insertWithChapter(userId string, videoId string, title string, description string, url string, chapters []dto2.ChapterDto) error {
 	var values []interface{}
 	createChapterQuery := "INSERT INTO video_chapter (id_video, title, start, end) VALUES "
 
@@ -175,6 +176,18 @@ func (r *VideoRepository) Find(videoId string) (*model.Video, error) {
 
 	video.Chapters = chapters
 
+	q = `SELECT SUM(IF(isLike = 0, 1, 0)) AS video_dislikes,
+		SUM(IF(isLike = 1, 1, 0)) AS video_likes
+		FROM video_like
+		WHERE id_video = ?`
+	row = r.connector.GetDb().QueryRow(q, videoId)
+	var countLikes sql.NullInt64
+	var countDisLikes sql.NullInt64
+	err = row.Scan(
+		&countDisLikes,
+		&countLikes)
+	video.CountLikes = int(countLikes.Int64)
+	video.CountDisLikes = int(countDisLikes.Int64)
 	return &video, err
 }
 
@@ -238,7 +251,7 @@ func (r *VideoRepository) GetPageCount(countVideoOnPage int) (int, bool) {
 
 	var countVideo int
 	for rows.Next() {
-		err := rows.Scan(
+		err = rows.Scan(
 			&countVideo,
 		)
 		if err != nil {
@@ -283,11 +296,65 @@ func (r *VideoRepository) IncrementViews(id string) bool {
 	return true
 }
 
-func (r *VideoRepository) FindUserVideos(userId string, dto dto.SearchDto) ([]model.VideoListItem, error) {
+func (r *VideoRepository) FindUserVideos(userId string, dto dto2.SearchDto) ([]model.VideoListItem, error) {
 	offset := (dto.Page) * dto.Count
 	query := "SELECT video.id_video, title, duration, thumbnail_url, uploaded, views, status, quality FROM video  WHERE owner_id=?  LIMIT ?, ?;"
 	rows, err := r.connector.GetDb().Query(query, userId, offset, dto.Count)
 	return r.getVideoListItem(rows, err)
+}
+
+func (r *VideoRepository) Like(like model.Like) (model.Action, error) {
+	query := `SELECT isLike FROM video_like WHERE id_video = ? AND owner_id= ?;`
+
+	rows, err := r.connector.GetDb().Query(query, like.IdVideo, like.OwnerId)
+
+	if err == nil {
+		var isLike bool
+		if rows.Next() {
+			defer rows.Close()
+			err = rows.Scan(&isLike)
+			if err != nil {
+				return 0, domain.ErrInternal
+			}
+			if isLike == like.IsLike {
+				err = r.DeleteLike(like)
+				if err != nil {
+					return model.DeleteLike, domain.ErrFailedDeleteLike
+				}
+				if isLike {
+					return model.DeleteLike, nil
+				} else {
+					return model.DeleteDisLike, nil
+				}
+			} else {
+				if isLike {
+					return 0, domain.ErrAlreadyLike
+				} else {
+					return 0, domain.ErrAlreadyDisLike
+				}
+			}
+		}
+
+	}
+	query = `INSERT INTO video_like (id_video, owner_id, isLike)
+	VALUES (?, ?, ?)
+	ON DUPLICATE KEY UPDATE isLike=?;`
+	_, err = r.connector.GetDb().Query(query, like.IdVideo, like.OwnerId, like.IsLike, like.IsLike)
+	if err != nil {
+		return 0, domain.ErrFailedAddLike
+	}
+	if like.IsLike {
+		return model.AddLike, nil
+	} else {
+		return model.AddDislike, nil
+	}
+}
+
+func (r *VideoRepository) DeleteLike(like model.Like) error {
+	query := `DELETE FROM video_like WHERE id_video = ? AND owner_id= ?;`
+	_, err := r.connector.GetDb().Query(query, like.IdVideo, like.OwnerId)
+
+	return err
 }
 
 func (r *VideoRepository) getVideoListItem(rows *sql.Rows, err error) ([]model.VideoListItem, error) {
@@ -299,7 +366,7 @@ func (r *VideoRepository) getVideoListItem(rows *sql.Rows, err error) ([]model.V
 	videos := make([]model.VideoListItem, 0)
 	for rows.Next() {
 		var videoListItem model.VideoListItem
-		err := rows.Scan(
+		err = rows.Scan(
 			&videoListItem.Id,
 			&videoListItem.Name,
 			&videoListItem.Duration,

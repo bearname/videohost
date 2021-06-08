@@ -10,6 +10,10 @@ import (
 	"net/http"
 )
 
+var (
+	ErrBadRequest = errors.New("bad request")
+)
+
 type BaseController struct {
 }
 
@@ -35,7 +39,7 @@ func (c *BaseController) AllowCorsRequest(writer *http.ResponseWriter) {
 	(*writer).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-func (c *BaseController) JsonResponse(writer http.ResponseWriter, data interface{}) {
+func (c *BaseController) WriteJsonResponse(writer http.ResponseWriter, data interface{}) {
 	writer.Header().Set("Content-Type", "application/json")
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -55,7 +59,14 @@ func (c *BaseController) WriteResponse(w *http.ResponseWriter, statusCode int, s
 		Success: success,
 		Message: message,
 	}
-	c.JsonResponse(*w, response)
+	c.WriteJsonResponse(*w, response)
+}
+
+func (c *BaseController) WriteError(w http.ResponseWriter, err error, responseError TransportError) {
+	log.Error(err.Error())
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(responseError.Status)
+	_ = json.NewEncoder(w).Encode(responseError.Response)
 }
 
 func (c *BaseController) WriteResponseData(w http.ResponseWriter, data interface{}) {

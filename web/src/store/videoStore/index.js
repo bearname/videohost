@@ -5,6 +5,7 @@ const state = {
     videoId: null,
     isProcessing: false,
     success: false,
+    code: false,
     error: false,
     video: null,
     videos: null,
@@ -42,6 +43,9 @@ const getters = {
     },
     getStatus(state) {
         return state.success
+    },
+    getCode(state) {
+        return state.code
     }
 };
 

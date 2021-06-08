@@ -143,7 +143,7 @@ func (s *VideoScaleServiceImpl) addVideoQuality(videoId string, quality domain.Q
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusUnauthorized {
-		token, err := util.GetAdminAccessToken(client, s.authServerAddress)
+		token, err = util.GetAdminAccessToken(client, s.authServerAddress)
 		if err != nil {
 			log.Error(err)
 			return false

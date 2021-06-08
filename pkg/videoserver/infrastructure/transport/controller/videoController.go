@@ -5,11 +5,11 @@ import (
 	"github.com/bearname/videohost/pkg/common/amqp"
 	"github.com/bearname/videohost/pkg/common/infrarstructure/transport/controller"
 	"github.com/bearname/videohost/pkg/common/util"
-	"github.com/bearname/videohost/pkg/videoserver/app/dto"
 	"github.com/bearname/videohost/pkg/videoserver/app/service"
 	"github.com/bearname/videohost/pkg/videoserver/domain"
+	dto2 "github.com/bearname/videohost/pkg/videoserver/domain/dto"
 	"github.com/bearname/videohost/pkg/videoserver/domain/model"
-	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport"
+	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport/requestparser"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -75,13 +75,13 @@ func (c VideoController) GetVideos() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		parser := transport.NewCatalogVideoParser()
+		parser := requestparser.NewCatalogVideoParser()
 		result, err := parser.Parse(request)
 		if err != nil {
 			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
 			return
 		}
-		searchDto := result.(dto.SearchDto)
+		searchDto := result.(dto2.SearchDto)
 
 		log.Info("page ", searchDto.Page, " count video ", searchDto.Count)
 		onPage, err := c.videoService.FindVideoOnPage(&searchDto)
@@ -114,7 +114,7 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		parser := transport.NewUploadVideoRequestParser()
+		parser := requestparser.NewUploadVideoRequestParser()
 		uploadVideoDto, err := parser.Parse(request)
 		if err != nil {
 			log.Error(err.Error())
@@ -122,7 +122,7 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		videoDto := uploadVideoDto.(*dto.UploadVideoDto)
+		videoDto := uploadVideoDto.(*dto2.UploadVideoDto)
 		videoId, err := c.videoService.UploadVideo(userDto.UserId, videoDto)
 		if err != nil {
 			log.Error(err.Error())
@@ -131,7 +131,7 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 		}
 
 		writer.WriteHeader(http.StatusOK)
-		c.BaseController.JsonResponse(writer, videoId)
+		c.BaseController.WriteJsonResponse(writer, videoId)
 	}
 }
 
@@ -158,7 +158,7 @@ func (c *VideoController) UpdateTitleAndDescription() func(http.ResponseWriter, 
 			return
 		}
 
-		var videoDto dto.VideoMetadata
+		var videoDto dto2.VideoMetadata
 		err = json.NewDecoder(request.Body).Decode(&videoDto)
 		if err != nil {
 			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "cannot decode videoId|title|description struct")
@@ -218,13 +218,13 @@ func (c *VideoController) SearchVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		parser := transport.NewSearchVideoParser()
+		parser := requestparser.NewSearchVideoParser()
 		result, err := parser.Parse(request)
 		if err != nil {
 			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
 			return
 		}
-		searchDto := result.(dto.SearchDto)
+		searchDto := result.(dto2.SearchDto)
 
 		log.Info("page ", searchDto.Page, " count video ", searchDto.Count)
 		pageCount, ok := c.videoRepository.GetPageCount(searchDto.Count)
@@ -263,7 +263,7 @@ func (c *VideoController) IncrementViews() func(http.ResponseWriter, *http.Reque
 		responseData := make(map[string]interface{})
 		responseData["success"] = c.videoRepository.IncrementViews(result[0])
 
-		c.JsonResponse(writer, responseData)
+		c.WriteJsonResponse(writer, responseData)
 	}
 }
 
@@ -312,5 +312,27 @@ func (c VideoController) AddQuality() func(http.ResponseWriter, *http.Request) {
 		}
 
 		c.BaseController.WriteResponse(&writer, http.StatusOK, true, "Success add quality")
+	}
+}
+
+func (c VideoController) LikeVideo() func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		parser := requestparser.NewLikeVideoRequestParser()
+		likeVideo, err := parser.Parse(request)
+		if err != nil {
+			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, err.Error())
+			return
+		}
+		likeVideoReq := likeVideo.(*requestparser.LikeVideoRequest)
+		action, err := c.videoService.LikeVideo(model.Like{IdVideo: likeVideoReq.VideoId, OwnerId: likeVideoReq.OwnerId, IsLike: likeVideoReq.IsLike})
+		if err != nil {
+			c.BaseController.WriteError(writer, err, TranslateError(err))
+			return
+		}
+
+		c.BaseController.WriteJsonResponse(writer, controller.Response{
+			Code:    int(action),
+			Message: "Success " + model.ActionToString(action),
+		})
 	}
 }

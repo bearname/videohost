@@ -60,32 +60,32 @@ const actions = {
         }
     },
     // async sendFIle(context, file, title, description) {
-        // const formData = new FormData();
-        // formData.append("file", file)
-        // formData.append("title", title)
-        // formData.append("description", description)
-        //
-        // const config = {
-        //     headers: {
-        //         'Content-Type': 'video/mp4',
-        //         'Authorization': context.rootGetters["auth/getTokenHeader"]
-        //     }
-        // }
-        //
-        // const url = process.env.VUE_APP_VIDEO_API + "/api/v1/videos/";
-        // console.log('upload video' + url)
-        //
-        // const response = await axios.post(url, formData, config);
-        // console.log(response);
-        // const status = response.status
-        // if (status !== 200) {
-        //     context.state.isProcessing = false
-        //     throw new Error('Failed upload video')
-        // } else {
-        //     console.log('SUCCESS!!')
-        //     context.state.isProcessing = true
-        //     context.state.videoId = response.data
-        // }
+    // const formData = new FormData();
+    // formData.append("file", file)
+    // formData.append("title", title)
+    // formData.append("description", description)
+    //
+    // const config = {
+    //     headers: {
+    //         'Content-Type': 'video/mp4',
+    //         'Authorization': context.rootGetters["auth/getTokenHeader"]
+    //     }
+    // }
+    //
+    // const url = process.env.VUE_APP_VIDEO_API + "/api/v1/videos/";
+    // console.log('upload video' + url)
+    //
+    // const response = await axios.post(url, formData, config);
+    // console.log(response);
+    // const status = response.status
+    // if (status !== 200) {
+    //     context.state.isProcessing = false
+    //     throw new Error('Failed upload video')
+    // } else {
+    //     console.log('SUCCESS!!')
+    //     context.state.isProcessing = true
+    //     context.state.videoId = response.data
+    // }
     // },
     async getVideoOnPage(context, page = '1', countVideoOnPage = '10') {
         try {
@@ -176,6 +176,40 @@ const actions = {
             console.log(error);
             context.state.success = false;
             throw error;
+        }
+    },
+    async likeVideo(context, {videoId, isLike}) {
+        try {
+            await context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
+            const videoServerAddress = process.env.VUE_APP_VIDEO_API;
+            const url = videoServerAddress + `/api/v1/videos/${videoId}/like/${isLike ? 1 : 0}`;
+            const config = {
+                headers: {
+                    'Content-Type': 'video/mp4',
+                    'Authorization': context.rootGetters["auth/getTokenHeader"]
+                }
+            }
+
+            const response = await axios.post(url, null, config);
+
+            console.log('like response');
+            console.log(response);
+            context.state.success = (response.status === 200);
+            context.state.code = response.data.code;
+            // console.log('response.data');
+            // console.log(data);
+
+            //
+            // if (Object.keys(data).includes("pageCount")) {
+            //     this.countPage = data.pageCount;
+            // }
+            // if (Object.keys(data).includes("videos")) {
+            //     context.state.videos = data.videos;
+            //     context.state.videos.forEach(videosUtil.updateThumbnail, context.state.videos);
+            //     context.state.countUserVideos = data.countAllVideos;
+            // }
+        } catch (error) {
+            logError(error);
         }
     },
     async searchVideos(context, {searchString, page = '1', countVideoOnPage = '10'}) {

@@ -1,11 +1,14 @@
-package transport
+package requestparser
 
 import (
 	"encoding/json"
 	"errors"
 	"github.com/bearname/videohost/pkg/common/util"
-	"github.com/bearname/videohost/pkg/videoserver/app/dto"
+	dto2 "github.com/bearname/videohost/pkg/videoserver/domain/dto"
+	"github.com/gorilla/context"
+	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 type RequestParser interface {
@@ -34,14 +37,14 @@ func (p *UploadVideoRequestParser) Parse(request *http.Request) (interface{}, er
 		return nil, errors.New("cannot get file")
 	}
 	chaptersJson := request.FormValue("chapters")
-	var chapters []dto.ChapterDto
+	var chapters []dto2.ChapterDto
 	if len(chaptersJson) != 0 {
 		if err = json.Unmarshal([]byte(chaptersJson), &chapters); err != nil {
 			return nil, errors.New("cannot parse chapter")
 		}
 	}
 
-	return &dto.UploadVideoDto{
+	return &dto2.UploadVideoDto{
 		Title:         title,
 		Description:   description,
 		MultipartFile: fileReader,
@@ -70,7 +73,7 @@ func (p *CatalogVideoParser) Parse(request *http.Request) (interface{}, error) {
 		return nil, errors.New("failed get countVideoOnPage parameter")
 	}
 
-	return dto.SearchDto{
+	return dto2.SearchDto{
 		Page:         page,
 		Count:        countVideoOnPage,
 		SearchString: "",
@@ -102,7 +105,7 @@ func (p *SearchVideoParser) Parse(request *http.Request) (interface{}, error) {
 		return nil, errors.New("failed get searchString parameter")
 	}
 
-	return dto.SearchDto{
+	return dto2.SearchDto{
 		Page:         page,
 		Count:        countVideoOnPage,
 		SearchString: searchString,
@@ -140,4 +143,44 @@ func validate(pageStr string) (int, bool) {
 		return 0, true
 	}
 	return page, false
+}
+
+type LikeVideoRequestParser struct {
+}
+
+func NewLikeVideoRequestParser() *LikeVideoRequestParser {
+	return new(LikeVideoRequestParser)
+}
+
+func (p *LikeVideoRequestParser) Parse(request *http.Request) (interface{}, error) {
+	authorId, ok := context.Get(request, "userId").(string)
+	if !ok {
+		return nil, errors.New("cannot get userId")
+	}
+	vars := mux.Vars(request)
+	videoId, ok := vars["videoId"]
+	if !ok {
+		return nil, errors.New("videoId not present")
+	}
+
+	isLikeResult, ok := vars["isLike"]
+	if !ok {
+		return nil, errors.New("isLike not present")
+	}
+
+	atoi, err := strconv.Atoi(isLikeResult)
+	if err != nil {
+		return nil, errors.New("isLike must be 0 - is dislike or 1 - is like")
+	}
+
+	var isLike bool
+	if atoi == 1 {
+		isLike = true
+	} else if atoi == 0 {
+		isLike = false
+	} else {
+		return nil, errors.New("isLike must be 0 - is dislike or 1 - is like")
+	}
+
+	return &LikeVideoRequest{VideoId: videoId, OwnerId: authorId, IsLike: isLike}, nil
 }
