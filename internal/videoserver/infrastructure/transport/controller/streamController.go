@@ -32,7 +32,7 @@ func (c *StreamController) StreamHandler(writer http.ResponseWriter, request *ht
 	var ok bool
 	variable, err := c.BaseController.ParseMuxVariable(request, []string{"videoId"})
 	if err != nil {
-		c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "401 id not present")
+		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "401 id not present")
 		return
 	}
 

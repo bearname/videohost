@@ -24,12 +24,15 @@ func main() {
 	}
 
 	connector := mysql.ConnectorImpl{}
+
 	err = connector.Connect(parseConfig.DbUser, parseConfig.DbPassword, parseConfig.DbAddress, parseConfig.DbName)
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
 		return
 	}
 	defer connector.Close()
+	connector.SetMaxOpenConns(10)
+	connector.SetConnMaxIdleTime(100)
 
 	handler := router.Router(&connector, parseConfig.MessageBrokerAddress, parseConfig.AuthServerAddress, parseConfig.RedisAddress, parseConfig.RedisPassword)
 	if handler == nil {

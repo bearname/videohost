@@ -22,10 +22,10 @@ import (
 )
 
 type AuthServiceImpl struct {
-	userRepo repository.UserRepository
+	userRepo repository.UserRepo
 }
 
-func NewAuthService(userRepository repository.UserRepository) *AuthServiceImpl {
+func NewAuthService(userRepository repository.UserRepo) *AuthServiceImpl {
 	v := new(AuthServiceImpl)
 	v.userRepo = userRepository
 	return v
@@ -143,10 +143,12 @@ func (a *AuthServiceImpl) RefreshToken(request *http.Request) (domain.Token, err
 		return domain.Token{}, errors.New("cannot check username"), http.StatusInternalServerError
 	}
 	userKey, ok := context.Get(request, "userId").(string)
+	context.Clear(request)
 	if !ok {
 		return domain.Token{}, errors.New("cannot check userId"), http.StatusInternalServerError
 	}
 
+	context.Clear(request)
 	userFromDb, err := a.userRepo.FindByUserName(username)
 	if (err == nil && userFromDb.Username != username) || err != nil {
 		return domain.Token{}, errors.New("unauthorized, user not exists"), http.StatusUnauthorized

@@ -3,6 +3,7 @@ package mysql
 import (
 	"database/sql"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 type ConnectorImpl struct {
@@ -15,6 +16,14 @@ func NewConnectorImpl() ConnectorImpl {
 
 func (c *ConnectorImpl) GetDb() *sql.DB {
 	return c.database
+}
+
+func (c *ConnectorImpl) SetMaxOpenConns(maxOpenConnections int) {
+	c.GetDb().SetMaxOpenConns(maxOpenConnections)
+}
+
+func (c *ConnectorImpl) SetConnMaxIdleTime(d time.Duration) {
+	c.GetDb().SetConnMaxIdleTime(d)
 }
 
 func (c *ConnectorImpl) Connect(user string, password string, dbAddress string, dbName string) error {

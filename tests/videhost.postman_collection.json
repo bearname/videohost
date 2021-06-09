@@ -133,6 +133,68 @@
 					"response": []
 				},
 				{
+					"name": "subscribe to user",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8001/api/v1/users/cfaff592-b933-11eb-b073-e4e74940035b?followingToId=4bbe7653-b933-11eb-b073-e4e74940035b/follow",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8001",
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"cfaff592-b933-11eb-b073-e4e74940035b"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "followingToId",
+									"value": "4bbe7653-b933-11eb-b073-e4e74940035b/follow"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get user subscriber statistic",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8001/api/v1/users/cfaff592-b933-11eb-b073-e4e74940035b/subscriber",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8001",
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"cfaff592-b933-11eb-b073-e4e74940035b",
+								"subscriber"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "create user",
 					"request": {
 						"method": "POST",
@@ -254,7 +316,8 @@
 							{
 								"key": "Authorization",
 								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzcyMDQ5NzQsInJvbGUiOjEsInVzZXJJZCI6IjJiM2QxYjc2LWJjNmEtMTFlYi04YjM0LWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoiYWRtaW4ifQ.AIJnoxwVudeqFuI8EkB61kp5Nawisl_y8AL8H5Seij8",
-								"type": "text"
+								"type": "text",
+								"disabled": true
 							}
 						],
 						"body": {

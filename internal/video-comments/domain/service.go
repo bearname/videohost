@@ -8,7 +8,7 @@ type CommentDto struct {
 }
 
 type CommentService interface {
-	Create(commentDto *CommentDto) (int64, error)
+	Create(commentDto CommentDto) (int64, error)
 	FindRootLevel(videoId string, page *Page) (VideoComments, error)
 	FindChildren(rootCommentId int, page *Page) ([]Comment, error)
 	Edit(commentId int, message string, userId string) error

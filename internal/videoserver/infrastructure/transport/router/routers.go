@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/bearname/videohost/internal/common/db"
 	"github.com/bearname/videohost/internal/common/infrarstructure/amqp"
+	"github.com/bearname/videohost/internal/common/infrarstructure/profile"
 	caching "github.com/bearname/videohost/internal/common/infrarstructure/redis"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/handler"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/middleware"
@@ -54,5 +55,5 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	var imgServer = http.FileServer(http.Dir("C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoserver\\content"))
 	router.PathPrefix("/content/").Handler(http.StripPrefix("/content/", imgServer))
 
-	return middleware.LogMiddleware(router)
+	return middleware.LogMiddleware(profile.ProfileHandler(router))
 }

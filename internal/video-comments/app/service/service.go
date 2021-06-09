@@ -7,6 +7,7 @@ import (
 	"github.com/bearname/videohost/internal/common/util"
 	"github.com/bearname/videohost/internal/video-comments/domain"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
+	"net/http"
 )
 
 type CommentService struct {
@@ -23,9 +24,9 @@ func NewCommentService(repo domain.CommentRepository, cache caching.Cache, video
 	return c
 }
 
-func (s *CommentService) Create(commentDto *domain.CommentDto) (int64, error) {
+func (s *CommentService) Create(commentDto domain.CommentDto) (int64, error) {
 	//TODO send needed field on get parameter
-	responseBody, err := util.GetRequest(s.videoServerAddress+"/api/v1/videos/"+commentDto.VideoId, "")
+	responseBody, err := util.GetRequest(&http.Client{}, s.videoServerAddress+"/api/v1/videos/"+commentDto.VideoId, "")
 	if err != nil {
 		return 0, err
 	}
@@ -34,8 +35,7 @@ func (s *CommentService) Create(commentDto *domain.CommentDto) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-
-	return s.videoRepo.Create(domain.NewComment(commentDto.UserId, commentDto.VideoId, commentDto.ParentId, commentDto.Message))
+	return s.videoRepo.Create(commentDto.UserId, commentDto.VideoId, commentDto.ParentId, commentDto.Message)
 }
 
 func (s *CommentService) FindRootLevel(videoId string, page *domain.Page) (domain.VideoComments, error) {

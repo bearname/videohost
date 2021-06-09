@@ -11,7 +11,7 @@ import (
 )
 
 func ValidateToken(authorization string, authServerUrl string) (dto.UserDto, bool) {
-	body, err := GetRequest(authServerUrl+"/api/v1/auth/token/validate", authorization)
+	body, err := GetRequest(&http.Client{}, authServerUrl+"/api/v1/auth/token/validate", authorization)
 	if err != nil {
 		return dto.UserDto{}, false
 	}
@@ -76,7 +76,7 @@ func GetAdminAccessToken(client *http.Client, authServerUrl string) (*domain.Tok
 }
 
 func updateToken(token *domain.Token, authServerUrl string) (*domain.Token, error) {
-	respBody, err := GetRequest(authServerUrl+"/api/v1/auth/token", "Bearer "+token.RefreshToken)
+	respBody, err := GetRequest(&http.Client{}, authServerUrl+"/api/v1/auth/token", "Bearer "+token.RefreshToken)
 	if err != nil {
 		return nil, err
 	}

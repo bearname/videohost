@@ -2,6 +2,7 @@ package transport
 
 import (
 	"github.com/bearname/videohost/internal/common/db"
+	"github.com/bearname/videohost/internal/common/infrarstructure/profile"
 	caching "github.com/bearname/videohost/internal/common/infrarstructure/redis"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/handler"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/middleware"
@@ -28,5 +29,5 @@ func Router(connector db.Connector, userServerAddress string, videoServerAddress
 	subRouter.HandleFunc("/{commentId}", middleware.AllowCors(videoController.EditComment())).Methods(http.MethodPut, http.MethodOptions)
 	subRouter.HandleFunc("/{commentId}", middleware.AllowCors(videoController.DeleteComment())).Methods(http.MethodDelete, http.MethodOptions)
 
-	return middleware.LogMiddleware(router)
+	return middleware.LogMiddleware(profile.ProfileHandler(router))
 }

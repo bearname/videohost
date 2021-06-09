@@ -34,7 +34,7 @@ func (h *VideoScaleVisitor) Handle(message string) error {
 	if !ok {
 		return errors.New("invalid failed get access token")
 	}
-	response, err := util.GetRequest(h.videoServerAddress+"/api/v1/videos/"+videoId, token.RefreshToken)
+	response, err := util.GetRequest(&http.Client{}, h.videoServerAddress+"/api/v1/videos/"+videoId, token.RefreshToken)
 	if err != nil {
 		return err
 	}

@@ -53,7 +53,7 @@ type Page struct {
 }
 
 type CommentRepository interface {
-	Create(*Comment) (int64, error)
+	Create(VideoId string, UserId string, ParentId int, Message string) (int64, error)
 	FindById(commentId int) (Comment, error)
 	FindRootLevel(videoId string, page *Page) (VideoComments, error)
 	FindChildren(rootCommentId int, page *Page) ([]Comment, error)

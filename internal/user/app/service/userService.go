@@ -13,7 +13,16 @@ import (
 )
 
 type UserService struct {
-	userRepo repository.UserRepository
+	userRepo   repository.UserRepo
+	followRepo repository.FollowerRepo
+}
+
+func NewUserService(userRepo repository.UserRepo, followRepo repository.FollowerRepo) *UserService {
+	s := new(UserService)
+	s.followRepo = followRepo
+	s.userRepo = userRepo
+
+	return s
 }
 
 func (s *UserService) Find(usernameOrId string) (dto.FindUserDto, error) {
@@ -40,6 +49,22 @@ func (s *UserService) Find(usernameOrId string) (dto.FindUserDto, error) {
 func (s *UserService) isUUID(uuid string) bool {
 	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$")
 	return r.MatchString(uuid)
+}
+
+func (s *UserService) Follow(followingToUserId string, follower string, isFollowing bool) error {
+	return s.followRepo.Follow(followingToUserId, follower, isFollowing)
+}
+
+func (s *UserService) GetUserStatistic(userId string) (*model.UserStatistic, error) {
+	user, err := s.userRepo.FindById(userId)
+	if err != nil {
+		return nil, err
+	}
+	stats, err := s.followRepo.GetStats(userId)
+	if err != nil {
+		return nil, err
+	}
+	return model.NewUserStatistic(userId, user.Username, stats), nil
 }
 
 func (s *UserService) UpdatePassword(request *http.Request) error {

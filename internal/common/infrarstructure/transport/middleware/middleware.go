@@ -41,7 +41,7 @@ func AuthMiddleware(next http.HandlerFunc, authServerUrl string) http.HandlerFun
 			http.Error(writer, "authorization header not set", http.StatusUnauthorized)
 			return
 		}
-		body, err := util.GetRequest(authServerUrl+"/api/v1/auth/token/validate", authorization)
+		body, err := util.GetRequest(&http.Client{}, authServerUrl+"/api/v1/auth/token/validate", authorization)
 		if err != nil {
 			http.Error(writer, "valid check writes", http.StatusInternalServerError)
 			return

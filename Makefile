@@ -5,8 +5,8 @@ build: lint build-video build-user build-thumbgenerator build-videoprocessor bui
 lint:
 	golangci-lint run
 
-.PHONY: build-video
-build-video:
+.PHONY: build-videos
+build-videos:
 	go build  -o .\bin\videoserver\videoserver.exe .\cmd\videoserver\main.go
 
 .PHONY: build-user
@@ -17,7 +17,7 @@ build-user:
 build-thumbgenerator:
 	go build  -o .\bin\thumbgenerator\thumbgenerator.exe .\cmd\thumbgenerator\main.go
 
-.PHONY: build-video
+.PHONY: build-videoprocessor
 build-videoprocessor:
 	go build  -o .\bin\videoprocessor\videoprocessor.exe .\cmd\videoprocessor\main.go
 
@@ -36,8 +36,7 @@ build-video-scaler:
 	go build  -o .\bin\video-scaler\video-scaler.exe .\cmd\video-scaler\main.go
 
 .PHONY: run
-run:
-	run.bat
+run: run.bat
 
 .PHONY: run-videoserver
 run-videoserver:
@@ -48,8 +47,8 @@ run-user:
 	.\bin\user\userserver.exe
 
 .PHONY: run-video-comments
-run-user:
-	.\bin\user\video-comments.exe
+run-video-comments:
+	.\bin\comments\video-comments.exe
 
 .PHONY: run-thumbgenerator
 run-thumbgenerator:

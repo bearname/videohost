@@ -154,6 +154,7 @@ func NewLikeVideoRequestParser() *LikeVideoRequestParser {
 
 func (p *LikeVideoRequestParser) Parse(request *http.Request) (interface{}, error) {
 	authorId, ok := context.Get(request, "userId").(string)
+	context.Clear(request)
 	if !ok {
 		return nil, errors.New("cannot get userId")
 	}

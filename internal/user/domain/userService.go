@@ -8,4 +8,5 @@ import (
 type UserService interface {
 	Find(usernameOrId string) (dto.FindUserDto, error)
 	UpdatePassword(request *http.Request) error
+	Follow(followingToUserId string, follower string, isFollowing string) error
 }

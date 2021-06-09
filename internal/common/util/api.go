@@ -6,8 +6,7 @@ import (
 	"net/http"
 )
 
-func GetRequest(url string, authorization string) ([]byte, error) {
-	client := &http.Client{}
+func GetRequest(client *http.Client, url string, authorization string) ([]byte, error) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -21,11 +20,11 @@ func GetRequest(url string, authorization string) ([]byte, error) {
 		log.Error(err.Error())
 		return nil, err
 	}
+	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusUnauthorized {
 		return nil, err
 	}
 
-	defer response.Body.Close()
 	return io.ReadAll(response.Body)
 }

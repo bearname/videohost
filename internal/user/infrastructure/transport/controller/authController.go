@@ -61,6 +61,7 @@ func (c *AuthController) RefreshToken(writer http.ResponseWriter, request *http.
 		writer.WriteHeader(http.StatusNoContent)
 		return
 	}
+
 	token, err, code := c.authService.RefreshToken(request)
 
 	if err != nil {

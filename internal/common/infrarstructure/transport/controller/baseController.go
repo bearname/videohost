@@ -54,13 +54,13 @@ func (c *BaseController) WriteJsonResponse(writer http.ResponseWriter, data inte
 	}
 }
 
-func (c *BaseController) WriteResponse(w *http.ResponseWriter, statusCode int, success bool, message string) {
-	(*w).WriteHeader(statusCode)
+func (c *BaseController) WriteResponse(w http.ResponseWriter, statusCode int, success bool, message string) {
+	w.WriteHeader(statusCode)
 	response := transport.Response{
 		Success: success,
 		Message: message,
 	}
-	c.WriteJsonResponse(*w, response)
+	c.WriteJsonResponse(w, response)
 }
 
 func (c *BaseController) WriteError(w http.ResponseWriter, err error, responseError TransportError) {

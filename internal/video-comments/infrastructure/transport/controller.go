@@ -32,7 +32,7 @@ func (c *CommentController) CreateComment() func(http.ResponseWriter, *http.Requ
 		authorization := request.Header.Get("Authorization")
 		userDto, ok := util.ValidateToken(authorization, c.authServerAddress)
 		if !ok {
-			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
+			c.BaseController.WriteResponse(writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
 		}
 
@@ -40,11 +40,11 @@ func (c *CommentController) CreateComment() func(http.ResponseWriter, *http.Requ
 		err := json.NewDecoder(request.Body).Decode(&commentRequest)
 		if err != nil {
 			log.Error(err)
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "cannot decode videoId|message struct")
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "cannot decode videoId|message struct")
 			return
 		}
 
-		commentId, err := c.commentService.Create(&domain.CommentDto{
+		commentId, err := c.commentService.Create(domain.CommentDto{
 			UserId:   userDto.UserId,
 			VideoId:  commentRequest.VideoId,
 			ParentId: commentRequest.ParentId,
@@ -52,11 +52,11 @@ func (c *CommentController) CreateComment() func(http.ResponseWriter, *http.Requ
 		})
 		if err != nil {
 			log.Error(err)
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "failed create comments")
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "failed create comments")
 			return
 		}
 
-		c.BaseController.WriteResponse(&writer, http.StatusOK, true, "success create comment "+strconv.FormatInt(commentId, 10))
+		c.BaseController.WriteResponse(writer, http.StatusOK, true, "success create comment "+strconv.FormatInt(commentId, 10))
 	}
 }
 
@@ -65,7 +65,7 @@ func (c *CommentController) FindComments() func(http.ResponseWriter, *http.Reque
 		commentsFilter, err := DecodeFindCommentsRequest(request)
 		if err != nil {
 			log.Error(err)
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "parse query parameter")
+			c.WriteResponse(writer, http.StatusBadRequest, false, "parse query parameter")
 			return
 		}
 
@@ -74,7 +74,7 @@ func (c *CommentController) FindComments() func(http.ResponseWriter, *http.Reque
 			comments, err = c.commentService.FindUserComments(commentsFilter.AuthorId, &commentsFilter.Page)
 			if err != nil {
 				log.Error(err)
-				c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "failed find user comments")
+				c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "failed find user comments")
 				return
 			}
 
@@ -86,7 +86,7 @@ func (c *CommentController) FindComments() func(http.ResponseWriter, *http.Reque
 			comments, err = c.commentService.FindRootLevel(commentsFilter.VideoId, &commentsFilter.Page)
 			if err != nil {
 				log.Error(err)
-				c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "failed find comments")
+				c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "failed find comments")
 				return
 			}
 
@@ -98,7 +98,7 @@ func (c *CommentController) FindComments() func(http.ResponseWriter, *http.Reque
 			comments, err = c.commentService.FindChildren(commentsFilter.RootId, &commentsFilter.Page)
 			if err != nil {
 				log.Error(err)
-				c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "failed find comments")
+				c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "failed find comments")
 				return
 			}
 
@@ -108,7 +108,7 @@ func (c *CommentController) FindComments() func(http.ResponseWriter, *http.Reque
 		}
 
 		err = controller.ErrRouteNotFound
-		c.WriteError(writer, err, controller.TransportError{
+		c.BaseController.WriteError(writer, err, controller.TransportError{
 			Status: http.StatusNotFound,
 			Response: controller.Response{
 				Code:    100,
@@ -123,7 +123,7 @@ func (c *CommentController) EditComment() func(http.ResponseWriter, *http.Reques
 		authorization := request.Header.Get("Authorization")
 		userDto, ok := util.ValidateToken(authorization, c.authServerAddress)
 		if !ok {
-			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
+			c.BaseController.WriteResponse(writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
 		}
 
@@ -131,7 +131,7 @@ func (c *CommentController) EditComment() func(http.ResponseWriter, *http.Reques
 		err := json.NewDecoder(request.Body).Decode(&commentRequest)
 		if err != nil {
 			log.Error(err)
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "cannot decode videoId|message struct")
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "cannot decode videoId|message struct")
 			return
 		}
 
@@ -139,18 +139,18 @@ func (c *CommentController) EditComment() func(http.ResponseWriter, *http.Reques
 		commentId, err := strconv.Atoi(vars["commentId"])
 		if err != nil {
 			log.Error(err)
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "failed parse commentId")
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "failed parse commentId")
 			return
 		}
 
 		err = c.commentService.Edit(commentId, commentRequest.Message, userDto.UserId)
 		if err != nil {
 			log.Error(err)
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "failed edit comments")
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "failed edit comments")
 			return
 		}
 
-		c.BaseController.WriteResponse(&writer, http.StatusOK, true, "success edit comment "+strconv.FormatInt(int64(commentId), 10))
+		c.BaseController.WriteResponse(writer, http.StatusOK, true, "success edit comment "+strconv.FormatInt(int64(commentId), 10))
 	}
 }
 
@@ -159,7 +159,7 @@ func (c *CommentController) DeleteComment() func(http.ResponseWriter, *http.Requ
 		authorization := request.Header.Get("Authorization")
 		userDto, ok := util.ValidateToken(authorization, c.authServerAddress)
 		if !ok {
-			c.BaseController.WriteResponse(&writer, http.StatusUnauthorized, false, "Not grant permission")
+			c.BaseController.WriteResponse(writer, http.StatusUnauthorized, false, "Not grant permission")
 			return
 		}
 
@@ -167,17 +167,17 @@ func (c *CommentController) DeleteComment() func(http.ResponseWriter, *http.Requ
 		commentId, err := strconv.Atoi(vars["commentId"])
 		if err != nil {
 			log.Error(err)
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "failed parse commentId")
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "failed parse commentId")
 			return
 		}
 
 		err = c.commentService.Delete(commentId, userDto.UserId)
 		if err != nil {
 			log.Error(err)
-			c.BaseController.WriteResponse(&writer, http.StatusBadRequest, false, "failed find comments")
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "failed find comments")
 			return
 		}
 
-		c.BaseController.WriteResponse(&writer, http.StatusOK, true, "success delete comment "+strconv.FormatInt(int64(commentId), 10))
+		c.BaseController.WriteResponse(writer, http.StatusOK, true, "success delete comment "+strconv.FormatInt(int64(commentId), 10))
 	}
 }

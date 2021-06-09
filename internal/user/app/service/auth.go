@@ -62,6 +62,7 @@ func parseToken(tokenString string) (*jwt.Token, error) {
 
 func IsUsernameContextOk(username string, r *http.Request) bool {
 	usernameCtx, ok := context.Get(r, "username").(string)
+	context.Clear(r)
 	if !ok {
 		return false
 	}

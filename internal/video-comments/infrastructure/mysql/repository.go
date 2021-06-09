@@ -18,16 +18,16 @@ func NewCommentRepo(connector db.Connector) *CommentRepo {
 	return m
 }
 
-func (r *CommentRepo) Create(comment *domain.Comment) (int64, error) {
+func (r *CommentRepo) Create(VideoId string, UserId string, ParentId int, Message string) (int64, error) {
 	var sqlQuery string
 	var err error
 	var result sql.Result
-	if comment.ParentId > 0 {
+	if ParentId > 0 {
 		sqlQuery = "INSERT INTO video_comments (video_id, user_id, parent_id, message) VALUES  (?, ?, ?, ?);"
-		result, err = r.connector.GetDb().Exec(sqlQuery, comment.VideoId, comment.UserId, comment.ParentId, comment.Message)
+		result, err = r.connector.GetDb().Exec(sqlQuery, &VideoId, &UserId, &ParentId, &Message)
 	} else {
 		sqlQuery = "INSERT INTO video_comments (video_id, user_id, message) VALUES  (?, ?, ?);"
-		result, err = r.connector.GetDb().Exec(sqlQuery, comment.VideoId, comment.UserId, comment.Message)
+		result, err = r.connector.GetDb().Exec(sqlQuery, &VideoId, &UserId, &Message)
 	}
 
 	if err != nil {

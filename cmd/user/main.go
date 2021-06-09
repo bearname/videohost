@@ -8,6 +8,7 @@ import (
 	"github.com/bearname/videohost/internal/user/infrastructure/transport/router"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
+	"runtime"
 )
 
 func main() {
@@ -19,17 +20,21 @@ func main() {
 	//	log.SetOutput(file)
 	//	defer file.Close()
 	//}
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	conf, err := config.ParseConfig()
 	if err != nil {
 		log.WithError(err).Fatal("failed to parse conf")
 	}
 
 	connector := mysql.ConnectorImpl{}
+
 	err = connector.Connect(conf.DbUser, conf.DbPassword, conf.DbAddress, conf.DbName)
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
 		return
 	}
-
+	defer connector.Close()
+	connector.SetMaxOpenConns(15)
+	connector.SetConnMaxIdleTime(100)
 	server.ExecuteServer("userserver", conf.Port, router.Router(&connector))
 }

@@ -62,7 +62,7 @@ func (s *VideoScaleServiceImpl) PrepareToStream(videoId string, inputVideoPath s
 	}
 	s.token = token
 
-	response, err := util.GetRequest(s.videoServerAddress+"/api/v1/videos/"+videoId, s.token.RefreshToken)
+	response, err := util.GetRequest(&http.Client{}, s.videoServerAddress+"/api/v1/videos/"+videoId, s.token.RefreshToken)
 	if err != nil {
 		return false
 	}
