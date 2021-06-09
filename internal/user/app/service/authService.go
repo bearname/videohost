@@ -3,11 +3,11 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	commonDto "github.com/bearname/videohost/pkg/common/dto"
-	"github.com/bearname/videohost/pkg/user/app/dto"
-	"github.com/bearname/videohost/pkg/user/domain/model"
-	"github.com/bearname/videohost/pkg/user/domain/repository"
-	"github.com/bearname/videohost/pkg/video-scaler/domain"
+	commonDto "github.com/bearname/videohost/internal/common/dto"
+	"github.com/bearname/videohost/internal/user/app/dto"
+	"github.com/bearname/videohost/internal/user/domain/model"
+	"github.com/bearname/videohost/internal/user/domain/repository"
+	"github.com/bearname/videohost/internal/video-scaler/domain"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/gorilla/context"
@@ -56,7 +56,7 @@ func (a *AuthServiceImpl) CreateUser(requestBody io.ReadCloser) (domain.Token, e
 		return domain.Token{}, errors.New("failed generate id"), http.StatusInternalServerError
 	}
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+	passwordHash, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	role := model.General
 	accessToken, err := CreateToken(userKey.String(), newUser.Username, role)
 	if err != nil {
@@ -120,7 +120,7 @@ func (a *AuthServiceImpl) ValidateToken(authorizationHeader string) (commonDto.U
 		return commonDto.UserDto{}, http.StatusUnauthorized
 	}
 
-	username, userId, ok := a.parsePayload(ok, token)
+	username, userId, ok := a.parsePayload(token)
 	if !ok {
 		return commonDto.UserDto{}, http.StatusUnauthorized
 	}
@@ -180,7 +180,7 @@ func (a *AuthServiceImpl) RefreshToken(request *http.Request) (domain.Token, err
 	}, nil, http.StatusOK
 }
 
-func (a *AuthServiceImpl) parsePayload(ok bool, token *jwt.Token) (string, string, bool) {
+func (a *AuthServiceImpl) parsePayload(token *jwt.Token) (string, string, bool) {
 	var username string
 	var userId string
 	claims, ok := token.Claims.(jwt.MapClaims)

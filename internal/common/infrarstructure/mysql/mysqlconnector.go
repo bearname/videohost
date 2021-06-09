@@ -63,7 +63,7 @@ func (c *ConnectorImpl) ExecTransaction(query string, args ...interface{}) error
 		return err
 	}
 	defer func(tx *sql.Tx) {
-		err := tx.Rollback()
+		err = tx.Rollback()
 		if err != nil {
 			log.Error(err)
 		}

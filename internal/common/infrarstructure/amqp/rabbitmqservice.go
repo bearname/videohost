@@ -19,7 +19,7 @@ func NewRabbitMqService(url string) *RabbitMqService {
 func (r *RabbitMqService) Publish(exchange string, routingKey string, body string) error {
 	conn, err := amqp.Dial(r.url)
 	if err != nil {
-		log.Error("failed to connect to RabbitMQ: %s", err)
+		log.Errorf("failed to connect to RabbitMQ: %s", err)
 	}
 	defer conn.Close()
 
@@ -40,7 +40,7 @@ func (r *RabbitMqService) Publish(exchange string, routingKey string, body strin
 		nil,
 	)
 	if err != nil {
-		log.Error("%s: %s", "ffailed to declare an exchange", err)
+		log.Errorf("%s: %s", "failed to declare an exchange", err)
 		return err
 	}
 
@@ -138,6 +138,6 @@ func (r *RabbitMqService) handleMessage(message string, handler ConsumerVisitor)
 
 func failOnError(err error, msg string) {
 	if err != nil {
-		log.Error("%s: %s", msg, err)
+		log.Errorf("%s: %s", msg, err)
 	}
 }
