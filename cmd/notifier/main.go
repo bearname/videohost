@@ -1,16 +1,16 @@
 package main
 
 import (
-	config2 "github.com/bearname/videohost/cmd/notifier/config"
-	"github.com/bearname/videohost/pkg/common/amqp"
-	"github.com/bearname/videohost/pkg/notifier/app/service"
-	"github.com/bearname/videohost/pkg/notifier/intrastructure"
+	"github.com/bearname/videohost/cmd/notifier/config"
+	"github.com/bearname/videohost/internal/common/infrarstructure/amqp"
+	"github.com/bearname/videohost/internal/notifier/app/service"
+	"github.com/bearname/videohost/internal/notifier/intrastructure"
 )
 
 func main() {
-	config := config2.ParseConfig()
-	rabbitMqService := amqp.NewRabbitMqService(config.MessageBrokerAddress)
+	conf := config.ParseConfig()
+	rabbitMqService := amqp.NewRabbitMqService(conf.MessageBrokerAddress)
 
-	sender := service.NewSendInBlueMailSender(config.SendInBlueApiKey, config.SendBlueAddress)
-	rabbitMqService.Consume("events_topic", "events.video-scaled", intrastructure.NewEmailSendConsumer(sender, config.AuthServerAddress))
+	sender := service.NewSendInBlueMailSender(conf.SendInBlueApiKey, conf.SendBlueAddress)
+	rabbitMqService.Consume("events_topic", "events.video-scaled", intrastructure.NewEmailSendConsumer(sender, conf.AuthServerAddress))
 }

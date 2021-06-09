@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/bearname/videohost/cmd/thumbgenerator/config"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/caching"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
-	"github.com/bearname/videohost/pkg/common/model"
-	"github.com/bearname/videohost/pkg/thumbgenerator/app/worker"
+	"github.com/bearname/videohost/internal/common/db"
+	"github.com/bearname/videohost/internal/common/infrarstructure/mysql"
+	"github.com/bearname/videohost/internal/common/infrarstructure/redis"
+	"github.com/bearname/videohost/internal/common/infrarstructure/server"
+	"github.com/bearname/videohost/internal/thumbgenerator/app/worker"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 	"math/rand"
@@ -37,7 +37,7 @@ func main() {
 	stopChan := make(chan struct{})
 
 	killChan := server.GetKillSignalChan()
-	cache := caching.NewRedisCache(model.NewDsn(parseConfig.RedisAddress, "", parseConfig.RedisPassword, ""))
+	cache := caching.NewRedisCache(db.NewDsn(parseConfig.RedisAddress, "", parseConfig.RedisPassword, ""))
 	waitGroup := worker.PoolOfWorker(stopChan, &connector, cache)
 
 	server.WaitForKillSignal(killChan)

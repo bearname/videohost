@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -20,7 +21,8 @@ func main() {
 	for _, f := range files {
 		if f.IsDir() {
 			videoDir := root + "/" + f.Name()
-			filesInDir, err := ioutil.ReadDir(videoDir)
+			var filesInDir []fs.FileInfo
+			filesInDir, err = ioutil.ReadDir(videoDir)
 			if err != nil {
 				log.Error(err)
 			}
@@ -37,7 +39,7 @@ func main() {
 
 				if strings.Contains(name, "index-1080x") {
 					i := len(name)
-					s := name[i-len(".t"): i]
+					s := name[i-len(".t") : i]
 
 					newPath := videoDir + "/" + "index-1080" + s + ".ts"
 					rename(oldPath, newPath)

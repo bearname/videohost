@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/bearname/videohost/pkg/common/util"
+	"github.com/bearname/videohost/internal/common/util"
 	"strconv"
 )
 

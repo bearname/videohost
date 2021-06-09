@@ -1,6 +1,6 @@
 package config
 
-import "github.com/bearname/videohost/pkg/common/util"
+import "github.com/bearname/videohost/internal/common/util"
 
 type Config struct {
 	DbName            string

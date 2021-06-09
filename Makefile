@@ -1,5 +1,9 @@
 .PHONY: build
-build: build-video build-user build-thumbgenerator build-videoprocessor build-video-scaler build-notifier
+build: lint build-video build-user build-thumbgenerator build-videoprocessor build-video-scaler build-notifier
+
+.PHONY: lint
+lint:
+	golangci-lint run
 
 .PHONY: build-video
 build-video:
@@ -16,6 +20,10 @@ build-thumbgenerator:
 .PHONY: build-video
 build-videoprocessor:
 	go build  -o .\bin\videoprocessor\videoprocessor.exe .\cmd\videoprocessor\main.go
+
+.PHONY: build-video-comments
+build-video-comments:
+	go build  -o .\bin\video-comments\comments.exe .\cmd\video-comments\main.go
 
 .PHONY: build-notifier
 build-notifier:
@@ -38,6 +46,10 @@ run-videoserver:
 .PHONY: run-user
 run-user:
 	.\bin\user\userserver.exe
+
+.PHONY: run-video-comments
+run-user:
+	.\bin\user\video-comments.exe
 
 .PHONY: run-thumbgenerator
 run-thumbgenerator:

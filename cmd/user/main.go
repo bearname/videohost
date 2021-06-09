@@ -2,26 +2,34 @@ package main
 
 import (
 	"fmt"
-	config2 "github.com/bearname/videohost/cmd/user/config"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
-	"github.com/bearname/videohost/pkg/user/infrastructure/transport/router"
+	"github.com/bearname/videohost/cmd/user/config"
+	"github.com/bearname/videohost/internal/common/infrarstructure/mysql"
+	"github.com/bearname/videohost/internal/common/infrarstructure/server"
+	"github.com/bearname/videohost/internal/user/infrastructure/transport/router"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-	config, err := config2.ParseConfig()
+	//logFile := "user.log"
+	//
+	//log.SetFormatter(&log.JSONFormatter{})
+	//file, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	//if err == nil {
+	//	log.SetOutput(file)
+	//	defer file.Close()
+	//}
+	conf, err := config.ParseConfig()
 	if err != nil {
-		log.WithError(err).Fatal("failed to parse config")
+		log.WithError(err).Fatal("failed to parse conf")
 	}
 
 	connector := mysql.ConnectorImpl{}
-	err = connector.Connect(config.DbUser, config.DbPassword, config.DbAddress, config.DbName)
+	err = connector.Connect(conf.DbUser, conf.DbPassword, conf.DbAddress, conf.DbName)
 	if err != nil {
 		fmt.Println("unable to connect to connector" + err.Error())
 		return
 	}
 
-	server.ExecuteServer("userserver", config.Port, router.Router(&connector))
+	server.ExecuteServer("userserver", conf.Port, router.Router(&connector))
 }

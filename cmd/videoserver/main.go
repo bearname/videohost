@@ -3,14 +3,21 @@ package main
 import (
 	"fmt"
 	"github.com/bearname/videohost/cmd/videoserver/config"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/mysql"
-	"github.com/bearname/videohost/pkg/common/infrarstructure/server"
-	"github.com/bearname/videohost/pkg/videoserver/infrastructure/transport/router"
+	"github.com/bearname/videohost/internal/common/infrarstructure/mysql"
+	"github.com/bearname/videohost/internal/common/infrarstructure/server"
+	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/router"
 	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
+	//logFile := "video.log"
+	//log.SetFormatter(&log.JSONFormatter{})
+	//file, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	//if err == nil {
+	//	log.SetOutput(file)
+	//	defer file.Close()
+	//}
 	parseConfig, err := config.ParseConfig()
 	if err != nil {
 		log.WithError(err).Fatal("failed to parse parseConfig")
