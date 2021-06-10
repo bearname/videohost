@@ -13,9 +13,9 @@
       </span>
     </div>
     <div v-else>
-<!--      <v-alert v-if="message" border="left" color="blue-grey" dark>-->
-<!--        {{ message }}-->
-<!--      </v-alert>-->
+      <!--      <v-alert v-if="message" border="left" color="blue-grey" dark>-->
+      <!--        {{ message }}-->
+      <!--      </v-alert>-->
       <v-form>
 
         <v-container>

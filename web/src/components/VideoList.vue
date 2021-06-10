@@ -5,7 +5,8 @@
           v-for="video in videoList" :key="video.id"
           :cols="3"
       >
-        <VideoItem :video="video" :current-user-id="currentUserId" :show-status="showStatus" :user-page="isUserPage" :key="video.id"/>
+        <VideoItem :video="video" :current-user-id="currentUserId" :show-status="showStatus" :user-page="isUserPage"
+                   :key="video.id"/>
       </v-col>
     </v-row>
   </v-container>

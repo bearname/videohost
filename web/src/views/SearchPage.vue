@@ -1,7 +1,7 @@
 <template>
   <div>
     {{ search }}
-<!--    <Search :search-query="search" :key="search"/>-->
+    <!--    <Search :search-query="search" :key="search"/>-->
   </div>
 </template>
 
