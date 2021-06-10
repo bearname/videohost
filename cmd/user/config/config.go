@@ -22,8 +22,8 @@ func ParseConfig() (*Config, error) {
 	dbAddress := util.ParseEnvString("DATABASE_ADDRESS", "")
 	dbUser := util.ParseEnvString("DATABASE_USER", "root")
 	dbPassword := util.ParseEnvString("DATABASE_PASSWORD", "123")
-	MaxOpenConns := util.ParseEnvString("MAX_OPEN_CONNS", "")
-	ConnMaxIdleTime := util.ParseEnvString("CONN_MAX_IDLE_TIME", "")
+	MaxOpenConns := util.ParseEnvString("MAX_OPEN_CONNS", "5")
+	ConnMaxIdleTime := util.ParseEnvString("CONN_MAX_IDLE_TIME", "1")
 
 	atoi, err := strconv.Atoi(port)
 	if err != nil {

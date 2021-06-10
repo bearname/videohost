@@ -1,5 +1,4 @@
 import axios from "axios";
-import Cookie from "../../util/cookie";
 import videosUtil from "./video";
 import logError from "../../util/logger";
 import makeRequest from "../../api/api";
@@ -103,32 +102,6 @@ const actions = {
             }
         } catch (error) {
             logError(error)
-        }
-    },
-    async getUserVideos(context, {page, countVideoOnPage}) {
-        try {
-            await context.dispatch("auth/updateAuthorizationIfNeeded", {}, {root: true});
-            const url = process.env.VUE_APP_USER_API + "/api/v1/users/" + Cookie.getCookie("username") + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
-            console.log(url)
-
-            const config = {
-                headers: {
-                    'Authorization': context.rootGetters["auth/getTokenHeader"]
-                }
-            };
-
-            const data = await makeRequest(context, url, config);
-            console.log('data');
-            console.log(data);
-            const {videos, countAllVideos} = data;
-            context.state.userVideos = videos;
-            context.state.userVideos.forEach(videosUtil.updateThumbnail, context.state.userVideos);
-            context.state.countUserVideos = countAllVideos;
-            console.log('inner end');
-        } catch (error) {
-            console.log(error);
-            context.state.success = false;
-            throw error;
         }
     },
     async updateTitleAndDescription(context, {videoId, name, description}) {

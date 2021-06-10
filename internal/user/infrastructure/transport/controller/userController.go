@@ -153,23 +153,23 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 	}
 	log.Println("get user videos called")
 	vars := mux.Vars(request)
-	username, ok := vars["username"]
+	userId, ok := vars["userId"]
 	if !ok {
-		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot find username in request")
+		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot find by userId in request")
 		return
 	}
 
-	if _, err := c.userRepository.FindByUserName(username); err != nil {
+	if _, err := c.userRepository.FindById(userId); err != nil {
 		c.BaseController.WriteResponse(writer, http.StatusOK, false, "User not exist")
 		return
 	}
-
-	userId, ok := context.Get(request, "userId").(string)
-	context.Clear(request)
-	if !ok {
-		c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot check userId")
-		return
-	}
+	//
+	//userId, ok := context.Get(request, "userId").(string)
+	//context.Clear(request)
+	//if !ok {
+	//	c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot check userId")
+	//	return
+	//}
 
 	parser := requestparser.NewCatalogVideoParser()
 	result, err := parser.Parse(request)

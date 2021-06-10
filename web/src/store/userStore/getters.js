@@ -7,6 +7,12 @@ const getters = {
             return {}
         }
     },
+    getUserVideos(state) {
+        return {
+            videos: state.userVideos,
+            countAllVideos: state.countUserVideos
+        };
+    },
 };
 
 export default getters

@@ -38,7 +38,7 @@ func Router(connector db.Connector) http.Handler {
 	apiV1Route.HandleFunc("/users/{usernameOrId}", authController.CheckTokenHandler(userController.GetUser)).Methods(http.MethodGet, http.MethodOptions)
 	apiV1Route.HandleFunc("/users/{userId}/subscriber", userController.GetUserSubscription).Methods(http.MethodGet, http.MethodOptions)
 	apiV1Route.HandleFunc("/users/{userId}/follow", authController.CheckTokenHandler(userController.Follow)).Methods(http.MethodPost, http.MethodOptions)
-	apiV1Route.HandleFunc("/users/{username}/videos", authController.CheckTokenHandler(userController.GetUserVideos)).Methods(http.MethodGet, http.MethodOptions)
+	apiV1Route.HandleFunc("/users/{userId}/videos", userController.GetUserVideos).Methods(http.MethodGet, http.MethodOptions)
 
 	return middleware.LogMiddleware(profile.ProfileHandler(router))
 }

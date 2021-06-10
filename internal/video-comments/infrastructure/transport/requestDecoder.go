@@ -1,7 +1,7 @@
 package transport
 
 import (
-	"github.com/bearname/videohost/internal/video-comments/domain"
+	"github.com/bearname/videohost/internal/common/db"
 	"net/http"
 	"strconv"
 )
@@ -10,7 +10,7 @@ const defaultPageSize = 15
 const NotSet = -1
 
 type CommentsFilter struct {
-	Page     domain.Page
+	Page     db.Page
 	RootId   int
 	AuthorId string
 	VideoId  string
@@ -26,7 +26,7 @@ func DecodeFindCommentsRequest(r *http.Request) (CommentsFilter, error) {
 	if err != nil || pageNum < 0 {
 		pageNum = 0
 	}
-	pageSpec := &domain.Page{
+	pageSpec := &db.Page{
 		Size:   pageSize,
 		Number: pageNum,
 	}

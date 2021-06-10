@@ -1,9 +1,11 @@
 import actions from "./actions";
-import getters from "../authStore/getters";
-import mutations from "../authStore/mutaions";
+import getters from "./getters";
+import mutations from "./mutations";
 
 const state = {
     loadedUsers: [],
+    userVideos: null,
+    countUserVideos: 0,
 };
 
 export default {

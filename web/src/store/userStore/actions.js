@@ -1,3 +1,7 @@
+import makeRequest from "@/api/api";
+import videosUtil from "@/store/videoStore/video";
+import Cookie from "@/util/cookie";
+
 const actions = {
     async addUser(context, {username}) {
         try {
@@ -54,7 +58,33 @@ const actions = {
             console.log(error);
             throw error;
         }
-    }
+    },
+    async getUserVideos(context, {page, countVideoOnPage}) {
+        try {
+            const cookie = Cookie.getCookie("userId");
+            const url = process.env.VUE_APP_USER_API + "/api/v1/users/" + cookie + "/videos?page=" + page + "&countVideoOnPage=" + countVideoOnPage;
+            console.log(url)
+
+            const config = {
+                // headers: {
+                //     'Authorization': context.rootGetters["auth/getTokenHeader"]
+                // }
+            };
+
+            const data = await makeRequest(context, url, config);
+            console.log('data');
+            console.log(data);
+            const {videos, countAllVideos} = data;
+            context.state.userVideos = videos;
+            context.state.userVideos.forEach(videosUtil.updateThumbnail, context.state.userVideos);
+            context.state.countUserVideos = countAllVideos;
+            console.log('inner end');
+        } catch (error) {
+            console.log(error);
+            context.state.success = false;
+            throw error;
+        }
+    },
 }
 
 export default actions;

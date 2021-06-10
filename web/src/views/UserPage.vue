@@ -40,11 +40,11 @@ export default {
   },
   methods: {
     ...mapActions({
-      fetchUserVideos: "video/getUserVideos"
+      fetchUserVideos: "user/getUserVideos"
     }),
     ...mapGetters({
-      getUserVideos: "video/getUserVideos",
-      getUser: "user/getCurrentUser",
+      getUserVideos: "user/getUserVideos",
+      getUser: "auth/getCurrentUser",
       isLoggedIn: "auth/isLoggedIn",
       getCurrentUser: "auth/getCurrentUser"
     }),

@@ -9,9 +9,7 @@ const state = {
     error: false,
     video: null,
     videos: null,
-    userVideos: null,
     pageCount: 0,
-    countUserVideos: 0,
     url: {
         type: String,
         required: false,
@@ -31,12 +29,6 @@ const getters = {
     },
     getVideo(state) {
         return state.video;
-    },
-    getUserVideos(state) {
-        return {
-            videos: state.userVideos,
-            countAllVideos: state.countUserVideos
-        };
     },
     getPageCount(state) {
         return state.pageCount
