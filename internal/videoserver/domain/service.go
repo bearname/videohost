@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"github.com/bearname/videohost/internal/common/db"
 	commonDto "github.com/bearname/videohost/internal/common/dto"
 	dto2 "github.com/bearname/videohost/internal/videoserver/domain/dto"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
@@ -21,4 +22,5 @@ type VideoService interface {
 	DeleteVideo(userDto commonDto.UserDto, videoId string) error
 	FindVideoOnPage(searchDto *dto2.SearchDto) (dto2.SearchResultDto, error)
 	LikeVideo(like model.Like) (model.Action, error)
+	FindUserLikedVideo(userId string, page db.Page) ([]model.VideoListItem, error)
 }

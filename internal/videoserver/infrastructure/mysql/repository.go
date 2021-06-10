@@ -352,6 +352,21 @@ func (r *VideoRepository) Like(like model.Like) (model.Action, error) {
 	}
 }
 
+func (r *VideoRepository) FindLikedByUser(userId string, page db.Page) ([]model.VideoListItem, error) {
+	offset := (page.Number) * page.Size
+	query := `SELECT ids.id_video,
+       title,
+       duration,
+       thumbnail_url,
+       uploaded,
+       views,
+       status,
+       quality FROM (SELECT id_video FROM video_like WHERE owner_id = ? LIMIT ?, ?) as ids         LEFT JOIN video v ON ids.id_video = v.id_video`
+	rows, err := r.connector.GetDb().Query(query, userId, offset, page.Size)
+
+	return r.getVideoListItem(rows, err)
+}
+
 func (r *VideoRepository) DeleteLike(like model.Like) error {
 	query := `DELETE FROM video_like WHERE id_video = ? AND owner_id= ?;`
 	_, err := r.connector.GetDb().Query(query, like.IdVideo, like.OwnerId)

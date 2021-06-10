@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/bearname/videohost/internal/common/caching"
+	"github.com/bearname/videohost/internal/common/db"
 	commonDto "github.com/bearname/videohost/internal/common/dto"
 	"github.com/bearname/videohost/internal/common/infrarstructure/amqp"
 	"github.com/bearname/videohost/internal/common/util"
@@ -245,4 +246,8 @@ func (s *VideoServiceImpl) LikeVideo(like model.Like) (model.Action, error) {
 	}
 
 	return s.videoRepo.Like(like)
+}
+
+func (s *VideoServiceImpl) FindUserLikedVideo(userId string, page db.Page) ([]model.VideoListItem, error) {
+	return s.videoRepo.FindLikedByUser(userId, page)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/bearname/videohost/internal/common/caching"
+	"github.com/bearname/videohost/internal/common/db"
 	"github.com/bearname/videohost/internal/common/util"
 	"github.com/bearname/videohost/internal/video-comments/domain"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
@@ -38,15 +39,15 @@ func (s *CommentService) Create(commentDto domain.CommentDto) (int64, error) {
 	return s.videoRepo.Create(commentDto.UserId, commentDto.VideoId, commentDto.ParentId, commentDto.Message)
 }
 
-func (s *CommentService) FindRootLevel(videoId string, page *domain.Page) (domain.VideoComments, error) {
+func (s *CommentService) FindRootLevel(videoId string, page *db.Page) (domain.VideoComments, error) {
 	return s.videoRepo.FindRootLevel(videoId, page)
 }
 
-func (s *CommentService) FindChildren(rootCommentId int, page *domain.Page) ([]domain.Comment, error) {
+func (s *CommentService) FindChildren(rootCommentId int, page *db.Page) ([]domain.Comment, error) {
 	return s.videoRepo.FindChildren(rootCommentId, page)
 }
 
-func (s *CommentService) FindUserComments(userId string, page *domain.Page) (domain.Comments, error) {
+func (s *CommentService) FindUserComments(userId string, page *db.Page) (domain.Comments, error) {
 	return s.videoRepo.FindUserComments(userId, page)
 }
 

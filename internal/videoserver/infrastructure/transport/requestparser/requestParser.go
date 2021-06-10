@@ -62,13 +62,13 @@ func NewCatalogVideoParser() *CatalogVideoParser {
 
 func (p *CatalogVideoParser) Parse(request *http.Request) (interface{}, error) {
 	var page int
-	page, err := getIntQueryParameter(request, "page")
+	page, err := GetIntQueryParameter(request, "page")
 	if err != nil {
 		return nil, errors.New("failed get page parameter")
 	}
 
 	var countVideoOnPage int
-	countVideoOnPage, err = getIntQueryParameter(request, "countVideoOnPage")
+	countVideoOnPage, err = GetIntQueryParameter(request, "countVideoOnPage")
 	if err != nil {
 		return nil, errors.New("failed get countVideoOnPage parameter")
 	}
@@ -89,13 +89,13 @@ func NewSearchVideoParser() *SearchVideoParser {
 
 func (p *SearchVideoParser) Parse(request *http.Request) (interface{}, error) {
 	var page int
-	page, err := getIntQueryParameter(request, "page")
+	page, err := GetIntQueryParameter(request, "page")
 	if err != nil {
 		return nil, errors.New("failed get page parameter")
 	}
 
 	var countVideoOnPage int
-	countVideoOnPage, err = getIntQueryParameter(request, "limit")
+	countVideoOnPage, err = GetIntQueryParameter(request, "limit")
 	if err != nil {
 		return nil, errors.New("failed get countVideoOnPage parameter")
 	}
@@ -112,7 +112,7 @@ func (p *SearchVideoParser) Parse(request *http.Request) (interface{}, error) {
 	}, nil
 }
 
-func getIntQueryParameter(request *http.Request, key string) (int, error) {
+func GetIntQueryParameter(request *http.Request, key string) (int, error) {
 	pageStr, done := parseQueryParameter(request, key)
 	if !done {
 		return 0, errors.New("invalid " + key + " parameter not found")

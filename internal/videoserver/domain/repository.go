@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"github.com/bearname/videohost/internal/common/db"
 	dto2 "github.com/bearname/videohost/internal/videoserver/domain/dto"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
 )
@@ -18,5 +19,6 @@ type VideoRepository interface {
 	IncrementViews(videoId string) bool
 	SearchVideo(searchString string, page int, count int) ([]model.VideoListItem, error)
 	Like(like model.Like) (model.Action, error)
+	FindLikedByUser(userId string, page db.Page) ([]model.VideoListItem, error)
 	DeleteLike(like model.Like) error
 }

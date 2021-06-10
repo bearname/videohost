@@ -70,7 +70,7 @@ func (r *CommentRepo) FindById(commentId int) (domain.Comment, error) {
 	return domain.Comment{}, errors.New("not found comment")
 }
 
-func (r *CommentRepo) FindRootLevel(videoId string, page *domain.Page) (domain.VideoComments, error) {
+func (r *CommentRepo) FindRootLevel(videoId string, page *db.Page) (domain.VideoComments, error) {
 	query := `SELECT id,  user_id,  message, created, countSubComments
 				FROM video_comments
 						 JOIN (WITH RECURSIVE tmp (id, parent_id) AS (SELECT id, parent_id
@@ -131,7 +131,7 @@ func (r *CommentRepo) FindRootLevel(videoId string, page *domain.Page) (domain.V
 	return *domain.NewVideoComments(videoId, countAllComments, comments), nil
 }
 
-func (r *CommentRepo) FindUserComments(userId string, page *domain.Page) (domain.Comments, error) {
+func (r *CommentRepo) FindUserComments(userId string, page *db.Page) (domain.Comments, error) {
 	query := `SELECT id,  video_id,  message, created, countSubComments
 FROM video_comments
          JOIN (WITH RECURSIVE tmp (id, parent_id) AS (SELECT id, parent_id
@@ -187,7 +187,7 @@ LIMIT ?, ?;`
 	return domain.Comments{CountAllComments: countAllComments, RootComments: comments}, nil
 }
 
-func (r *CommentRepo) FindChildren(rootCommentId int, page *domain.Page) ([]domain.Comment, error) {
+func (r *CommentRepo) FindChildren(rootCommentId int, page *db.Page) ([]domain.Comment, error) {
 	query := `SELECT video_comments.id, video_id, user_id, message, created
 				FROM video_comments
 						 JOIN (

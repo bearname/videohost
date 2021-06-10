@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"github.com/bearname/videohost/internal/common/db"
 	"github.com/bearname/videohost/internal/common/infrarstructure/amqp"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/controller"
 	"github.com/bearname/videohost/internal/common/util"
@@ -10,6 +11,7 @@ import (
 	dto2 "github.com/bearname/videohost/internal/videoserver/domain/dto"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/requestparser"
+	"github.com/gorilla/context"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -335,5 +337,36 @@ func (c VideoController) LikeVideo() func(http.ResponseWriter, *http.Request) {
 			Code:    int(action),
 			Message: "Success " + model.ActionToString(action),
 		})
+	}
+}
+
+func (c VideoController) FindUserLikedVideo() func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		userId, ok := context.Get(request, "userId").(string)
+		context.Clear(request)
+		if !ok {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "cannot get userId")
+			return
+		}
+		var page int
+		page, err := requestparser.GetIntQueryParameter(request, "page")
+
+		if err != nil {
+			page = 0
+		}
+
+		var size int
+		size, err = requestparser.GetIntQueryParameter(request, "size")
+		if err != nil {
+			size = 30
+		}
+
+		likedVideos, err := c.videoService.FindUserLikedVideo(userId, db.Page{Number: page, Size: size})
+		if err != nil {
+			c.BaseController.WriteError(writer, err, TranslateError(err))
+			return
+		}
+
+		c.BaseController.WriteJsonResponse(writer, likedVideos)
 	}
 }

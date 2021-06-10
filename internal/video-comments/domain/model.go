@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"github.com/bearname/videohost/internal/common/db"
+	"time"
+)
 
 type BaseComment struct {
 	Id      int
@@ -47,17 +50,12 @@ func NewVideoComments(videoId string, countAllComments int, rootComments []RootC
 	return v
 }
 
-type Page struct {
-	Size   int
-	Number int
-}
-
 type CommentRepository interface {
 	Create(VideoId string, UserId string, ParentId int, Message string) (int64, error)
 	FindById(commentId int) (Comment, error)
-	FindRootLevel(videoId string, page *Page) (VideoComments, error)
-	FindChildren(rootCommentId int, page *Page) ([]Comment, error)
-	FindUserComments(userId string, page *Page) (Comments, error)
+	FindRootLevel(videoId string, page *db.Page) (VideoComments, error)
+	FindChildren(rootCommentId int, page *db.Page) ([]Comment, error)
+	FindUserComments(userId string, page *db.Page) (Comments, error)
 	Edit(commentId int, message string) error
 	Delete(commentId int) error
 }
