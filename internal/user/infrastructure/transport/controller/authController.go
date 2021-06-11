@@ -66,6 +66,7 @@ func (c *AuthController) RefreshToken(writer http.ResponseWriter, request *http.
 
 	if err != nil {
 		http.Error(writer, err.Error(), code)
+		return
 	}
 
 	c.WriteJsonResponse(writer, token)

@@ -163,13 +163,6 @@ func (c *UserController) GetUserVideos(writer http.ResponseWriter, request *http
 		c.BaseController.WriteResponse(writer, http.StatusOK, false, "User not exist")
 		return
 	}
-	//
-	//userId, ok := context.Get(request, "userId").(string)
-	//context.Clear(request)
-	//if !ok {
-	//	c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "Cannot check userId")
-	//	return
-	//}
 
 	parser := requestparser.NewCatalogVideoParser()
 	result, err := parser.Parse(request)

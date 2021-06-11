@@ -342,6 +342,7 @@ func (c VideoController) LikeVideo() func(http.ResponseWriter, *http.Request) {
 
 func (c VideoController) FindUserLikedVideo() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		c.AllowCorsRequest(&writer)
 		userId, ok := context.Get(request, "userId").(string)
 		context.Clear(request)
 		if !ok {

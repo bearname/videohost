@@ -140,22 +140,23 @@ func (a *AuthServiceImpl) ValidateToken(authorizationHeader string) (commonDto.U
 func (a *AuthServiceImpl) RefreshToken(request *http.Request) (domain.Token, error, int) {
 	username, ok := context.Get(request, "username").(string)
 	if !ok {
+		context.Clear(request)
 		return domain.Token{}, errors.New("cannot check username"), http.StatusInternalServerError
 	}
 	userKey, ok := context.Get(request, "userId").(string)
-	context.Clear(request)
 	if !ok {
+		context.Clear(request)
 		return domain.Token{}, errors.New("cannot check userId"), http.StatusInternalServerError
 	}
-
+	token, ok := context.Get(request, "token").(string)
+	if !ok {
+		context.Clear(request)
+		return domain.Token{}, errors.New("token to preset on context by token checker"), http.StatusInternalServerError
+	}
 	context.Clear(request)
 	userFromDb, err := a.userRepo.FindByUserName(username)
 	if (err == nil && userFromDb.Username != username) || err != nil {
 		return domain.Token{}, errors.New("unauthorized, user not exists"), http.StatusUnauthorized
-	}
-	token, ok := context.Get(request, "token").(string)
-	if !ok {
-		return domain.Token{}, errors.New("token to preset on context by token checker"), http.StatusInternalServerError
 	}
 
 	if userFromDb.RefreshToken != token {
