@@ -21,12 +21,6 @@
           videoStatus
         }}</span>
     </v-card-text>
-
-    <p>ownerId id {{ videoItem.ownerId }}</p>
-    <p>User id {{ userId }}</p>
-    <div v-if="isCurrentUserOwner">
-      <v-btn v-on:click="deleteItemPermanent(videoItem.id)" :data-id="videoItem.id">delete</v-btn>
-    </div>
     <div v-if="status !== null">
       <span v-if="status">Success </span>
       <span v-else>Failed</span>

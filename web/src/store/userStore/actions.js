@@ -16,7 +16,7 @@ const actions = {
       if (!response.ok) {
         if (response.status !== 401) {
           console.log(response);
-          return
+          return;
         }
         await context.dispatch('auth/logout', {}, {root: true});
       }
