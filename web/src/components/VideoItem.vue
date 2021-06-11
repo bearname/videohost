@@ -1,5 +1,5 @@
 <template>
-  <div style="overflow-y: auto; height:340px">
+  <v-card style="overflow-y: auto; height:340px">
     <v-img
         :src="videoItem.thumbnail"
         class="white--text align-end"
@@ -27,16 +27,27 @@
       <span>delete video
       </span>
     </div>
-  </div>
+  </v-card>
 </template>
 
 <script>
 
 import {mapActions, mapGetters} from "vuex";
 import VideoStatus from "../store/videoStore/videoStatus";
+import {VBtn, VCard, VCardActions, VCardText, VCardTitle, VDialog, VImg, VToolbar} from "vuetify/lib";
 
 export default {
   name: "VideoItem",
+  components: {
+    VBtn,
+    VCard,
+    VCardTitle,
+    VCardText,
+    VToolbar,
+    VCardActions,
+    VImg,
+    VDialog,
+  },
   props: [
     'video',
     'showStatus',
@@ -53,14 +64,27 @@ export default {
       isUserPage: this.userPage,
       status: null,
       userId: this.currentUserId,
+      saveToPlaylist: false,
+      userPlaylists: null,
+      dialog: false,
+      select: [
+        { text: 'State 1' },
+        { text: 'State 2' },
+        { text: 'State 3' },
+        { text: 'State 4' },
+        { text: 'State 5' },
+        { text: 'State 6' },
+        { text: 'State 7' },
+      ],
+
     }
   },
   methods: {
     ...mapActions({
-      deleteVideoPermanent: "video/deleteVideoPermanent"
+      deleteVideoPermanent: "videoMod/deleteVideoPermanent"
     }),
     ...mapGetters({
-      getStatus: "video/getStatus"
+      getStatus: "videoMod/getStatus"
     }),
     isCurrentUserOwner() {
       return this.userId !== null && this.videoItem.ownerId === this.userId
@@ -69,6 +93,10 @@ export default {
       await this.deleteVideoPermanent({videoId: videoId});
       this.status = this.getStatus();
     },
+    toggleDialog() {
+      console.log('dialog')
+      this.dialog = true;
+    }
   }
 }
 </script>

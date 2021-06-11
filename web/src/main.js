@@ -1,24 +1,26 @@
 import Vue from 'vue/dist/vue.js';
-import Vuex from 'vuex';
-import VueRouter from 'vue-router';
-
-import router from './router';
-import store from './store';
+import {createVuetify} from './plugins/vuetify';
 import App from './App';
-import vuetify from './plugins/vuetify';
 import 'material-design-icons-iconfont/dist/material-design-icons.css';
-import Vuetify from 'vuetify/lib';
+import {createStore} from './store';
+import {registerPlugins} from "@/plugins";
+import routerModule from "@/router";
+import { sync } from 'vuex-router-sync'
 
-Vue.use(Vuex);
 Vue.config.productionTip = false;
-Vue.use(VueRouter);
-Vue.use(Vuetify);
+registerPlugins(Vue);
+
+const store = createStore();
+const vuetify = createVuetify();
+const router = routerModule.getInstance(store)
+// createRouter(vuetify, store)
+sync(store, router)
 
 new Vue({
   el: '#app',
   router,
   store,
-  template: '<App/>',
   vuetify,
+  template: '<App/>',
   components: {App},
 });

@@ -1,4 +1,4 @@
-import videosUtil from './video';
+import videosUtil from './videoUtil';
 
 const mutations = {
   SET_VIDEOS(state, {videos}) {

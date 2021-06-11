@@ -15,8 +15,14 @@
 </template>
 
 <script>
+import {VBtn} from "vuetify/lib";
+import {mapActions, mapGetters} from "vuex";
+
 export default {
   name: "VideoEdit",
+  components: {
+    VBtn
+  },
   props: [
     "videoId",
     "videoName",
@@ -30,15 +36,21 @@ export default {
     }
   },
   methods: {
+    ...mapActions({
+      updateVideoTitleAndDescription: "videoMod/updateTitleAndDescription"
+    }),
+    ...mapGetters({
+      getVideoStatus: "videoMod/getStatus"
+    }),
     async updateTitleAndDescription() {
       const video = {
         videoId: this.id,
         name: this.name,
         description: this.description,
       };
-      await this.$store.dispatch("video/updateTitleAndDescription", video)
-      const getter = this.$store.getters["video/getStatus"];
-      console.log(getter)
+      await this.updateVideoTitleAndDescription(video);
+      const status = this.getVideoStatus();
+      console.log(status)
     }
   }
 }

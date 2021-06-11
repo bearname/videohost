@@ -24,7 +24,7 @@
               <button
                   id="playButton"
                   type="button"
-                  title="video.play()"
+                  title="play video"
                   v-on:click="togglePlayPause()">&#x23F5;</button>
             </span>
             <span class="player-controls-item">
@@ -41,7 +41,7 @@
               <span id="currentTime"></span>
               <span> / {{ videoDuration }}</span>
             </span>
-            <span>
+            <span v-if="chaptersList!== null">
               <span id="chapterTitle" class="chapter-title">{{ chaptersList[0].title }}</span>
             </span>
             <div class="float-right right-control">
@@ -133,10 +133,11 @@ const USER_HELP = [
     key: 'f',
     message: 'Activate full screen. If full screen mode is enabled, activate F again or press escape to exit full screen mode.'
   },
-]
+];
+
 const PREVIEW_WIDTH = 256;
 const PREVIEW_HEIGHT = 144;
-const TILE_SIZE = {x: 5, y: 5}
+const TILE_SIZE = {x: 5, y: 5};
 
 export default {
   name: "Player",
@@ -196,6 +197,7 @@ export default {
       currentTimeElement: null,
       chapterTitleElement: null,
       chapterPopupElement: null,
+      chapterHoverElement: null,
       chapterSeekTimeItems: [],
       volumeMuteElement: null,
       showHoverTimeElement: null,
@@ -203,7 +205,6 @@ export default {
       progressBarElement: null,
       progressBarCircleElement: null,
       chapterContainerElement: null,
-      chapterHoverElement: null,
       volumeChangerElement: null,
       settingButtonElement: null,
       toggleFullScreenElement: null,
@@ -239,11 +240,11 @@ export default {
   },
   methods: {
     ...mapActions({
-      getVideoOnPage: "video/getVideoOnPage"
+      getVideoOnPage: "videoMod/getVideoOnPage"
     }),
     ...mapGetters({
-      getVideos: "video/getVideos",
-      getPageCount: "video/getPageCount"
+      getVideos: "videoMod/getVideos",
+      getPageCount: "videoMod/getPageCount"
     }),
     async preloadPreviewImages() {
       const thumbnails = [];
@@ -301,6 +302,7 @@ export default {
     initVideoControls() {
       this.initVideoControlsItem();
       this.initProgressBar();
+      this.initChapterControl();
       this.initSettingElement();
     },
     initContextMenu() {
@@ -317,8 +319,7 @@ export default {
       // this.stopRecordElement = document.getElementById('stopRecord');
       this.videoControlElement = document.getElementById('videoControls');
       this.currentTimeElement = document.getElementById('currentTime');
-      this.chapterPopupElement = document.getElementById('chapterPopup');
-      this.chapterTitleElement = document.getElementById('chapterTitle');
+
 
       this.volume = document.getElementById('volume');
       this.playButton = document.getElementById('playButton');
@@ -333,6 +334,10 @@ export default {
       this.progressBarElement = document.getElementById('progressBar');
       this.progressBarCircleElement = document.getElementById('progressBarCircle');
       this.chapterContainerElement = document.getElementById('chapterContainer');
+    },
+    initChapterControl() {
+      this.chapterPopupElement = document.getElementById('chapterPopup');
+      this.chapterTitleElement = document.getElementById('chapterTitle');
       this.chapterHoverElement = document.getElementById('chapterHover');
       this.showHoverTimeElement = document.getElementById('showHoverTime');
     },
@@ -368,7 +373,9 @@ export default {
       this.volumeChangerElement.addEventListener('change', this.handleVolumeChange, false);
       this.volumeChangerElement.addEventListener('mousemove', this.handleVolumeChange, false);
 
-      this.chapterTitleElement.addEventListener('click', this.handleShowChapter, false);
+      if (this.chaptersList !== null) {
+        this.chapterTitleElement.addEventListener('click', this.handleShowChapter, false);
+      }
     },
     addEventListenerOnProgressBar() {
       this.progressBarWrapperElement.addEventListener('mousemove', this.onHoverProgressBar, false);
@@ -450,7 +457,7 @@ export default {
       this.hls.loadSource(process.env.VUE_APP_VIDEO_API + '/media/' + id + '/stream/');
       this.hls.attachMedia(this.videoElement);
       this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        this.play();
+        this.playVideo();
 
         // this.hls.on(Hls.Events.BUFFER_APPENDING, function (event, data) {
         //   console.log("apending");
@@ -509,19 +516,19 @@ export default {
     },
     togglePlayPause() {
       if (!this.videoElement.paused && !this.videoElement.ended) {
-        this.pause();
+        this.pauseVideo();
       } else if (this.videoElement.ended) {
-        this.videoReplay()
+        this.replayVideo()
       } else {
-        this.play();
+        this.playVideo();
       }
     },
-    play() {
+    playVideo() {
       this.videoElement.play();
       this.isPause = false;
       this.playButton.innerText = '❚ ❚';
     },
-    pause() {
+    pauseVideo() {
       this.videoElement.pause();
       this.isPause = true;
       this.playButton.textContent = '►';
@@ -715,7 +722,9 @@ export default {
       if (this.prevSeekTime === seekTime) {
         return;
       }
-      this.setNewPreviewImageIfNeeded(seekTime);
+      if (this.previewImages) {
+        this.setNewPreviewImageIfNeeded(seekTime);
+      }
 
       this.prevSeekTime = seekTime;
       const offsetX = event.x - boundingClientRect.x;
@@ -794,7 +803,7 @@ export default {
     },
     loopVideo() {
       if (this.isLoopedVideo) {
-        this.videoReplay();
+        this.replayVideo();
       } else {
         this.playButton.textContent = 'Replay';
       }
@@ -805,9 +814,9 @@ export default {
       console.log(this.contextMenuElement);
       this.toggleHideElement(this.contextMenuElement);
     },
-    videoReplay() {
+    replayVideo() {
       this.currentTime = 0;
-      this.play();
+      this.playVideo();
     },
     copyVideoPath() {
       this.copyTextToClipboard(document.URL);
@@ -1020,7 +1029,7 @@ export default {
 
       console.log('seek time: ' + seekTime);
       this.videoElement.currentTime = seekTime;
-    }
+    },
   },
 }
 </script>

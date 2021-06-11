@@ -28,9 +28,13 @@
 
 <script>
 import {mapActions} from "vuex";
+import {VBtn} from "vuetify/lib";
 
 export default {
   name: "LoginPage",
+  components: {
+    VBtn,
+  },
   data() {
     return {
       loginSelected: true,
@@ -43,8 +47,8 @@ export default {
   },
   methods: {
     ...mapActions({
-      login: "auth/login",
-      signup: "auth/signup"
+      login: "authMod/login",
+      signup: "authMod/signup"
     }),
     toggleLogin() {
       this.loginSelected = !this.loginSelected;

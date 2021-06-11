@@ -28,10 +28,10 @@ export default {
   },
   methods: {
     ...mapActions({
-      findUserLikedVideos: "user/getUserLikedVideos",
+      findUserLikedVideos: "userMod/getUserLikedVideos",
     }),
     ...mapGetters({
-      getVideoResult: "user/getUserVideos",
+      getVideoResult: "userMod/getUserVideos",
     }),
     async fetchUserVideos(page, countVideo) {
       await this.findUserLikedVideos({page: page, countVideoOnPage: countVideo});

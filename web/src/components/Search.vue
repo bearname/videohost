@@ -19,10 +19,14 @@
 <script>
 import VideoList from "./VideoList";
 import {mapActions, mapGetters} from "vuex";
+import {VBtn} from 'vuetify/lib';
 
 export default {
   name: "Search",
-  components: {VideoList},
+  components: {
+    VideoList,
+    VBtn
+  },
   props: [
     'searchQuery'
   ],
@@ -51,11 +55,11 @@ export default {
   },
   methods: {
     ...mapActions({
-      searchVideosByQuery: "video/searchVideos"
+      searchVideosByQuery: "videoMod/searchVideos"
     }),
     ...mapGetters({
-      getVideos: "video/getVideos",
-      getPageCount: "video/getPageCount"
+      getVideos: "videoMod/getVideos",
+      getPageCount: "videoMod/getPageCount"
     }),
     async searchVideo() {
       await this.searchVideos(this.search);

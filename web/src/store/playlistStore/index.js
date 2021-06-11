@@ -1,15 +1,17 @@
 import actions from './actions';
 import mutations from './mutations';
-import getters from './getters';
 
 const state = {
-  username: 'default',
-  user: {
-    id: '',
-    username: '',
-    loggedIn: false,
-    accessToken: '',
-    refreshToken: '',
+  playlist: null,
+  error: null
+};
+
+const getters = {
+  getPlaylist(state) {
+    return state.playlist;
+  },
+  getError(state) {
+    return state.error;
   },
 };
 

@@ -1,10 +1,13 @@
 import dbUtils from '../dbUtils';
-import router from '../../router';
 import jwt_decode from 'jwt-decode';
+
 
 const actions = {
   async login(context, {username, password}) {
     try {
+      context.commit('setUsername');
+
+      console.log(context.getters.username);
       const response = await fetch(process.env.VUE_APP_USER_API + '/api/v1/auth/login', {
         method: 'POST',
         body: JSON.stringify({username: username, password: password}),
@@ -15,21 +18,29 @@ const actions = {
         return;
       }
       const data = await response.json();
+      console.log(data);
       const {accessToken, refreshToken} = data;
       await dbUtils.addUser({username, password});
+      context.commit('LOGIN', {username, accessToken, refreshToken});
+      console.log('context.state.user after login');
+      console.log(context.state.user);
 
-      context.commit('LOGIN', {username, accessToken});
-      context.commit('SET_REFRESH_TOKEN', {refreshToken});
+      // context.commit('SET_REFRESH_TOKEN', {refreshToken});
       context.commit('SET_COOKIE', {
         username,
         accessToken,
         refreshToken,
       });
+
       context.commit('SET_REFRESH_TOKEN_COOKIE', {refreshToken});
-      await router.push({name: 'uploadVideo'});
+      console.log('router');
+      console.log(router);
+
+      // await router.push({name: 'uploadVideo'});
+      // await router.push({name: 'uploadVideo'});
     } catch (err) {
       console.log(err);
-      await context.dispatch('logout');
+      // await context.dispatch('logout');
     }
   },
   async logout(context) {
@@ -44,7 +55,7 @@ const actions = {
       context.commit('LOGOUT');
       context.commit('ERASE_COOKIE', {cookies: ['username', 'accessToken']});
       context.commit('SET_REFRESH_TOKEN', {refreshToken: ''});
-      await router.push({name: 'login'});
+      // await router.push({name: 'login'});
     } catch (error) {
       console.log(error);
     }
@@ -76,7 +87,7 @@ const actions = {
       context.commit('SET_COOKIE', {username: username, accessToken: accessToken});
       context.commit('SET_REFRESH_TOKEN_COOKIE', {refreshToken: refreshToken});
 
-      await router.push({name: 'uploadVideo'});
+      // await router.push({name: 'uploadVideo'});
     } catch (err) {
       console.log(err);
 

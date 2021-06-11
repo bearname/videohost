@@ -1,5 +1,5 @@
 import axios from 'axios';
-import videosUtil from './video';
+import videosUtil from './videoUtil';
 import logError from '../../util/logger';
 import makeRequest from '../../api/api';
 import VideoStatus from './videoStatus';
@@ -15,7 +15,6 @@ const actions = {
         return;
       }
       const data = response.data;
-      console.log(data);
       context.state.video = data;
       context.state.videoStatus = VideoStatus.intToStatus(data.status);
       context.state.video.uploaded = videosUtil.getElapsedString(data.uploaded);
@@ -25,7 +24,7 @@ const actions = {
   },
   async uploadVideo(context, {file, title, description}) {
     try {
-      await context.dispatch('auth/updateAuthorizationIfNeeded', {}, {root: true});
+      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
       console.log(title, description);
       const formData = new FormData();
       formData.append('file', file);
@@ -35,7 +34,7 @@ const actions = {
       const config = {
         headers: {
           'Content-Type': 'video/mp4',
-          'Authorization': context.rootGetters['auth/getTokenHeader'],
+          'Authorization': context.rootGetters['authMod/getTokenHeader'],
         },
       };
 
@@ -80,12 +79,12 @@ const actions = {
   },
   async updateTitleAndDescription(context, {videoId, name, description}) {
     try {
-      await context.dispatch('auth/updateAuthorizationIfNeeded', {}, {root: true});
+      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
       const url = process.env.VUE_APP_VIDEO_API + '/api/v1/videos/' + videoId;
       const config = {
         method: 'PUT',
         headers: {
-          'Authorization': context.rootGetters['auth/getTokenHeader'],
+          'Authorization': context.rootGetters['authMod/getTokenHeader'],
         },
         body: JSON.stringify({'title': name, 'description': description}),
       };
@@ -104,12 +103,12 @@ const actions = {
   },
   async deleteVideoPermanent(context, {videoId}) {
     try {
-      await context.dispatch('auth/updateAuthorizationIfNeeded', {}, {root: true});
+      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
       const url = process.env.VUE_APP_VIDEO_API + '/api/v1/videos/' + videoId;
       const config = {
         method: 'DELETE',
         headers: {
-          'Authorization': context.rootGetters['auth/getTokenHeader'],
+          'Authorization': context.rootGetters['authMod/getTokenHeader'],
         },
       };
       const data = await makeRequest(context, url, config);
@@ -127,13 +126,13 @@ const actions = {
   },
   async likeVideo(context, {videoId, isLike}) {
     try {
-      await context.dispatch('auth/updateAuthorizationIfNeeded', {}, {root: true});
+      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
       const videoServerAddress = process.env.VUE_APP_VIDEO_API;
       const url = videoServerAddress + `/api/v1/videos/${videoId}/like/${isLike ? 1 : 0}`;
       const config = {
         headers: {
           'Content-Type': 'video/mp4',
-          'Authorization': context.rootGetters['auth/getTokenHeader'],
+          'Authorization': context.rootGetters['authMod/getTokenHeader'],
         },
       };
 

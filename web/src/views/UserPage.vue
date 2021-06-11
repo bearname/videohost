@@ -40,13 +40,13 @@ export default {
   },
   methods: {
     ...mapActions({
-      fetchUserVideos: "user/getUserVideos"
+      fetchUserVideos: "userMod/getUserVideos"
     }),
     ...mapGetters({
-      getUserVideos: "user/getUserVideos",
-      getUser: "auth/getCurrentUser",
-      isLoggedIn: "auth/isLoggedIn",
-      getCurrentUser: "auth/getCurrentUser"
+      getUserVideos: "userMod/getUserVideos",
+      getUser: "authMod/getCurrentUser",
+      isLoggedIn: "authMod/isLoggedIn",
+      getCurrentUser: "authMod/getCurrentUser"
     }),
     async getAsyncVideos() {
       console.log('start');

@@ -93,9 +93,13 @@
 
 <script>
 import {mapActions, mapGetters} from "vuex";
+import {VBtn} from "vuetify/lib";
 
 export default {
   name: "UploadVideoPage",
+  components: {
+    VBtn,
+  },
   data() {
     return {
       file: undefined,
@@ -119,11 +123,11 @@ export default {
   },
   methods: {
     ...mapActions({
-      uploadVideo: "video/uploadVideo"
+      uploadVideo: "videoMod/uploadVideo"
     }),
     ...mapGetters({
-      getVideoId: "video/getVideoId",
-      getIsProcessing: "video/getIsProcessing"
+      getVideoId: "videoMod/getVideoId",
+      getIsProcessing: "videoMod/getIsProcessing"
     }),
     onChangeFile(file) {
       this.file = file;

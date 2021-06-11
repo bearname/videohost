@@ -2,11 +2,25 @@ import jwt_decode from 'jwt-decode';
 import Cookie from '../../util/cookie';
 
 const mutations = {
-  LOGIN(state, {username, accessToken}) {
+  setUsername(state) {
+    state.username = 'otto';
+  },
+  LOGIN(state, {username, accessToken, refreshToken}) {
+    console.log('login mutation');
+    console.log(state.user);
+
     state.user.loggedIn = true;
     state.user.username = username;
     state.user.accessToken = accessToken;
     state.user.id = jwt_decode(accessToken).userId;
+    state.user = {
+      id: jwt_decode(accessToken).userId,
+      username: '',
+      loggedIn: true,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    }
+    console.log(state.user);
   },
   LOGOUT(state) {
     state.user.loggedIn = false;
@@ -21,6 +35,7 @@ const mutations = {
   SET_REFRESH_TOKEN(state, {refreshToken}) {
     console.log('SET_REFRESH_TOKEN');
     state.user.refreshToken = refreshToken;
+
   },
   SET_COOKIE(state, {username, accessToken}) {
     if (accessToken !== '') {

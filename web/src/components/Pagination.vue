@@ -25,18 +25,20 @@
 <script>
 import VideoList from "./VideoList";
 import {mapActions, mapGetters} from "vuex";
+import {VBtn} from 'vuetify/lib'
 
 export default {
   name: "Pagination",
   components: {
-    VideoList
+    VideoList,
+    VBtn
   },
   props: [
     'showStatus',
     'userPage',
   ],
   created() {
-    const getter = this.$store.getters["auth/getCurrentUser"];
+    const getter = this.$store.getters["authMod/getCurrentUser"];
     this.currentUserId = getter.id;
   },
   data() {
@@ -56,11 +58,11 @@ export default {
   },
   methods: {
     ...mapActions({
-      getVideoOnPage: "video/getVideoOnPage"
+      getVideoOnPage: "videoMod/getVideoOnPage"
     }),
     ...mapGetters({
-      getVideos: "video/getVideos",
-      getPageCount: "video/getPageCount"
+      getVideos: "videoMod/getVideos",
+      getPageCount: "videoMod/getPageCount"
     }),
     async previousPage() {
       if (this.pageNumber > 0) {

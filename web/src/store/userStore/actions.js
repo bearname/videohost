@@ -1,5 +1,5 @@
 import makeRequest from '@/api/api';
-import videosUtil from '@/store/videoStore/video';
+import videosUtil from '@/store/videoStore/videoUtil';
 import Cookie from '@/util/cookie';
 
 const actions = {
@@ -9,7 +9,7 @@ const actions = {
         process.env.VUE_APP_VIDEO_API + '/api/v1/users/' + username,
         {
           headers: {
-            Authorization: context.rootGetters['auth/getTokenHeader'],
+            Authorization: context.rootGetters['authMod/getTokenHeader'],
           },
         },
       );
@@ -18,7 +18,7 @@ const actions = {
           console.log(response);
           return;
         }
-        await context.dispatch('auth/logout', {}, {root: true});
+        await context.dispatch('authMod/logout', {}, {root: true});
       }
 
       const data = response.json();
@@ -30,11 +30,11 @@ const actions = {
   },
   async updateDescription(context, {username, description}) {
     try {
-      await context.dispatch('auth/updateAuthorizationIfNeeded', {}, {root: true});
+      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
       const config = {
         method: 'PATCH',
         headers: {
-          'Authorization': context.rootGetters['auth/getTokenHeader'],
+          'Authorization': context.rootGetters['authMod/getTokenHeader'],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -49,7 +49,7 @@ const actions = {
           console.log(response);
           return;
         }
-        await context.dispatch('auth/logout', {}, {root: true});
+        await context.dispatch('authMod/logout', {}, {root: true});
       }
       const data = response.json();
       this.state.videos = data.videos;
@@ -86,7 +86,7 @@ const actions = {
   },
   async getUserLikedVideos(context, {page, countVideoOnPage}) {
     try {
-      await context.dispatch('auth/updateAuthorizationIfNeeded', {}, {root: true});
+      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
 
       const url = process.env.VUE_APP_VIDEO_API + '/api/v1/videos-liked?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
       console.log(url);
@@ -94,7 +94,7 @@ const actions = {
       const config = {
         method: 'GET',
         headers: {
-          'Authorization': context.rootGetters['auth/getTokenHeader'],
+          'Authorization': context.rootGetters['authMod/getTokenHeader'],
         },
       };
 

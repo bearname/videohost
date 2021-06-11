@@ -2,17 +2,16 @@ import Vuex from 'vuex';
 import authModule from './authStore/index.js';
 import videoModule from './videoStore/index.js';
 import userModule from './userStore/index.js';
-import Vue from 'vue';
+import playlistModule from './playlistStore/index.js';
 
 import createPersistedState from 'vuex-persistedstate';
 import * as Cookies from 'js-cookie';
 
-Vue.use(Vuex);
-
 const modules = {
-  video: videoModule,
-  auth: authModule,
-  user: userModule,
+  videoMod: videoModule,
+  authMod: authModule,
+  userMod: userModule,
+  playlistMod: playlistModule,
 };
 
 const plugins = [
@@ -22,10 +21,22 @@ const plugins = [
   }),
 ];
 
-export default new Vuex.Store({
-  state: {},
-  mutations: {},
-  actions: {},
-  modules: modules,
-  plugins: plugins,
-});
+export function useVuex(app) {
+  app.use(Vuex);
+}
+
+let store;
+
+export function createStore() {
+  if (store == null && store === undefined) {
+    store = new Vuex.Store({
+      state: {},
+      mutations: {},
+      actions: {},
+      modules: modules,
+      plugins: plugins,
+    });
+  }
+
+  return store;
+}

@@ -66,14 +66,16 @@ import Player from '../components/Player.vue'
 import {mapActions, mapGetters} from "vuex";
 import Cookie from "../util/cookie";
 import VideoStatus from "../store/videoStore/videoStatus";
-import videosUtil from "../store/videoStore/video"
+import videosUtil from "../store/videoStore/videoUtil"
 import logError from "../util/logger";
 import RESPONSE_CODES from "@/store/videoStore/responseCode";
+import {VBtn} from "vuetify/lib";
 
 export default {
   name: "StreamPage",
   components: {
     Player,
+    VBtn,
     // Pagination,
   },
   data() {
@@ -107,12 +109,12 @@ export default {
   },
   methods: {
     ...mapActions({
-      findVideoById: "video/getVideoById",
-      deleteVideoPermanent: "video/deleteVideoPermanent",
-      likeVideoRequest: "video/likeVideo",
+      findVideoById: "videoMod/getVideoById",
+      deleteVideoPermanent: "videoMod/deleteVideoPermanent",
+      likeVideoRequest: "videoMod/likeVideo",
     }),
     ...mapGetters({
-      getVideoResult: "video/getVideo",
+      getVideoResult: "videoMod/getVideo",
     }),
     async setVideoId() {
       this.videoId = this.$route.params.videoId;
@@ -125,6 +127,8 @@ export default {
         if (!('chapters' in this.video)) {
           this.video.chapters = [];
         }
+        console.log(this.video);
+
         this.videoStatus = VideoStatus.intToStatus(this.video.status);
         this.video.uploaded = videosUtil.getElapsedString(this.video.uploaded);
       } catch (error) {
@@ -138,7 +142,7 @@ export default {
         description: this.video.description,
       };
 
-      await this.$store.dispatch("video/updateTitleAndDescription", video);
+      await this.$store.dispatch("videoMod/updateTitleAndDescription", video);
       console.log("update status");
       this.error = this.getStatus();
     },

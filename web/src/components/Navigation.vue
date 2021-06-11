@@ -38,10 +38,17 @@
 <script>
 import {mapActions, mapGetters} from "vuex";
 // import SearchRow from "./SearchRow";
+import {VBtn, VCard, VToolbar, VToolbarTitle} from 'vuetify/lib'
 
 export default {
   name: "Navigation",
-  // components: {SearchRow},
+  components: {
+    VBtn,
+    VCard,
+    VToolbar,
+    VToolbarTitle,
+
+  },
   data() {
     return {
       userid: {type: String, default: ""},
@@ -49,12 +56,12 @@ export default {
   },
   methods: {
     ...mapActions({
-      logout: "auth/logout",
+      logout: "authMod/logout",
     }),
     ...mapGetters({
-      isLogged: "auth/isLoggedIn",
-      getUser: "auth/getCurrentUser",
-      getCurrentUser: "auth/getCurrentUser"
+      isLogged: "authMod/isLoggedIn",
+      getUser: "authMod/getCurrentUser",
+      getCurrentUser: "authMod/getCurrentUser"
     }),
     logoutUser() {
       this.logout()
