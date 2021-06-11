@@ -1,11 +1,13 @@
 import Vuetify from 'vuetify/lib';
-// import {icons} from "./icons";
-// import {IS_SERVER} from "@/util/globals";
+import {IS_SERVER} from "@/util/globals";
+import '@mdi/font/css/materialdesignicons.css'
 
 export function createVuetify() {
   const config = {
     // breakpoint: { mobileBreakpoint: 'md' },
-    // icons,
+    // icons: {
+    //   iconfont: 'mdi', // default - only for display purposes
+    // },
     // theme: {
     //   dark: store.state.user.theme.dark,
     //   options: {
