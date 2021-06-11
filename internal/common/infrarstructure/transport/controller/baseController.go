@@ -71,7 +71,7 @@ func (c *BaseController) WriteError(w http.ResponseWriter, err error, responseEr
 }
 
 func (c *BaseController) WriteResponseData(w http.ResponseWriter, data interface{}) {
-	b, err := json.Marshal(data)
+	bytes, err := json.Marshal(data)
 	if err != nil {
 		log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -81,7 +81,7 @@ func (c *BaseController) WriteResponseData(w http.ResponseWriter, data interface
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if _, err = io.WriteString(w, string(b)); err != nil {
+	if _, err = io.WriteString(w, string(bytes)); err != nil {
 		log.WithField("err", err).Error("write response error")
 	}
 }

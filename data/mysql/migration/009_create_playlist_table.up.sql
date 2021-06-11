@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS playlist
+(
+    id      INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name    VARCHAR(255) NOT NULL,
+    user_id  VARCHAR(255) NOT NULL,
+    created TIMESTAMP DEFAULT NOW(),
+    privacy TINYINT   DEFAULT 0
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  DEFAULT CHARSET = utf8;
+
+CREATE TABLE IF NOT EXISTS video_in_playlist
+(
+    video_id VARCHAR(255) NOT NULL,
+    user_id  VARCHAR(255) NOT NULL,
+    added    TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT FOREIGN KEY (video_id) REFERENCES video (id_video)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8;

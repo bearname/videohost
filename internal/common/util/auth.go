@@ -11,6 +11,9 @@ import (
 )
 
 func ValidateToken(authorization string, authServerUrl string) (dto.UserDto, bool) {
+	if len(authorization) == 0 {
+		return dto.UserDto{}, false
+	}
 	body, err := GetRequest(&http.Client{}, authServerUrl+"/api/v1/auth/token/validate", authorization)
 	if err != nil {
 		return dto.UserDto{}, false

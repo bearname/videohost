@@ -9,4 +9,5 @@ var (
 	ErrInternal         = errors.New("internal error")
 	ErrAlreadyLike      = errors.New("already like")
 	ErrAlreadyDisLike   = errors.New("already dislike")
+	ErrPlaylistNotFound = errors.New("not found")
 )

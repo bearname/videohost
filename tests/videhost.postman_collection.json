@@ -44,7 +44,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzcyMDQ5NzQsInJvbGUiOjEsInVzZXJJZCI6IjJiM2QxYjc2LWJjNmEtMTFlYi04YjM0LWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoiYWRtaW4ifQ.AIJnoxwVudeqFuI8EkB61kp5Nawisl_y8AL8H5Seij8",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2MjMyNjc5NDksInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ._Uq2n9Z1marqw3fj0MQketipGcaXesXYmqlUTYmJDhE",
 								"type": "text"
 							}
 						],
@@ -77,17 +77,17 @@
 							}
 						],
 						"url": {
-							"raw": "http://localhost:8000/api/v1/users/mikha/videos?page=1&countVideoOnPage=10",
+							"raw": "http://localhost:8001/api/v1/users/cfaff592-b933-11eb-b073-e4e74940035b/videos?page=1&countVideoOnPage=10",
 							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8000",
+							"port": "8001",
 							"path": [
 								"api",
 								"v1",
 								"users",
-								"mikha",
+								"cfaff592-b933-11eb-b073-e4e74940035b",
 								"videos"
 							],
 							"query": [
@@ -263,7 +263,7 @@
 					"response": []
 				},
 				{
-					"name": "getUserToken",
+					"name": "login",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -305,6 +305,207 @@
 		{
 			"name": "video",
 			"item": [
+				{
+					"name": "playlist",
+					"item": [
+						{
+							"name": "create",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Movies1\",\r\n    \"privacy\": 0,\r\n    \"videos\": [\"3624f091-bcac-11eb-afa0-e4e74940035b\", \"5333927f-c649-11eb-b7fe-00ff7c2a75d7\",  \"53f81f3b-c07f-11eb-bc58-e4e74940035b\" ]\r\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlist",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlist"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "find",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlist/5",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlist",
+										"5"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "add video to playlist",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"videos\": [\"8cbb79f0-bc76-11eb-afc7-e4e74940035b\", \"9bb38b2c-bcac-11eb-afa0-e4e74940035b\"],\r\n    \"act\": 0\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlist/8/modify",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlist",
+										"8",
+										"modify"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "remove video from playlist",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"videos\": [\"8cbb79f0-bc76-11eb-afc7-e4e74940035b\", \"9bb38b2c-bcac-11eb-afa0-e4e74940035b\"],\r\n    \"act\": 1\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlist/5/modify",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlist",
+										"5",
+										"modify"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "delete playlist",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlist/7",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlist",
+										"7"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "add video to playlist Copy",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"videos\": [\"8cbb79f0-bc76-11eb-afc7-e4e74940035b\", \"9bb38b2c-bcac-11eb-afa0-e4e74940035b\"],\r\n    \"act\": 0\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlist/5/change-privacy/1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlist",
+										"5",
+										"change-privacy",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
 				{
 					"name": "get video",
 					"protocolProfileBehavior": {
@@ -569,6 +770,33 @@
 								"5333927f-c649-11eb-b7fe-00ff7c2a75d7",
 								"like",
 								"0"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get user liked video",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE1NTMsInJvbGUiOjEsInVzZXJJZCI6IjRiYmU3NjUzLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoidXNlciJ9.FEzXwTANvfuEDlAC-YLpPqLIBNZjhj5IhpCo8oWeR9I",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8000/api/v1/videos-liked",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"v1",
+								"videos-liked"
 							]
 						}
 					},

@@ -13,6 +13,7 @@ import (
 	"github.com/bearname/videohost/internal/videoserver/domain"
 	dto2 "github.com/bearname/videohost/internal/videoserver/domain/dto"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
+	"github.com/bearname/videohost/internal/videoserver/domain/repository"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/ftp"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -21,14 +22,14 @@ import (
 )
 
 type VideoServiceImpl struct {
-	videoRepo     domain.VideoRepository
+	videoRepo     repository.VideoRepository
 	messageBroker amqp.MessageBroker
 	cache         caching.Cache
 }
 
 const videoCachePrefix = "video-"
 
-func NewVideoService(videoRepository domain.VideoRepository, messageBroker amqp.MessageBroker, cache caching.Cache) *VideoServiceImpl {
+func NewVideoService(videoRepository repository.VideoRepository, messageBroker amqp.MessageBroker, cache caching.Cache) *VideoServiceImpl {
 	s := new(VideoServiceImpl)
 
 	s.videoRepo = videoRepository

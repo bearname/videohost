@@ -1,4 +1,4 @@
-package domain
+package repository
 
 import (
 	"github.com/bearname/videohost/internal/common/db"

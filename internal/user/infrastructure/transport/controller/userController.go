@@ -5,8 +5,8 @@ import (
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/controller"
 	userService "github.com/bearname/videohost/internal/user/app/service"
 	"github.com/bearname/videohost/internal/user/domain/repository"
-	"github.com/bearname/videohost/internal/videoserver/domain"
 	"github.com/bearname/videohost/internal/videoserver/domain/dto"
+	repository2 "github.com/bearname/videohost/internal/videoserver/domain/repository"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/requestparser"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -19,10 +19,10 @@ type UserController struct {
 	controller.BaseController
 	userRepository  repository.UserRepo
 	userService     userService.UserService
-	videoRepository domain.VideoRepository
+	videoRepository repository2.VideoRepository
 }
 
-func NewUserController(userService userService.UserService, userRepository repository.UserRepo, videoRepository domain.VideoRepository) *UserController {
+func NewUserController(userService userService.UserService, userRepository repository.UserRepo, videoRepository repository2.VideoRepository) *UserController {
 	v := new(UserController)
 	v.userRepository = userRepository
 	v.userService = userService

@@ -31,17 +31,26 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 		return nil
 	}
 
-	streamController := controller.NewStreamController(service.NewStreamServiceImpl())
-
 	router := mux.NewRouter()
 	router.HandleFunc("/health", handler.HealthHandler).Methods(http.MethodGet)
 	router.HandleFunc("/ready", handler.ReadyHandler).Methods(http.MethodGet)
 
+	streamController := controller.NewStreamController(service.NewStreamServiceImpl())
 	router.HandleFunc("/media/{videoId}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 
 	subRouter := router.PathPrefix("/api/v1").Subrouter()
+	repository := mysql.NewPlaylistRepository(connector)
+	listService := service.NewPlayListService(repository, cache)
+	playListController := controller.NewPlayListController(listService, authServerAddress)
+
+	subRouter.HandleFunc("/playlist", middleware.AllowCors(middleware.AuthMiddleware(playListController.CreatePlaylist(), authServerAddress))).Methods(http.MethodPost, http.MethodOptions)
+	subRouter.HandleFunc("/playlist/{playlistId:[0-9]+}", middleware.AllowCors(playListController.GetPlayList())).Methods(http.MethodGet, http.MethodOptions)
+	subRouter.HandleFunc("/playlist/{playlistId:[0-9]+}/modify", middleware.AllowCors(middleware.AuthMiddleware(playListController.ModifyVideoToPlaylist(), authServerAddress))).Methods(http.MethodPut, http.MethodOptions)
+	subRouter.HandleFunc("/playlist/{playlistId:[0-9]+}/change-privacy/{privacyType}", middleware.AllowCors(middleware.AuthMiddleware(playListController.ChangePrivacy(), authServerAddress))).Methods(http.MethodPut, http.MethodOptions)
+	subRouter.HandleFunc("/playlist/{playlistId:[0-9]+}", middleware.AllowCors(middleware.AuthMiddleware(playListController.DeletePlaylist(), authServerAddress))).Methods(http.MethodDelete, http.MethodOptions)
+
 	subRouter.HandleFunc("/videos/", videoController.GetVideos()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/videos/search", videoController.SearchVideo()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/videos/{videoId}", videoController.GetVideo()).Methods(http.MethodGet)

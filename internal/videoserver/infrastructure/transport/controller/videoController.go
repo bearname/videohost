@@ -7,9 +7,9 @@ import (
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/controller"
 	"github.com/bearname/videohost/internal/common/util"
 	"github.com/bearname/videohost/internal/videoserver/app/service"
-	"github.com/bearname/videohost/internal/videoserver/domain"
 	dto2 "github.com/bearname/videohost/internal/videoserver/domain/dto"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
+	"github.com/bearname/videohost/internal/videoserver/domain/repository"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/requestparser"
 	"github.com/gorilla/context"
 	log "github.com/sirupsen/logrus"
@@ -18,13 +18,13 @@ import (
 
 type VideoController struct {
 	controller.BaseController
-	videoRepository   domain.VideoRepository
+	videoRepository   repository.VideoRepository
 	messageBroker     amqp.MessageBroker
 	videoService      service.VideoServiceImpl
 	authServerAddress string
 }
 
-func NewVideoController(videoRepository domain.VideoRepository,
+func NewVideoController(videoRepository repository.VideoRepository,
 	videoService *service.VideoServiceImpl,
 	messageBroker amqp.MessageBroker,
 	authServerAddress string,
