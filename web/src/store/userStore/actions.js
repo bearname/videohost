@@ -6,12 +6,12 @@ const actions = {
   async addUser(context, {username}) {
     try {
       const response = await fetch(
-          process.env.VUE_APP_VIDEO_API + '/api/v1/users/' + username,
-          {
-            headers: {
-              Authorization: context.rootGetters['auth/getTokenHeader'],
-            },
+        process.env.VUE_APP_VIDEO_API + '/api/v1/users/' + username,
+        {
+          headers: {
+            Authorization: context.rootGetters['auth/getTokenHeader'],
           },
+        },
       );
       if (!response.ok) {
         if (response.status !== 401) {
@@ -77,6 +77,32 @@ const actions = {
       context.state.userVideos = videos;
       context.state.userVideos.forEach(videosUtil.updateThumbnail, context.state.userVideos);
       context.state.countUserVideos = countAllVideos;
+      console.log('inner end');
+    } catch (error) {
+      console.log(error);
+      context.state.success = false;
+      throw error;
+    }
+  },
+  async getUserLikedVideos(context, {page, countVideoOnPage}) {
+    try {
+      await context.dispatch('auth/updateAuthorizationIfNeeded', {}, {root: true});
+
+      const url = process.env.VUE_APP_VIDEO_API + '/api/v1/videos-liked?page=' + page + '&countVideoOnPage=' + countVideoOnPage;
+      console.log(url);
+
+      const config = {
+        method: 'GET',
+        headers: {
+          'Authorization': context.rootGetters['auth/getTokenHeader'],
+        },
+      };
+
+      const data = await makeRequest(context, url, config);
+      console.log('data');
+      console.log(data);
+      context.state.userVideos = data;
+      context.state.userVideos.forEach(videosUtil.updateThumbnail, context.state.userVideos);
       console.log('inner end');
     } catch (error) {
       console.log(error);

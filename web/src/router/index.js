@@ -7,6 +7,7 @@ import UploadVideo from '../views/UploadVideoPage';
 import LoginPage from '../views/LoginPage';
 import UserPage from '../views/UserPage';
 import SearchPage from '../views/SearchPage';
+import Playlist from '../views/Playlist';
 
 const routes = {
   home: {
@@ -48,6 +49,11 @@ const routes = {
     path: '/search/:searchQuery',
     component: SearchPage,
   },
+  playlist: {
+    name: 'playlist',
+    path: '/playlist',
+    component: Playlist,
+  },
   // editVideo: {
   //     name: 'videoStream',
   //     path: '/videos/:videoId/edit',
@@ -84,6 +90,7 @@ const router = new VueRouter({
     routes.uploadVideo,
     routes.login,
     routes.search,
+    routes.playlist,
     // routes.editVideo,
   ],
 });

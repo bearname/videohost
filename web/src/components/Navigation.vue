@@ -23,6 +23,13 @@
           <v-btn v-on:click="logoutUser()">logout</v-btn>
         </div>
       </v-toolbar-title>
+      <v-toolbar-title class="float-right">
+        <div v-if="isLoggedUser === true">
+          <router-link :to="{ name: 'playlist', query: {PL: 'LL'}}" class="subtitle-2"> <span
+              class="subtitle-2">Liked video</span>
+          </router-link>
+        </div>
+      </v-toolbar-title>
 
     </v-toolbar>
   </v-card>
@@ -46,7 +53,7 @@ export default {
     }),
     ...mapGetters({
       isLogged: "auth/isLoggedIn",
-      getUser: "user/getCurrentUser",
+      getUser: "auth/getCurrentUser",
       getCurrentUser: "auth/getCurrentUser"
     }),
     logoutUser() {

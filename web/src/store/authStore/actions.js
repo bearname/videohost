@@ -124,7 +124,6 @@ const actions = {
         console.log(error);
         if (error.message === 'Invalid res') {
           await context.dispatch('logout');
-          alert('logout');
         }
         throw error;
       }
