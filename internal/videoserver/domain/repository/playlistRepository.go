@@ -7,6 +7,7 @@ import (
 
 type PlaylistRepository interface {
 	Create(playlist dto.CreatePlaylistDto) (int64, error)
+	FindPlaylists(userId string, privacyType []model.PrivacyType) ([]dto.PlaylistItem, error)
 	FindPlaylist(playlistId int) (model.Playlist, error)
 	AddVideos(playlistId int, userId string, videosId []string) error
 	RemoveVideos(playlistId int, userId string, videosId []string) error

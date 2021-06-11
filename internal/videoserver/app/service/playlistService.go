@@ -37,6 +37,10 @@ func (s *PlayListService) FindPlaylist(playlistId int) (model.Playlist, error) {
 	return s.playlistRepo.FindPlaylist(playlistId)
 }
 
+func (s *PlayListService) FindUserPlaylists(userId string, privacyType []model.PrivacyType) ([]dto.PlaylistItem, error) {
+	return s.playlistRepo.FindPlaylists(userId, privacyType)
+}
+
 func (s *PlayListService) ModifyVideosOnPlaylist(playlistId int, userId string, videosId []string, action domain.Action) error {
 	switch action {
 	case domain.AddVideoAction:

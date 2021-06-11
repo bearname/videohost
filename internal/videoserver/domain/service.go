@@ -48,6 +48,7 @@ func (a *Action) String() string {
 
 type PlayListService interface {
 	CreatePlaylist(playlist dto.CreatePlaylistDto) (int64, error)
+	FindUserPlaylists(userId string, privacyType []model.PrivacyType) ([]dto.PlaylistItem, error)
 	FindPlaylist(playlistId int) (model.Playlist, error)
 	ModifyVideosOnPlaylist(playlistId int, userId string, videosId []string, action Action) error
 	ChangeOrder(playlistId int, videoId []string, order []int) error

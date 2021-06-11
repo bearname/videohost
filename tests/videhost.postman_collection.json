@@ -340,7 +340,7 @@
 							"response": []
 						},
 						{
-							"name": "find",
+							"name": "get playlist",
 							"request": {
 								"method": "GET",
 								"header": [],
@@ -356,6 +356,33 @@
 										"v1",
 										"playlist",
 										"5"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get user playlists",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlists?ownerId=cfaff592-b933-11eb-b073-e4e74940035b",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlists"
+									],
+									"query": [
+										{
+											"key": "ownerId",
+											"value": "cfaff592-b933-11eb-b073-e4e74940035b"
+										}
 									]
 								}
 							},
@@ -438,34 +465,6 @@
 							"response": []
 						},
 						{
-							"name": "delete playlist",
-							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "Authorization",
-										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
-										"type": "text"
-									}
-								],
-								"url": {
-									"raw": "http://localhost:8000/api/v1/playlist/7",
-									"protocol": "http",
-									"host": [
-										"localhost"
-									],
-									"port": "8000",
-									"path": [
-										"api",
-										"v1",
-										"playlist",
-										"7"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "add video to playlist Copy",
 							"request": {
 								"method": "PUT",
@@ -499,6 +498,34 @@
 										"5",
 										"change-privacy",
 										"1"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "delete playlist",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlist/7",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlist",
+										"7"
 									]
 								}
 							},

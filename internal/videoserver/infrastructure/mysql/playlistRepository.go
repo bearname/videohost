@@ -112,6 +112,50 @@ func (r *PlaylistRepository) FindPlaylist(playlistId int) (model.Playlist, error
 	return playlist, domain.ErrPlaylistNotFound
 }
 
+func (r *PlaylistRepository) FindPlaylists(userId string, privacyTypes []model.PrivacyType) ([]dto.PlaylistItem, error) {
+	sqlQuery := `SELECT id,
+       				user_id,
+				    name,
+				    created,
+				    privacy
+				FROM playlist
+				WHERE user_id = ? AND privacy IN (`
+	var vals []interface{}
+	vals = append(vals, userId)
+
+	length := len(privacyTypes)
+	for i := 0; i < length; i++ {
+		sqlQuery += "?"
+		vals = append(vals, privacyTypes[i].Int())
+		if i != length-1 {
+			sqlQuery += ","
+		}
+	}
+	sqlQuery += ");"
+
+	rows, err := r.connector.GetDb().Query(sqlQuery, vals...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var playlistItems []dto.PlaylistItem
+
+	var playlistItem dto.PlaylistItem
+	for rows.Next() {
+		err = rows.Scan(&playlistItem.Id,
+			&playlistItem.OwnerId,
+			&playlistItem.Name,
+			&playlistItem.Created,
+			&playlistItem.Privacy)
+
+		if err != nil {
+			return nil, err
+		}
+		playlistItems = append(playlistItems, playlistItem)
+	}
+	return playlistItems, nil
+}
+
 func (r *PlaylistRepository) AddVideos(playlistId int, userId string, videosId []string) error {
 	query := "INSERT INTO video_in_playlist (playlist_id, video_id, user_id) VALUES "
 	var vals []interface{}

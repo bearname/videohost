@@ -46,6 +46,8 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	playListController := controller.NewPlayListController(listService, authServerAddress)
 
 	subRouter.HandleFunc("/playlist", middleware.AllowCors(middleware.AuthMiddleware(playListController.CreatePlaylist(), authServerAddress))).Methods(http.MethodPost, http.MethodOptions)
+
+	subRouter.HandleFunc("/playlists", middleware.AllowCors(playListController.GetUserPlaylists())).Methods(http.MethodGet, http.MethodOptions)
 	subRouter.HandleFunc("/playlist/{playlistId:[0-9]+}", middleware.AllowCors(playListController.GetPlayList())).Methods(http.MethodGet, http.MethodOptions)
 	subRouter.HandleFunc("/playlist/{playlistId:[0-9]+}/modify", middleware.AllowCors(middleware.AuthMiddleware(playListController.ModifyVideoToPlaylist(), authServerAddress))).Methods(http.MethodPut, http.MethodOptions)
 	subRouter.HandleFunc("/playlist/{playlistId:[0-9]+}/change-privacy/{privacyType}", middleware.AllowCors(middleware.AuthMiddleware(playListController.ChangePrivacy(), authServerAddress))).Methods(http.MethodPut, http.MethodOptions)

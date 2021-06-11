@@ -13,6 +13,19 @@ const (
 	Private
 )
 
+func (p PrivacyType) Int() int {
+	switch p {
+	case Public:
+		return 0
+	case Unlisted:
+		return 1
+	case Private:
+		return 2
+	default:
+		return -1
+	}
+}
+
 type Playlist struct {
 	Id          string
 	Name        string

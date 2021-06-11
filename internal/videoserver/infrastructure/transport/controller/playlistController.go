@@ -9,6 +9,7 @@ import (
 	"github.com/bearname/videohost/internal/videoserver/domain"
 	"github.com/bearname/videohost/internal/videoserver/domain/dto"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
+	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/requestparser"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -61,6 +62,39 @@ func (c *PlayListController) CreatePlaylist() func(http.ResponseWriter, *http.Re
 		}{1, "Success create playlist with id " + strconv.Itoa(int(playlistId))})
 	}
 }
+
+func (c *PlayListController) GetUserPlaylists() func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		ownerId, ok := requestparser.GetStringQueryParameter(request, "ownerId")
+		if !ok {
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "query parameter ownerId not set")
+			return
+		}
+
+		var privacyType []model.PrivacyType
+		privacyType = append(privacyType, model.Public)
+		privacyType = append(privacyType, model.Unlisted)
+		authorization := request.Header.Get("Authorization")
+		if len(authorization) != 0 {
+			var userDto dto2.UserDto
+
+			userDto, ok = util.ValidateToken(authorization, c.authServerAddress)
+			if ok && userDto.UserId == ownerId {
+				privacyType = append(privacyType, model.Private)
+			}
+		}
+
+		userPlaylists, err := c.playListService.FindUserPlaylists(ownerId, privacyType)
+		if err != nil {
+			//TODO add translate method
+			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
+			return
+		}
+
+		c.BaseController.WriteJsonResponse(writer, userPlaylists)
+	}
+}
+
 func (c *PlayListController) GetPlayList() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		vars := mux.Vars(request)
