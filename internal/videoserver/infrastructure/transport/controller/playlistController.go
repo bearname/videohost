@@ -3,7 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"github.com/bearname/videohost/internal/common/caching"
-	dto2 "github.com/bearname/videohost/internal/common/dto"
+	commonDto "github.com/bearname/videohost/internal/common/dto"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/controller"
 	"github.com/bearname/videohost/internal/common/util"
 	"github.com/bearname/videohost/internal/videoserver/domain"
@@ -76,7 +76,7 @@ func (c *PlayListController) GetUserPlaylists() func(http.ResponseWriter, *http.
 		privacyType = append(privacyType, model.Unlisted)
 		authorization := request.Header.Get("Authorization")
 		if len(authorization) != 0 {
-			var userDto dto2.UserDto
+			var userDto commonDto.UserDto
 
 			userDto, ok = util.ValidateToken(authorization, c.authServerAddress)
 			if ok && userDto.UserId == ownerId {
@@ -112,7 +112,7 @@ func (c *PlayListController) GetPlayList() func(http.ResponseWriter, *http.Reque
 		}
 		if playlist.Privacy == model.Private {
 			authorization := request.Header.Get("Authorization")
-			var userDto dto2.UserDto
+			var userDto commonDto.UserDto
 
 			var ok bool
 			userDto, ok = util.ValidateToken(authorization, c.authServerAddress)
@@ -162,7 +162,6 @@ func (c *PlayListController) ModifyVideoToPlaylist() func(http.ResponseWriter, *
 
 		err = c.playListService.ModifyVideosOnPlaylist(playlistId, userId, modificationRequest.Videos, action)
 		if err != nil {
-			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "not supported modification action "+action.String())
 			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
 			return
 		}

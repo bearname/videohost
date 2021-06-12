@@ -3,12 +3,18 @@ import videosUtil from './videoUtil';
 import logError from '../../util/logger';
 import makeRequest from '../../api/api';
 import VideoStatus from './videoStatus';
+import RESPONSE_CODES from "@/store/videoStore/responseCode";
 
 const actions = {
   async getVideoById(context, {videoId}) {
     try {
+
       const url = process.env.VUE_APP_VIDEO_API + '/api/v1/videos/' + videoId;
+      console.log(url);
       const response = await axios.get(url);
+      console.log('        await this.findVideoById({videoId: videoId});\n')
+      console.log(`responseresponseresponseresponseresponse`);
+      console.log(response);
       if (response.status !== 200) {
         console.log('failed get video by id');
         console.log(response);
@@ -143,6 +149,9 @@ const actions = {
       context.state.success = (response.status === 200);
       context.state.code = response.data.code;
     } catch (error) {
+      // context.state.code = RESPONSE_CODES.ErrInternalServer;
+      context.state.code = response.data.code;
+
       logError(error);
     }
   },

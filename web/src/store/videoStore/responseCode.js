@@ -7,6 +7,7 @@ const RESPONSE_CODES = {
   ErrFailedAddLike: 103,
   ErrAlreadyLike: 104,
   ErrAlreadyDisLike: 105,
+  ErrInternalServer: 500,
 };
 
 export default RESPONSE_CODES;

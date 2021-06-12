@@ -4,7 +4,9 @@
       <v-col
           cols="12"
       >
+        asdfadsf
         <div v-if="video !== null" class="text-align-left">
+          {{ video.status }}
           <div v-if="video.status === 3">
             <Player :videoId="videoId" :duration="video.duration" :thumbnail="video.thumbnail"
                     :availableQualities="video.quality" :chapters="video.chapters" :key="key"/>
@@ -20,17 +22,19 @@
         </h4>
       </v-col>
     </v-row>
+
     <v-row no-gutters v-if="video !== null">
       <v-col
           cols="12"
           sm="8"
       >
+        <PlaylistAddPopup :video-id="video.id"/>
         <h3>{{ video.name }}</h3>
         <p class="subtitle-1">Watch video {{ video.description }}</p>
         <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
         <p class="subtitle-2">{{ video.views }} views</p>
-        <v-btn v-on:click="likeVideo(true)">like {{ video.countLikes }}</v-btn>
-        <v-btn v-on:click="likeVideo(false)">dislike {{ video.countDisLikes }}</v-btn>
+        <v-btn id="countLikes" v-on:click="likeVideo(true)">{{countLikes}} </v-btn>
+        <v-btn id="countDislikes" v-on:click="likeVideo(false)">{{countDisLikes}}}</v-btn>
         <div v-if="isCurrentUserOwner">
           <v-btn v-on:click="toggleEdit" :data-id="video.id">edit</v-btn>
           <div v-if="showEdit">
@@ -70,10 +74,13 @@ import videosUtil from "../store/videoStore/videoUtil"
 import logError from "../util/logger";
 import RESPONSE_CODES from "@/store/videoStore/responseCode";
 import {VBtn} from "vuetify/lib";
+import PlaylistAddPopup from "@/components/PlaylistAddPopup";
+import {publishEvent} from "@/events/event-bus";
 
 export default {
   name: "StreamPage",
   components: {
+    PlaylistAddPopup,
     Player,
     VBtn,
     // Pagination,
@@ -89,18 +96,28 @@ export default {
       videoStatus: null,
       userVideos: null,
       showEdit: false,
+      countLikes: 0,
+      countDisLikes: 0,
+      likeElement: null,
+      disLikeElement: null,
     }
   },
   created() {
-    this.setVideoId()
+    this.getVideo()
     this.key = Date.now()
     this.currentUserId = Cookie.getCookie("userId");
   },
   watch: {
     '$route'() {
-      this.setVideoId()
+      this.getVideo()
       this.key = Date.now()
-    }
+    },
+    likes: function () {
+      return "likes " + this.countLikes
+    },
+    dislikes: function () {
+      return "dislikes " + this.countDisLikes
+    },
   },
   computed: {
     isCurrentUserOwner() {
@@ -115,8 +132,9 @@ export default {
     }),
     ...mapGetters({
       getVideoResult: "videoMod/getVideo",
+      getResponseCode: "videoMod/getCode",
     }),
-    async setVideoId() {
+    async getVideo() {
       this.videoId = this.$route.params.videoId;
       await this.fetchVideo(this.$route.params.videoId);
     },
@@ -131,6 +149,8 @@ export default {
 
         this.videoStatus = VideoStatus.intToStatus(this.video.status);
         this.video.uploaded = videosUtil.getElapsedString(this.video.uploaded);
+        this.countLikes = this.video.countLikes;
+        this.countDisLikes = this.video.countDisLikes;
       } catch (error) {
         logError(error);
       }
@@ -155,32 +175,63 @@ export default {
     },
     async likeVideo(isLike) {
       await this.likeVideoRequest({videoId: this.videoId, isLike: isLike, ownerId: this.video.ownerId});
-      this.code = this.getCode();
-      switch (this.code) {
+      this.code = this.getResponseCode();
+      console.log('this.code');
+      console.log(this.code);
+      const code = parseInt(this.code);
+      switch (code) {
+        case RESPONSE_CODES.ErrInternalServer: {
+          publishEvent('false', "Internal server error");
+          break;
+        }
         case RESPONSE_CODES.SuccessAddLike: {
-          this.video.countLikes++;
+          this.countLikes++;
+          publishEvent('success', "Success Add Like");
+          document.getElementById("countLikes").innerText = "likes " + this.countLikes;
           break;
         }
         case RESPONSE_CODES.SuccessAddDislike: {
-          this.video.countDisLikes++;
+          publishEvent('success', "Success Add Dislike");
+          this.countDisLikes++;
+          document.getElementById("countDisLikes").innerText = "dislikes " + this.countLikes;
           break;
         }
         case RESPONSE_CODES.SuccessDeleteLike: {
-          this.video.countLikes--;
+          publishEvent('success', "Success Remove Like");
+          this.countLikes--;
+          document.getElementById("countLikes").innerText = "likes " + this.countLikes;
           break;
         }
         case RESPONSE_CODES.SuccessDeleteDisLike: {
-          this.video.countDisLikes--;
+          publishEvent('success', "Success Remove Dislike");
+          this.countDisLikes--;
+          document.getElementById("countDisLikes").innerText = "dislikes " + this.countLikes;
+          break;
+        }
+        case RESPONSE_CODES.ErrAlreadyLike: {
+          publishEvent('false', "Already Liked");
+          break;
+        }
+        case RESPONSE_CODES.ErrAlreadyDisLike: {
+          publishEvent('false', "Already DisLiked");
+          break;
+        }
+        case RESPONSE_CODES.ErrFailedAddLike: {
+          publishEvent('false', "Already Failed Add Like");
+          break;
+        }
+        case RESPONSE_CODES.ErrFailedDeleteLike: {
+          publishEvent('false', "Already Failed Remove Like");
           break;
         }
         default: {
           break
         }
       }
-      this.error = this.getStatus();
-    }
+    },
   },
 }
+
 </script>
 
 <style scoped>

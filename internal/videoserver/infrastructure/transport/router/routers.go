@@ -45,13 +45,12 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	listService := service.NewPlayListService(repository, cache)
 	playListController := controller.NewPlayListController(listService, authServerAddress)
 
-	subRouter.HandleFunc("/playlists", middleware.AllowCors(middleware.AuthMiddleware(playListController.CreatePlaylist(), authServerAddress))).Methods(http.MethodPost, http.MethodOptions)
-
 	subRouter.HandleFunc("/playlists", middleware.AllowCors(playListController.GetUserPlaylists())).Methods(http.MethodGet, http.MethodOptions)
-	subRouter.HandleFunc("/playlists/{playlistId:[0-9]+}", middleware.AllowCors(playListController.GetPlayList())).Methods(http.MethodGet, http.MethodOptions)
-	subRouter.HandleFunc("/playlists/{playlistId:[0-9]+}/modify", middleware.AllowCors(middleware.AuthMiddleware(playListController.ModifyVideoToPlaylist(), authServerAddress))).Methods(http.MethodPut, http.MethodOptions)
-	subRouter.HandleFunc("/playlists/{playlistId:[0-9]+}/change-privacy/{privacyType}", middleware.AllowCors(middleware.AuthMiddleware(playListController.ChangePrivacy(), authServerAddress))).Methods(http.MethodPut, http.MethodOptions)
-	subRouter.HandleFunc("/playlists/{playlistId:[0-9]+}", middleware.AllowCors(middleware.AuthMiddleware(playListController.DeletePlaylist(), authServerAddress))).Methods(http.MethodDelete, http.MethodOptions)
+	subRouter.HandleFunc("/playlists", middleware.AllowCors(middleware.AuthMiddleware(playListController.CreatePlaylist(), authServerAddress))).Methods(http.MethodPost, http.MethodOptions)
+	subRouter.HandleFunc("/playlists/{playlistId}/modify", middleware.AuthMiddleware(playListController.ModifyVideoToPlaylist(), authServerAddress)).Methods(http.MethodPut, http.MethodOptions)
+	subRouter.HandleFunc("/playlists/{playlistId}", middleware.AllowCors(playListController.GetPlayList())).Methods(http.MethodGet, http.MethodOptions)
+	subRouter.HandleFunc("/playlists/{playlistId}/change-privacy/{privacyType}", middleware.AllowCors(middleware.AuthMiddleware(playListController.ChangePrivacy(), authServerAddress))).Methods(http.MethodPut, http.MethodOptions)
+	subRouter.HandleFunc("/playlists/{playlistId}", middleware.AllowCors(middleware.AuthMiddleware(playListController.DeletePlaylist(), authServerAddress))).Methods(http.MethodDelete, http.MethodOptions)
 
 	subRouter.HandleFunc("/videos/", videoController.GetVideos()).Methods(http.MethodGet)
 	subRouter.HandleFunc("/videos/search", videoController.SearchVideo()).Methods(http.MethodGet)

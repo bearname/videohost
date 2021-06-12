@@ -1,4 +1,4 @@
-async function makeRequest(context, url, config) {
+export async function makeRequest(context, url, config) {
   const response = await fetch(url, config);
   if (!response.ok) {
     if (response.status === 401) {
@@ -8,6 +8,18 @@ async function makeRequest(context, url, config) {
     }
   }
   return response.json();
+}
+
+export async function sendWithAuth(context, method, url, json) {
+  const config = {
+    method: method,
+    headers: {
+      'Authorization': context.rootGetters['authMod/getTokenHeader'],
+    },
+    body: JSON.stringify(json)
+  };
+
+  return await makeRequest(context, url, config);
 }
 
 export default makeRequest;

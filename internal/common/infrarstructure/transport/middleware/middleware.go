@@ -36,6 +36,13 @@ func AllowCors(next http.HandlerFunc) http.HandlerFunc {
 
 func AuthMiddleware(next http.HandlerFunc, authServerUrl string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Access-Control-Allow-Origin", "*")
+		writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if (*request).Method == "OPTIONS" {
+			writer.WriteHeader(http.StatusNoContent)
+			return
+		}
 		authorization := request.Header.Get("Authorization")
 		if len(authorization) == 0 {
 			http.Error(writer, "authorization header not set", http.StatusUnauthorized)

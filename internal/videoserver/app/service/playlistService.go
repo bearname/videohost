@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"github.com/bearname/videohost/internal/common/caching"
 	"github.com/bearname/videohost/internal/videoserver/domain"
 	"github.com/bearname/videohost/internal/videoserver/domain/dto"
@@ -48,7 +47,7 @@ func (s *PlayListService) ModifyVideosOnPlaylist(playlistId int, userId string, 
 	case domain.RemoveVideoAction:
 		return s.playlistRepo.RemoveVideos(playlistId, userId, videosId)
 	default:
-		return errors.New("unknown action")
+		return domain.ErrUnknownModificationAction
 	}
 }
 

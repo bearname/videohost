@@ -20,8 +20,8 @@ func NewPlaylistRepository(connector db.Connector) *PlaylistRepository {
 }
 
 func (r *PlaylistRepository) Create(playlist dto.CreatePlaylistDto) (int64, error) {
-	_, err := r.checkExist(playlist.OwnerId, playlist.Name)
-	if err != nil && err != domain.ErrPlaylistNotFound {
+	playlistId, err := r.checkExist(playlist.OwnerId, playlist.Name)
+	if (err == nil && playlistId != -1) || (err != nil && err != domain.ErrPlaylistNotFound) {
 		return 0, err
 	}
 
@@ -73,7 +73,22 @@ func (r *PlaylistRepository) checkExist(ownerId string, name string) (int, error
 		rows.Scan(&id)
 		return id, nil
 	}
-	return 0, domain.ErrPlaylistNotFound
+	return -1, domain.ErrPlaylistNotFound
+}
+
+func (r *PlaylistRepository) checkExistVideoInPlaylistByUser(playlistId int, ownerId string, videoId string) (int, error) {
+	sqlQuery := `SELECT playlist_id FROM video_in_playlist WHERE playlist_id = ? AND user_id = ? AND video_id = ?`
+	rows, err := r.connector.GetDb().Query(sqlQuery, playlistId, ownerId, videoId)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	var id int
+	if rows.Next() {
+		rows.Scan(&id)
+		return id, nil
+	}
+	return -1, domain.ErrPlaylistNotFound
 }
 
 func (r *PlaylistRepository) FindPlaylist(playlistId int) (model.Playlist, error) {
@@ -157,6 +172,10 @@ func (r *PlaylistRepository) FindPlaylists(userId string, privacyTypes []model.P
 }
 
 func (r *PlaylistRepository) AddVideos(playlistId int, userId string, videosId []string) error {
+	id, err := r.checkExistVideoInPlaylistByUser(playlistId, userId, videosId[0])
+	if (err == nil && id != -1) || (err != nil && err != domain.ErrPlaylistNotFound) {
+		return domain.ErrPlaylistDuplicate
+	}
 	query := "INSERT INTO video_in_playlist (playlist_id, video_id, user_id) VALUES "
 	var vals []interface{}
 	for i, videoId := range videosId {
@@ -170,7 +189,7 @@ func (r *PlaylistRepository) AddVideos(playlistId int, userId string, videosId [
 		}
 	}
 
-	_, err := r.connector.GetDb().Query(query, vals...)
+	_, err = r.connector.GetDb().Query(query, vals...)
 	if err != nil {
 		return err
 	}

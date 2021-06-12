@@ -117,6 +117,7 @@
 
 <script>
 import {mapActions, mapGetters} from "vuex";
+import {addCss, hideElement, removeCss, toggleHideElement, unHideElement} from "@/util/dom";
 
 let Hls = require('hls.js');
 
@@ -230,9 +231,9 @@ export default {
   },
   async mounted() {
     console.log('mounted');
+    await this.preloadPreviewImages();
     this.initPlayer();
     this.initKeyHandler();
-    await this.preloadPreviewImages();
     // this.fetchVideosByPage(0, 10)
   },
   updated() {
@@ -266,6 +267,7 @@ export default {
         img.src = thumbnails[i];
         this.previewImages.push(img);
       }
+      console.log(this.previewImages);
     },
     async fetchVideosByPage(page, countVideoOnPage) {
       await this.getVideoOnPage(page, countVideoOnPage);
@@ -333,9 +335,9 @@ export default {
       this.progressBarWrapperElement = document.getElementById('progressBarWrapper');
       this.progressBarElement = document.getElementById('progressBar');
       this.progressBarCircleElement = document.getElementById('progressBarCircle');
-      this.chapterContainerElement = document.getElementById('chapterContainer');
     },
     initChapterControl() {
+      this.chapterContainerElement = document.getElementById('chapterContainer');
       this.chapterPopupElement = document.getElementById('chapterPopup');
       this.chapterTitleElement = document.getElementById('chapterTitle');
       this.chapterHoverElement = document.getElementById('chapterHover');
@@ -356,8 +358,8 @@ export default {
     },
     addEventListenerOnVideoElement() {
       this.videoElement.addEventListener('click', () => {
-        this.hideElement(this.contextMenuElement);
-        this.hideElement(this.submenuShowElement);
+        hideElement(this.contextMenuElement);
+        hideElement(this.submenuShowElement);
         this.togglePlayPause();
       })
 
@@ -400,27 +402,35 @@ export default {
       this.keyboardHelpElement.addEventListener('click', this.showKeyboardHelp, false);
     },
     handleShowChapter() {
-      this.toggleHideElement(this.chapterPopupElement);
+      console.log('handle show chapter');
       let html = `<h3>Chapter</h3><button id="toggleChapter">X</button>`;
       console.log(this.chaptersList);
-      this.chaptersList.forEach((chapter) => {
-        console.log(chapter);
-        const point = this.getPreviewImageOffset(chapter.start);
-        const imageIndex = this.getImageIndex(chapter.start);
-        const previewImage = this.previewImages[imageIndex];
-        console.log(previewImage);
+      console.log(this.previewImages);
 
-        html += `<div style="overflow: hidden; width: 256px; height: 144px;">
+      this.chaptersList.forEach((chapter) => {
+         try {
+           console.log(chapter);
+           const point = this.getPreviewImageOffset(chapter.start);
+           const imageIndex = this.getImageIndex(chapter.start);
+           const previewImage = this.previewImages[imageIndex].src;
+           console.log(previewImage);
+
+           html += `<div style="overflow: hidden; width: 256px; height: 144px;">
              <img style="transform:translate(-${PREVIEW_WIDTH * point.x}px, -${PREVIEW_HEIGHT * point.y}px);"
             src="${previewImage.src}" alt="chapter ${chapter.title}  prevew"/>' +
             </div>
             <p>${chapter.title}</p><button type="button" data-start="${chapter.start}">${chapter.start} seconds</button>`;
+         } catch (err) {
+           console.error(err);
+         }
       });
+      console.log(html);
+      toggleHideElement(this.chapterPopupElement);
       this.chapterPopupElement.innerHTML = html;
 
       const toggleChapter = document.getElementById('toggleChapter');
       toggleChapter.addEventListener('click', () => {
-        this.hideElement(this.chapterPopupElement);
+        hideElement(this.chapterPopupElement);
       });
       this.chapterSeekTimeItems = document.querySelectorAll("[data-start]");
       this.chapterSeekTimeItems.forEach(item => {
@@ -568,25 +578,25 @@ export default {
     },
     toggleFullScreenOnVideoElement() {
       if (!this.isFullScreen) {
-        this.hideElement(this.changePlayerSizeButton);
+        hideElement(this.changePlayerSizeButton);
         this.isFullScreen = true;
         this.toggleFullScreenElement.setAttribute('title', "Full screen");
       } else {
         this.isFullScreen = false;
-        this.unHideElement(this.changePlayerSizeButton);
+        unHideElement(this.changePlayerSizeButton);
         this.toggleFullScreenElement.setAttribute('title', "Exit full screen");
       }
     },
     togglePlayerSize() {
       if (this.isMedium) {
         this.isMedium = false;
-        this.removeCss(this.videoWrapperElement, 'player-medium');
-        this.addCss(this.videoWrapperElement, 'player-big');
+        removeCss(this.videoWrapperElement, 'player-medium');
+        addCss(this.videoWrapperElement, 'player-big');
         this.changePlayerSizeButton.setAttribute('title', 'Theater mode');
       } else {
         this.isMedium = true;
-        this.addCss(this.videoWrapperElement, 'player-medium');
-        this.removeCss(this.videoWrapperElement, 'player-big');
+        addCss(this.videoWrapperElement, 'player-medium');
+        removeCss(this.videoWrapperElement, 'player-big');
         this.changePlayerSizeButton.setAttribute('title', 'Default view');
       }
     },
@@ -734,7 +744,7 @@ export default {
 
       this.setElemPosition(this.chapterHoverElement, {left: offsetX - 15, top: -40});
 
-      this.unHideElement(this.chapterHoverElement);
+      unHideElement(this.chapterHoverElement);
 
       const chapter = this.getCurrentChapter(seekTime);
       if (chapter !== null) {
@@ -762,9 +772,9 @@ export default {
       return parseInt((event.pageX - boundingClientRect.left) * this.duration / boundingClientRect.width);
     },
     onMouseOutProgressBar() {
-      this.hideElement(this.previewImageWrapperElement);
-      this.hideElement(this.showHoverTimeElement);
-      this.hideElement(this.chapterHoverElement);
+      hideElement(this.previewImageWrapperElement);
+      hideElement(this.showHoverTimeElement);
+      hideElement(this.chapterHoverElement);
     },
     onVideoStop() {
       this.videoControlElement.style.transform = 'translateY(-20px)';
@@ -789,7 +799,7 @@ export default {
         left: boundingClientRect.left + 100,
         top: boundingClientRect.top - 300
       });
-      this.toggleHideElement(this.settingsPopupElement);
+      toggleHideElement(this.settingsPopupElement);
     },
     toggleLoop() {
       if (!this.isLoopedVideo) {
@@ -812,7 +822,7 @@ export default {
       e.preventDefault();
       console.log('this.contextMenuElement');
       console.log(this.contextMenuElement);
-      this.toggleHideElement(this.contextMenuElement);
+      toggleHideElement(this.contextMenuElement);
     },
     replayVideo() {
       this.currentTime = 0;
@@ -838,7 +848,7 @@ export default {
       this.toggleShowPopup(this.submenuShowElement, innerHtml);
     },
     toggleShowPopup(element, innerHtml) {
-      this.toggleHideElement(element);
+      toggleHideElement(element);
       this.submenuShowElement.innerHTML = innerHtml;
     },
     volumeUp(event) {
@@ -970,7 +980,7 @@ export default {
 
       this.setElemPosition(this.previewImageWrapperElement, {left: offset.left, top: offset.top});
 
-      this.unHideElement(this.previewImageWrapperElement);
+      unHideElement(this.previewImageWrapperElement);
     },
     getPreviewImageOffset(seekTime) {
       const seconds = seekTime % (TILE_SIZE.x + TILE_SIZE.y);
@@ -981,7 +991,7 @@ export default {
     },
     changeHoverTimeElement(seekTime, x) {
       this.setElemPosition(this.showHoverTimeElement, {left: x - 15, top: -20});
-      this.unHideElement(this.showHoverTimeElement);
+      unHideElement(this.showHoverTimeElement);
       this.showHoverTimeElement.innerText = this.formatTimeString(seekTime);
     },
     calculatePreviewImageOffset(offsetX, boundingRect) {
@@ -1004,21 +1014,6 @@ export default {
       }
 
       return {left: x, top: top};
-    },
-    hideElement(element) {
-      this.addCss(element, 'hide');
-    },
-    unHideElement(element) {
-      this.removeCss(element, 'hide');
-    },
-    toggleHideElement(element) {
-      element.classList.toggle('hide');
-    },
-    addCss(element, cssClassName) {
-      element.classList.add(cssClassName);
-    },
-    removeCss(element, cssClassName) {
-      element.classList.remove(cssClassName);
     },
     setElemPosition(element, {left, top}) {
       element.style.top = top + "px";
