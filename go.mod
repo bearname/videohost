@@ -13,5 +13,6 @@ require (
 	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
 	github.com/sirupsen/logrus v1.8.1
 	github.com/streadway/amqp v1.0.0
+	github.com/swaggo/http-swagger v1.0.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 )

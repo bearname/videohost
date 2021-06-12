@@ -12,9 +12,25 @@ import (
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/controller"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	httpSwagger "github.com/swaggo/http-swagger"
+	_ "github.com/swaggo/http-swagger/example/go-chi/docs"
 	"net/http"
 )
 
+// @title Swagger Example API
+// @version 1.0
+// @description This is a sample server Petstore server.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host petstore.swagger.io
+// @BasePath /api/v1/
 func Router(connector db.Connector, messageBrokerAddress string, authServerAddress string, redisAddress string, redisPassword string) http.Handler {
 
 	videoRepository := mysql.NewMysqlVideoRepository(connector)
@@ -32,6 +48,10 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	}
 
 	router := mux.NewRouter()
+	router.HandleFunc("/swagger/{id}", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8000/swagger/doc.json"), //The url pointing to API definition"
+	)).Methods(http.MethodGet)
+
 	router.HandleFunc("/health", handler.HealthHandler).Methods(http.MethodGet)
 	router.HandleFunc("/ready", handler.ReadyHandler).Methods(http.MethodGet)
 

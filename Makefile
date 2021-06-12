@@ -69,3 +69,10 @@ run-web:
 .PHONY: stop
 stop:
 	stop.bat
+
+test:
+	go test --short -coverprofile=cover.out -v ./...
+	make test.coverage
+
+test.coverage:
+	go tool cover -func=cover.out
