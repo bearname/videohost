@@ -324,7 +324,7 @@
 									"raw": "{\r\n    \"name\": \"Movies1\",\r\n    \"privacy\": 0,\r\n    \"videos\": [\"3624f091-bcac-11eb-afa0-e4e74940035b\", \"5333927f-c649-11eb-b7fe-00ff7c2a75d7\",  \"53f81f3b-c07f-11eb-bc58-e4e74940035b\" ]\r\n}"
 								},
 								"url": {
-									"raw": "http://localhost:8000/api/v1/playlist",
+									"raw": "http://localhost:8000/api/v1/playlists",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -333,7 +333,7 @@
 									"path": [
 										"api",
 										"v1",
-										"playlist"
+										"playlists"
 									]
 								}
 							},
@@ -345,7 +345,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8000/api/v1/playlist/5",
+									"raw": "http://localhost:8000/api/v1/playlists/5",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -354,7 +354,7 @@
 									"path": [
 										"api",
 										"v1",
-										"playlist",
+										"playlists",
 										"5"
 									]
 								}
@@ -362,10 +362,43 @@
 							"response": []
 						},
 						{
-							"name": "get user playlists",
+							"name": "get user playlists without private",
 							"request": {
 								"method": "GET",
 								"header": [],
+								"url": {
+									"raw": "http://localhost:8000/api/v1/playlists?ownerId=cfaff592-b933-11eb-b073-e4e74940035b",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"playlists"
+									],
+									"query": [
+										{
+											"key": "ownerId",
+											"value": "cfaff592-b933-11eb-b073-e4e74940035b"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "get user playlists with private",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+										"type": "text"
+									}
+								],
 								"url": {
 									"raw": "http://localhost:8000/api/v1/playlists?ownerId=cfaff592-b933-11eb-b073-e4e74940035b",
 									"protocol": "http",
@@ -409,7 +442,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8000/api/v1/playlist/8/modify",
+									"raw": "http://localhost:8000/api/v1/playlists/8/modify",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -418,7 +451,7 @@
 									"path": [
 										"api",
 										"v1",
-										"playlist",
+										"playlists",
 										"8",
 										"modify"
 									]
@@ -447,7 +480,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8000/api/v1/playlist/5/modify",
+									"raw": "http://localhost:8000/api/v1/playlists/5/modify",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -456,7 +489,7 @@
 									"path": [
 										"api",
 										"v1",
-										"playlist",
+										"playlists",
 										"5",
 										"modify"
 									]
@@ -485,7 +518,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8000/api/v1/playlist/5/change-privacy/1",
+									"raw": "http://localhost:8000/api/v1/playlists/5/change-privacy/1",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -494,7 +527,7 @@
 									"path": [
 										"api",
 										"v1",
-										"playlist",
+										"playlists",
 										"5",
 										"change-privacy",
 										"1"
@@ -515,7 +548,7 @@
 									}
 								],
 								"url": {
-									"raw": "http://localhost:8000/api/v1/playlist/7",
+									"raw": "http://localhost:8000/api/v1/playlists/7",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -524,7 +557,7 @@
 									"path": [
 										"api",
 										"v1",
-										"playlist",
+										"playlists",
 										"7"
 									]
 								}
