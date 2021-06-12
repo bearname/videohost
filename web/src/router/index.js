@@ -55,7 +55,7 @@ function routes(store) {
     },
     playlist: {
       name: 'playlist',
-      path: '/playlist',
+      path: '/playlists',
       component: Playlist,
     },
     // editVideo: {

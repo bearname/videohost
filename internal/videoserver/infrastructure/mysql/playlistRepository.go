@@ -97,10 +97,12 @@ func (r *PlaylistRepository) FindPlaylist(playlistId int) (model.Playlist, error
 				    p.name,
 				    p.created,
 				    p.privacy,
-					   GROUP_CONCAT(CONCAT('{"videoId":"', video_in_playlist.video_id, '}') SEPARATOR ',') AS video_chapters
+					   GROUP_CONCAT(CONCAT('{"id":"', video_in_playlist.video_id, '", "name":"', v.title, '", "thumbnail":"', v.thumbnail_url, 
+					       '", "duration":"', v.duration, '", "uploaded":"', v.uploaded, '"}') SEPARATOR ',') AS video_chapters
 				FROM video_in_playlist
-						 LEFT JOIN playlist p on video_in_playlist.playlist_id = p.id
-				WHERE playlist_id = ?
+						 LEFT JOIN playlist p ON video_in_playlist.playlist_id = p.id
+						LEFT JOIN video v ON video_in_playlist.video_id = v.id_video
+				WHERE playlist_id = ? AND v.status = 3
 				GROUP BY playlist_id;`
 
 	rows, err := r.connector.GetDb().Query(sqlQuery, playlistId)
@@ -122,6 +124,7 @@ func (r *PlaylistRepository) FindPlaylist(playlistId int) (model.Playlist, error
 			return model.Playlist{}, err
 		}
 
+		playlist.VideoString = "[" + playlist.VideoString + "]"
 		return playlist, nil
 	}
 	return playlist, domain.ErrPlaylistNotFound

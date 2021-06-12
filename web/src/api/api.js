@@ -1,16 +1,4 @@
-export async function makeRequest(context, url, config) {
-  const response = await fetch(url, config);
-  if (!response.ok) {
-    if (response.status === 401) {
-      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
-    } else {
-      throw new Error('Cannot update');
-    }
-  }
-  return response.json();
-}
-
-export async function sendWithAuth(context, method, url, json) {
+export async function requestWithAuth(context, method, url, json) {
   const config = {
     method: method,
     headers: {
@@ -20,6 +8,16 @@ export async function sendWithAuth(context, method, url, json) {
   };
 
   return await makeRequest(context, url, config);
+}
+
+export async function makeRequest(context, url, config) {
+  const response = await fetch(url, config);
+  if (!response.ok) {
+    if (response.status === 401) {
+      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
+    }
+  }
+  return response.json();
 }
 
 export default makeRequest;

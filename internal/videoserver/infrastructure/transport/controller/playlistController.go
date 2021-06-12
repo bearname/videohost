@@ -162,7 +162,12 @@ func (c *PlayListController) ModifyVideoToPlaylist() func(http.ResponseWriter, *
 
 		err = c.playListService.ModifyVideosOnPlaylist(playlistId, userId, modificationRequest.Videos, action)
 		if err != nil {
-			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
+			if err == domain.ErrPlaylistDuplicate {
+				c.BaseController.WriteResponse(writer, http.StatusConflict, false, err.Error())
+			} else {
+				c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
+			}
+
 			return
 		}
 

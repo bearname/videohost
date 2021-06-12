@@ -11,7 +11,6 @@
       <v-toolbar-title>
         <router-link :to="{ name: 'uploadVideo'}">Загрузить видео</router-link>
       </v-toolbar-title>
-      <!--      <SearchRow/>-->
       <v-toolbar-title class="float-right">
         <router-link :to="{ name: 'user'}">User {{ currentUsername }}</router-link>
       </v-toolbar-title>

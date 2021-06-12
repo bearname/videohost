@@ -31,7 +31,8 @@
 <script>
 import {mapActions, mapGetters} from "vuex";
 import {toggleHideElement, unHideElement} from "@/util/dom";
-import {EventBus, publishEvent} from "@/events/event-bus";
+import {publishEvent} from "@/events/event-bus";
+import {playlistModification} from "@/store/playlistStore/actions";
 
 export default {
   name: "PlaylistAddPopup",
@@ -39,7 +40,6 @@ export default {
     "videoId"
   ],
   async mounted() {
-
     this.idVideo = this.videoId;
     this.createPlaylistPopupElement = document.getElementById("createPlaylistPopup");
     this.generalPopupElement = document.getElementById("popup");
@@ -64,12 +64,14 @@ export default {
   methods: {
     ...mapActions({
       createPlayList: "playlistMod/createPlaylist",
-      addToPlaylist: "playlistMod/saveToPlaylist",
+      doPlaylistModification: "playlistMod/modifyPlaylist",
       fetchUserPlaylists: "playlistMod/getUserPlaylists"
     }),
     ...mapGetters({
       getErrors: "playlistMod/getError",
-      getUserPlaylists: "playlistMod/getPlaylist",
+      getStatus: "playlistMod/getSuccess",
+      getMessage: "playlistMod/getResponseMessage",
+      getUserPlaylists: "playlistMod/getPlaylists",
     }),
     publish() {
       publishEvent( 'success', "data" + Date.now())
@@ -78,11 +80,15 @@ export default {
       const videos = this.getCurrentVideos();
       await this.createPlayList({name: this.name, privacy: this.privacy, videos: videos});
       this.errors = this.getErrors();
+
+      publishEvent(this.getStatus(), this.getMessage());
     },
     async saveToPlaylist(playlistId) {
       const videos = this.getCurrentVideos();
-      await this.addToPlaylist({playlistId: playlistId, videos})
+      await this.doPlaylistModification({action: playlistModification.AddVideo, playlistId: playlistId, videos})
       this.errors = this.getErrors();
+
+      publishEvent(this.getStatus(), this.getMessage());
     },
     showCreatePlaylistPopup() {
       unHideElement(this.createPlaylistPopupElement);
