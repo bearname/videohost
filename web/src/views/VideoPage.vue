@@ -33,8 +33,8 @@
         <p class="subtitle-1">Watch video {{ video.description }}</p>
         <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
         <p class="subtitle-2">{{ video.views }} views</p>
-        <v-btn id="countLikes" v-on:click="likeVideo(true)">{{countLikes}} </v-btn>
-        <v-btn id="countDislikes" v-on:click="likeVideo(false)">{{countDisLikes}}}</v-btn>
+        <v-btn id="countLikes" v-on:click="likeVideo(true)">Likes {{countLikes}} </v-btn>
+        <v-btn id="countDislikes" v-on:click="likeVideo(false)">Dislikes {{countDisLikes}}</v-btn>
         <div v-if="isCurrentUserOwner">
           <v-btn v-on:click="toggleEdit" :data-id="video.id">edit</v-btn>
           <div v-if="showEdit">
@@ -174,7 +174,9 @@ export default {
       this.showEdit = !this.showEdit;
     },
     async likeVideo(isLike) {
-      await this.likeVideoRequest({videoId: this.videoId, isLike: isLike, ownerId: this.video.ownerId});
+      const data = {videoId: this.videoId, isLike: isLike, ownerId: this.video.ownerId};
+      console.log(data);
+      await this.likeVideoRequest(data);
       this.code = this.getResponseCode();
       console.log('this.code');
       console.log(this.code);

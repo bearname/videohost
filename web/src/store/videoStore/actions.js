@@ -3,7 +3,6 @@ import videosUtil from './videoUtil';
 import logError from '../../util/logger';
 import makeRequest from '../../api/api';
 import VideoStatus from './videoStatus';
-import RESPONSE_CODES from "@/store/videoStore/responseCode";
 
 const actions = {
   async getVideoById(context, {videoId}) {
@@ -150,7 +149,7 @@ const actions = {
       context.state.code = response.data.code;
     } catch (error) {
       // context.state.code = RESPONSE_CODES.ErrInternalServer;
-      context.state.code = response.data.code;
+      context.state.code = error.response.data.code;
 
       logError(error);
     }
