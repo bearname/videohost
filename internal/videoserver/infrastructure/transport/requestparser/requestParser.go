@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/bearname/videohost/internal/common/util"
-	dto2 "github.com/bearname/videohost/internal/videoserver/domain/dto"
+	"github.com/bearname/videohost/internal/videoserver/domain/dto"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -37,14 +37,14 @@ func (p *UploadVideoRequestParser) Parse(request *http.Request) (interface{}, er
 		return nil, errors.New("cannot get file")
 	}
 	chaptersJson := request.FormValue("chapters")
-	var chapters []dto2.ChapterDto
+	var chapters []dto.ChapterDto
 	if len(chaptersJson) != 0 {
 		if err = json.Unmarshal([]byte(chaptersJson), &chapters); err != nil {
 			return nil, errors.New("cannot parse chapter")
 		}
 	}
 
-	return &dto2.UploadVideoDto{
+	return &dto.UploadVideoDto{
 		Title:         title,
 		Description:   description,
 		MultipartFile: fileReader,
@@ -73,7 +73,7 @@ func (p *CatalogVideoParser) Parse(request *http.Request) (interface{}, error) {
 		return nil, errors.New("failed get countVideoOnPage parameter")
 	}
 
-	return dto2.SearchDto{
+	return dto.SearchDto{
 		Page:         page,
 		Count:        countVideoOnPage,
 		SearchString: "",
@@ -105,7 +105,7 @@ func (p *SearchVideoParser) Parse(request *http.Request) (interface{}, error) {
 		return nil, errors.New("failed get searchString parameter")
 	}
 
-	return dto2.SearchDto{
+	return dto.SearchDto{
 		Page:         page,
 		Count:        countVideoOnPage,
 		SearchString: searchString,
