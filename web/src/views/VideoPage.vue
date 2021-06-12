@@ -29,12 +29,13 @@
           sm="8"
       >
         <PlaylistAddPopup :video-id="video.id"/>
+        <v-btn v-if="!isCurrentUserOwner" v-on:click="followToAuthor">follow to author</v-btn>
         <h3>{{ video.name }}</h3>
         <p class="subtitle-1">Watch video {{ video.description }}</p>
         <p class="subtitle-2">Добавлено {{ video.uploaded }}</p>
         <p class="subtitle-2">{{ video.views }} views</p>
-        <v-btn id="countLikes" v-on:click="likeVideo(true)">Likes {{countLikes}} </v-btn>
-        <v-btn id="countDislikes" v-on:click="likeVideo(false)">Dislikes {{countDisLikes}}</v-btn>
+        <v-btn id="countLikes" v-on:click="likeVideo(true)">Likes {{ countLikes }}</v-btn>
+        <v-btn id="countDislikes" v-on:click="likeVideo(false)">Dislikes {{ countDisLikes }}</v-btn>
         <div v-if="isCurrentUserOwner">
           <v-btn v-on:click="toggleEdit" :data-id="video.id">edit</v-btn>
           <div v-if="showEdit">
@@ -129,11 +130,19 @@ export default {
       findVideoById: "videoMod/getVideoById",
       deleteVideoPermanent: "videoMod/deleteVideoPermanent",
       likeVideoRequest: "videoMod/likeVideo",
+      follow: "userMod/subscribe",
     }),
     ...mapGetters({
+      isSuccessResult: "userMod/isSuccess",
       getVideoResult: "videoMod/getVideo",
       getResponseCode: "videoMod/getCode",
     }),
+    async followToAuthor() {
+      await this.follow({followingToUserId: this.video.ownerId});
+      const isOk = this.isSuccessResult();
+
+      publishEvent((isOk) ? "true" : "false", (isOk) ? "Success" : "Failed" + "subscribe");
+    },
     async getVideo() {
       this.videoId = this.$route.params.videoId;
       await this.fetchVideo(this.$route.params.videoId);

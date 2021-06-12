@@ -15,8 +15,8 @@ func NewFollowerRepo(connector db.Connector) *FollowerRepo {
 }
 
 func (r *FollowerRepo) Follow(followingToUserId string, followerId string, isFollowing bool) error {
-	sqlQuery := `INSERT INTO subscriptions (following_to_user_id, follower_user_id, is_following) VALUES (?, ?, ?) 
-		ON DUPLICATE KEY  UPDATE is_following=?;`
+	sqlQuery := `INSERT INTO subscriptions (following_to_user_id, follower_user_id, following) VALUES (?, ?, ?) 
+		ON DUPLICATE KEY  UPDATE following=?;`
 	query, err := r.connector.GetDb().Query(sqlQuery, followingToUserId, followerId, isFollowing, isFollowing)
 	if err != nil {
 		return err

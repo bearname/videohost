@@ -1,11 +1,21 @@
 export async function requestWithAuth(context, method, url, json) {
-  const config = {
-    method: method,
-    headers: {
-      'Authorization': context.rootGetters['authMod/getTokenHeader'],
-    },
-    body: JSON.stringify(json)
-  };
+  let config;
+  if (json !== null) {
+    config = {
+      method: method,
+      headers: {
+        'Authorization': context.rootGetters['authMod/getTokenHeader'],
+      },
+      body: JSON.stringify(json)
+    };
+  } else {
+    config = {
+      method: method,
+      headers: {
+        'Authorization': context.rootGetters['authMod/getTokenHeader'],
+      },
+    };
+  }
 
   return await makeRequest(context, url, config);
 }

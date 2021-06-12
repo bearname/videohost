@@ -13,6 +13,9 @@ const getters = {
       countAllVideos: state.countUserVideos,
     };
   },
+  isSuccess(state) {
+    return state.isSuccess;
+  },
 };
 
 export default getters;

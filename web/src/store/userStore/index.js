@@ -7,6 +7,7 @@ const state = {
   userVideos: null,
   countUserVideos: 0,
   rtl: false,
+  isSuccess: false,
   theme: {
     dark: false,
     system: false,

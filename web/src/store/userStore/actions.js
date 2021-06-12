@@ -1,4 +1,4 @@
-import makeRequest from '@/api/api';
+import makeRequest, {requestWithAuth} from '@/api/api';
 import videosUtil from '@/store/videoStore/videoUtil';
 import Cookie from '@/util/cookie';
 
@@ -107,6 +107,25 @@ const actions = {
     } catch (error) {
       console.log(error);
       context.state.success = false;
+      throw error;
+    }
+  },
+  async subscribe(context, {followingToUserId}) {
+    try {
+      await context.dispatch('authMod/updateAuthorizationIfNeeded', {}, {root: true});
+
+      const url = process.env.VUE_APP_USER_API + `/api/v1/users/${Cookie.getCookie("userId")}/follow?followingToId=${followingToUserId}`;
+      console.log(url);
+
+      const data = await requestWithAuth(context, "POST", url, null);
+      console.log('data');
+      console.log(data);
+      context.state.isSuccess = true;
+
+      console.log('inner end');
+    } catch (error) {
+      console.log(error);
+      context.state.isSuccess = false;
       throw error;
     }
   },
