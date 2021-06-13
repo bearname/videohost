@@ -2,13 +2,14 @@ package profile
 
 import (
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"net/http/pprof"
 	"os"
 	"runtime"
 	runtimepprof "runtime/pprof"
 )
 
-func ProfileHandler(router *mux.Router) *mux.Router {
+func BuildHandlers(router *mux.Router) *mux.Router {
 	pprofRouter := router.PathPrefix("/debug/pprof").Subrouter()
 	pprofRouter.HandleFunc("/", pprof.Index)
 	pprofRouter.HandleFunc("/cmdline", pprof.Cmdline)
@@ -18,9 +19,12 @@ func ProfileHandler(router *mux.Router) *mux.Router {
 	// Debug: pprof.WriteHeapProfile()
 	memprofile := "/run/dnsd/memprofile"
 	f, _ := os.Create(memprofile)
+	defer f.Close()
 	runtime.GC() // get up-to-date statistics
-	runtimepprof.WriteHeapProfile(f)
-	f.Close()
+	err := runtimepprof.WriteHeapProfile(f)
+	if err != nil {
+		log.Error(err)
+	}
 
 	profile := pprofRouter.PathPrefix("/profile").Subrouter()
 	profile.HandleFunc("", pprof.Profile)
@@ -28,5 +32,6 @@ func ProfileHandler(router *mux.Router) *mux.Router {
 	profile.Handle("/threadcreate", pprof.Handler("threadcreate"))
 	profile.Handle("/heap", pprof.Handler("heap"))
 	profile.Handle("/block", pprof.Handler("block"))
+
 	return router
 }

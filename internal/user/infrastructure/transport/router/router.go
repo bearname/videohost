@@ -40,5 +40,5 @@ func Router(connector db.Connector) http.Handler {
 	apiV1Route.HandleFunc("/users/{userId}/follow", authController.CheckTokenHandler(userController.Follow)).Methods(http.MethodPost, http.MethodOptions)
 	apiV1Route.HandleFunc("/users/{userId}/videos", userController.GetUserVideos).Methods(http.MethodGet, http.MethodOptions)
 
-	return middleware.LogMiddleware(profile.ProfileHandler(router))
+	return middleware.LogMiddleware(profile.BuildHandlers(router))
 }

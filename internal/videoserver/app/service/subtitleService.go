@@ -35,7 +35,7 @@ func (s *SubtitleService) Create(subtitle dto.CreateSubtitleRequestDto) (int64, 
 
 	marshal, err := json.Marshal(subtitle)
 	if err == nil {
-		err = s.cache.Set(key, string(marshal))
+		_ = s.cache.Set(key, string(marshal))
 		log.Error("failed save to cache")
 	}
 	return id, nil

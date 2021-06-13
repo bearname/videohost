@@ -186,6 +186,9 @@ func (s *VideoServiceImpl) DeleteVideo(userDto commonDto.UserDto, videoId string
 		return errors.New("failed connect to video store server")
 	}
 	err = connection.RemoveDirRecur(videoId)
+	if err != nil {
+		return err
+	}
 	err = connection.RemoveDir(videoId)
 
 	if err != nil {

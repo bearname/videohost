@@ -68,12 +68,11 @@ func (r *PlaylistRepository) checkExist(ownerId string, name string) (int, error
 		return 0, err
 	}
 	defer rows.Close()
-	var id int
-	if rows.Next() {
-		rows.Scan(&id)
-		return id, nil
+	id, err := r.scanId(rows)
+	if err != nil {
+		return -1, domain.ErrPlaylistNotFound
 	}
-	return -1, domain.ErrPlaylistNotFound
+	return id, nil
 }
 
 func (r *PlaylistRepository) checkExistVideoInPlaylistByUser(playlistId int, ownerId string, videoId string) (int, error) {
@@ -83,12 +82,23 @@ func (r *PlaylistRepository) checkExistVideoInPlaylistByUser(playlistId int, own
 		return 0, err
 	}
 	defer rows.Close()
+	id, err := r.scanId(rows)
+	if err != nil {
+		return -1, domain.ErrPlaylistNotFound
+	}
+	return id, nil
+}
+
+func (r *PlaylistRepository) scanId(rows *sql.Rows) (int, error) {
 	var id int
 	if rows.Next() {
-		rows.Scan(&id)
+		err := rows.Scan(&id)
+		if err != nil {
+			return 0, err
+		}
 		return id, nil
 	}
-	return -1, domain.ErrPlaylistNotFound
+	return 0, domain.ErrPlaylistNotFound
 }
 
 func (r *PlaylistRepository) FindPlaylist(playlistId int) (model.Playlist, error) {

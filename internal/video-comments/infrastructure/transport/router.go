@@ -29,5 +29,5 @@ func Router(connector db.Connector, userServerAddress string, videoServerAddress
 	subRouter.HandleFunc("/{commentId}", middleware.AllowCors(videoController.EditComment())).Methods(http.MethodPut, http.MethodOptions)
 	subRouter.HandleFunc("/{commentId}", middleware.AllowCors(videoController.DeleteComment())).Methods(http.MethodDelete, http.MethodOptions)
 
-	return middleware.LogMiddleware(profile.ProfileHandler(router))
+	return middleware.LogMiddleware(profile.BuildHandlers(router))
 }

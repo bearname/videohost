@@ -442,7 +442,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8000/api/v1/playlists/8/modify",
+									"raw": "http://localhost:8000/api/v1/playlists/5/modify",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -452,7 +452,7 @@
 										"api",
 										"v1",
 										"playlists",
-										"8",
+										"5",
 										"modify"
 									]
 								}
@@ -567,6 +567,47 @@
 					]
 				},
 				{
+					"name": "subtitle",
+					"item": [
+						{
+							"name": "Create playlist",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE5MzY4NTE3NzQsInJvbGUiOjEsInVzZXJJZCI6ImNmYWZmNTkyLWI5MzMtMTFlYi1iMDczLWU0ZTc0OTQwMDM1YiIsInVzZXJuYW1lIjoibWlraGEifQ.MslmmKdQtAYCAxHX3AcZXwPG2LneVYChriGEv4ns6dY",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"videoId\": \"5333927f-c649-11eb-b7fe-00ff7c2a75d7\",\r\n    \"parts\": [\r\n        {\"start\": 0, \"end\": 100, \"text\": \"intro\"},\r\n         {\"start\": 100, \"end\": 200, \"text\": \"end\"}\r\n    ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8000/api/v1/subtitles",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"v1",
+										"subtitles"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "get video",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
@@ -619,7 +660,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/C:/Users/mikha/Downloads/Black Mirror _ Season 4 Episode Titles _ Netflix.mp4"
+									"src": "/C:/Users/mikha/Downloads/pexels-polina-tankilevitch-6646568.mp4"
 								},
 								{
 									"key": "title",

@@ -91,5 +91,5 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	var imgServer = http.FileServer(http.Dir("C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoserver\\content"))
 	router.PathPrefix("/content/").Handler(http.StripPrefix("/content/", imgServer))
 
-	return middleware.LogMiddleware(profile.ProfileHandler(router))
+	return middleware.LogMiddleware(profile.BuildHandlers(router))
 }

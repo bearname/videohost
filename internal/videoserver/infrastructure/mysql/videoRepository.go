@@ -21,7 +21,7 @@ func NewMysqlVideoRepository(connector db.Connector) *VideoRepository {
 }
 
 func (r *VideoRepository) Create(userId string, videoId string, title string, description string, url string, chapters []dto2.ChapterDto) error {
-	if chapters == nil || len(chapters) == 0 {
+	if (chapters != nil && len(chapters) == 0) || chapters == nil {
 		return r.insertWithoutChapter(userId, videoId, title, description, url)
 	}
 	return r.insertWithChapter(userId, videoId, title, description, url, chapters)
