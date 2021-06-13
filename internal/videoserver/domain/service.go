@@ -55,3 +55,9 @@ type PlayListService interface {
 	ChangePrivacy(id string, playlistId int, privacyType model.PrivacyType) error
 	Delete(ownerId string, playlistId int) error
 }
+
+type SubtitleService interface {
+	Create(subtitle dto.CreateSubtitleRequestDto) (int64, error)
+	FindByVideo(videoId int) (model.Subtitle, error)
+	Delete(subtitleId int) error
+}

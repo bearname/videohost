@@ -61,12 +61,17 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 
 	subRouter := router.PathPrefix("/api/v1").Subrouter()
+	subtitleRepo := mysql.NewSubtitleRepository(connector)
+	subtitleService := service.NewSubtitleService(subtitleRepo, cache)
+	subtitleController := controller.NewSubtitleController(subtitleService, authServerAddress)
+	subRouter.HandleFunc("/subtitles", middleware.AllowCors(middleware.AuthMiddleware(subtitleController.CreateSubtitle(), authServerAddress))).Methods(http.MethodPost, http.MethodOptions)
+
 	repository := mysql.NewPlaylistRepository(connector)
 	listService := service.NewPlayListService(repository, cache)
 	playListController := controller.NewPlayListController(listService, authServerAddress)
 
-	subRouter.HandleFunc("/playlists", middleware.AllowCors(playListController.GetUserPlaylists())).Methods(http.MethodGet, http.MethodOptions)
 	subRouter.HandleFunc("/playlists", middleware.AllowCors(middleware.AuthMiddleware(playListController.CreatePlaylist(), authServerAddress))).Methods(http.MethodPost, http.MethodOptions)
+	subRouter.HandleFunc("/playlists", middleware.AllowCors(playListController.GetUserPlaylists())).Methods(http.MethodGet, http.MethodOptions)
 	subRouter.HandleFunc("/playlists/{playlistId}", middleware.AllowCors(playListController.GetPlayList())).Methods(http.MethodGet, http.MethodOptions)
 	subRouter.HandleFunc("/playlists/{playlistId}/modify", middleware.AuthMiddleware(playListController.ModifyVideoToPlaylist(), authServerAddress)).Methods(http.MethodPut, http.MethodOptions)
 	subRouter.HandleFunc("/playlists/{playlistId}/change-privacy/{privacyType}", middleware.AllowCors(middleware.AuthMiddleware(playListController.ChangePrivacy(), authServerAddress))).Methods(http.MethodPut, http.MethodOptions)

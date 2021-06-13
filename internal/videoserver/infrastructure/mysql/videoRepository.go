@@ -38,7 +38,7 @@ func (r *VideoRepository) insertWithChapter(userId string, videoId string, title
 	createChapterQuery = createChapterQuery[0 : len(createChapterQuery)-2]
 	createChapterQuery += ";"
 
-	err := WithTransaction(r.connector.GetDb(), func(tx Transaction) error {
+	err := db.WithTransaction(r.connector.GetDb(), func(tx db.Transaction) error {
 		createVideoQuery := "INSERT INTO video (id_video, title, description, url, owner_id) VALUE (?, ?, ?, ?, ?); "
 		_, err := tx.Exec(createVideoQuery, videoId, title, description, url, userId)
 		if err != nil {
@@ -59,35 +59,6 @@ func (r *VideoRepository) insertWithChapter(userId string, videoId string, title
 	return nil
 }
 
-type Transaction interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Prepare(query string) (*sql.Stmt, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...interface{}) *sql.Row
-}
-
-type TxFn func(Transaction) error
-
-func WithTransaction(db *sql.DB, fn TxFn) (err error) {
-	tx, err := db.Begin()
-	if err != nil {
-		return
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			err = tx.Rollback()
-			panic(p)
-		} else if err != nil {
-			err = tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-
-	err = fn(tx)
-	return err
-}
 func (r *VideoRepository) insertWithoutChapter(userId string, videoId string, title string, description string, url string) error {
 	query := "INSERT INTO video (id_video, title, description, url, owner_id) VALUE (?, ?, ?, ?, ?);"
 	_, err := r.connector.GetDb().Query(query, videoId,

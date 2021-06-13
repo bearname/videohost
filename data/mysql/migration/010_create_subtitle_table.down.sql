@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS subtitle;
+DROP TABLE IF EXISTS subtitle_part;

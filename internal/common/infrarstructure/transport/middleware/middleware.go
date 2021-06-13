@@ -30,6 +30,7 @@ func AllowCors(next http.HandlerFunc) http.HandlerFunc {
 			writer.WriteHeader(http.StatusNoContent)
 			return
 		}
+
 		next(writer, request)
 	}
 }

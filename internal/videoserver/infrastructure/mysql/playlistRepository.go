@@ -26,7 +26,7 @@ func (r *PlaylistRepository) Create(playlist dto.CreatePlaylistDto) (int64, erro
 	}
 
 	var id int64
-	err = WithTransaction(r.connector.GetDb(), func(tx Transaction) error {
+	err = db.WithTransaction(r.connector.GetDb(), func(tx db.Transaction) error {
 		query := `INSERT INTO playlist (name, user_id, privacy) VALUES (?, ?, ?);`
 		var result sql.Result
 		result, err = tx.Exec(query, playlist.Name, playlist.OwnerId, playlist.Privacy)
