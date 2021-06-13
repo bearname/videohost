@@ -3,6 +3,7 @@
 vendor
 */content
 content
+web/
 bin
 */*.exe
 */*.log
