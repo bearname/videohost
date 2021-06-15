@@ -101,9 +101,22 @@ func (a *AuthServiceImpl) Login(requestBody io.ReadCloser) (domain.Token, error,
 		return domain.Token{}, errors.New("wrong password"), http.StatusUnauthorized
 	}
 
+	role := model.General
+	accessToken, err := CreateToken(userFromDb.Key, userFromDb.Username, role)
+	if err != nil {
+		log.Error(err.Error())
+		return domain.Token{}, errors.New("cannot create accessToken"), http.StatusInternalServerError
+	}
+
+	refreshToken, err := CreateTokenWithDuration(userFromDb.Key, userFromDb.Username, role, time.Hour*24*365*10)
+	if err != nil {
+		log.Error(err.Error())
+		return domain.Token{}, errors.New("cannot create refreshToken"), http.StatusInternalServerError
+	}
+
 	return domain.Token{
-		AccessToken:  userFromDb.AccessToken,
-		RefreshToken: userFromDb.RefreshToken,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}, nil, http.StatusOK
 }
 

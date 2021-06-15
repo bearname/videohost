@@ -14,7 +14,6 @@ import (
 )
 
 func Router(connector db.Connector) http.Handler {
-
 	videoRepo := mysql.NewMysqlVideoRepository(connector)
 	userRepository := userRepo.NewMysqlUserRepository(connector)
 	followingRepository := userRepo.NewFollowerRepo(connector)
