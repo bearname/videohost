@@ -7,6 +7,8 @@ import (
 	caching "github.com/bearname/videohost/internal/common/infrarstructure/redis"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/handler"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/middleware"
+	"github.com/bearname/videohost/internal/stream-service/app"
+	controller2 "github.com/bearname/videohost/internal/stream-service/infrastructure/controller"
 	"github.com/bearname/videohost/internal/videoserver/app/service"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/mysql"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/controller"
@@ -55,7 +57,7 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	router.HandleFunc("/health", handler.HealthHandler).Methods(http.MethodGet)
 	router.HandleFunc("/ready", handler.ReadyHandler).Methods(http.MethodGet)
 
-	streamController := controller.NewStreamController(service.NewStreamServiceImpl())
+	streamController := controller2.NewStreamController(app.NewStreamService())
 	router.HandleFunc("/media/{videoId}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
 	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)

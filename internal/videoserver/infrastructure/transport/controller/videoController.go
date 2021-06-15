@@ -7,7 +7,7 @@ import (
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/controller"
 	"github.com/bearname/videohost/internal/common/util"
 	"github.com/bearname/videohost/internal/videoserver/app/service"
-	dto2 "github.com/bearname/videohost/internal/videoserver/domain/dto"
+	"github.com/bearname/videohost/internal/videoserver/domain/dto"
 	"github.com/bearname/videohost/internal/videoserver/domain/model"
 	"github.com/bearname/videohost/internal/videoserver/domain/repository"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/requestparser"
@@ -84,7 +84,7 @@ func (c VideoController) GetVideos() func(http.ResponseWriter, *http.Request) {
 			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
 			return
 		}
-		searchDto := result.(dto2.SearchDto)
+		searchDto := result.(dto.SearchDto)
 
 		log.Info("page ", searchDto.Page, " count video ", searchDto.Count)
 		onPage, err := c.videoService.FindVideoOnPage(&searchDto)
@@ -125,7 +125,7 @@ func (c *VideoController) UploadVideo() func(http.ResponseWriter, *http.Request)
 			return
 		}
 
-		videoDto := uploadVideoDto.(*dto2.UploadVideoDto)
+		videoDto := uploadVideoDto.(*dto.UploadVideoDto)
 		videoId, err := c.videoService.UploadVideo(userDto.UserId, videoDto)
 		if err != nil {
 			log.Error(err.Error())
@@ -161,7 +161,7 @@ func (c *VideoController) UpdateTitleAndDescription() func(http.ResponseWriter, 
 			return
 		}
 
-		var videoDto dto2.VideoMetadata
+		var videoDto dto.VideoMetadata
 		err = json.NewDecoder(request.Body).Decode(&videoDto)
 		if err != nil {
 			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, "cannot decode videoId|title|description struct")
@@ -227,7 +227,7 @@ func (c *VideoController) SearchVideo() func(http.ResponseWriter, *http.Request)
 			c.BaseController.WriteResponse(writer, http.StatusBadRequest, false, err.Error())
 			return
 		}
-		searchDto := result.(dto2.SearchDto)
+		searchDto := result.(dto.SearchDto)
 
 		log.Info("page ", searchDto.Page, " count video ", searchDto.Count)
 		pageCount, ok := c.videoRepository.GetPageCount(searchDto.Count)

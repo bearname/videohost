@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/controller"
-	"github.com/bearname/videohost/internal/videoserver/app/service"
+	"github.com/bearname/videohost/internal/stream-service/app"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -10,10 +10,10 @@ import (
 
 type StreamController struct {
 	controller.BaseController
-	streamService service.StreamServiceImpl
+	streamService app.StreamService
 }
 
-func NewStreamController(streamService service.StreamServiceImpl) *StreamController {
+func NewStreamController(streamService app.StreamService) *StreamController {
 	v := new(StreamController)
 	v.streamService = streamService
 	return v

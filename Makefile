@@ -1,5 +1,5 @@
 .PHONY: build
-build: lint build-video build-user build-thumbgenerator build-videoprocessor build-video-scaler build-notifier
+build: lint build-video build-user build-streaming-server build-thumbgenerator build-videoprocessor build-video-scaler build-notifier
 
 .PHONY: lint
 lint:
@@ -12,6 +12,10 @@ build-videos:
 .PHONY: build-user
 build-user:
 	go build  -o .\bin\user\userserver.exe .\cmd\user\main.go
+
+.PHONY: build-streaming-server
+build-streaming-server:
+	go build  -o .\bin\streaming-server\streamingserver.exe .\cmd\streaming-server\main.go
 
 .PHONY: build-thumbgenerator
 build-thumbgenerator:
@@ -45,6 +49,10 @@ run-videoserver:
 .PHONY: run-user
 run-user:
 	.\bin\user\userserver.exe
+
+.PHONY: run-streaming-server
+run-streaming-server:
+	.\bin\streaming-server\streamingserver.exe
 
 .PHONY: run-video-comments
 run-video-comments:
