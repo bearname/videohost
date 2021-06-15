@@ -7,8 +7,6 @@ import (
 	caching "github.com/bearname/videohost/internal/common/infrarstructure/redis"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/handler"
 	"github.com/bearname/videohost/internal/common/infrarstructure/transport/middleware"
-	"github.com/bearname/videohost/internal/stream-service/app"
-	controller2 "github.com/bearname/videohost/internal/stream-service/infrastructure/controller"
 	"github.com/bearname/videohost/internal/videoserver/app/service"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/mysql"
 	"github.com/bearname/videohost/internal/videoserver/infrastructure/transport/controller"
@@ -57,11 +55,6 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	router.HandleFunc("/health", handler.HealthHandler).Methods(http.MethodGet)
 	router.HandleFunc("/ready", handler.ReadyHandler).Methods(http.MethodGet)
 
-	streamController := controller2.NewStreamController(app.NewStreamService())
-	router.HandleFunc("/media/{videoId}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
-	router.HandleFunc("/media/{videoId}/{quality}/stream/", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
-	router.HandleFunc("/media/{videoId}/{quality}/stream/{segName:index-[0-9]+.ts}", streamController.StreamHandler).Methods(http.MethodGet, http.MethodOptions)
-
 	subRouter := router.PathPrefix("/api/v1").Subrouter()
 	subtitleRepo := mysql.NewSubtitleRepository(connector)
 	subtitleService := service.NewSubtitleService(subtitleRepo, cache)
@@ -89,9 +82,6 @@ func Router(connector db.Connector, messageBrokerAddress string, authServerAddre
 	subRouter.HandleFunc("/videos/{videoId}/increment", videoController.IncrementViews()).Methods(http.MethodPost, http.MethodOptions)
 	subRouter.HandleFunc("/videos-liked", middleware.AuthMiddleware(videoController.FindUserLikedVideo(), authServerAddress)).Methods(http.MethodGet, http.MethodOptions)
 	subRouter.HandleFunc("/videos/{videoId}/like/{isLike:[0-1]}", middleware.AuthMiddleware(videoController.LikeVideo(), authServerAddress)).Methods(http.MethodPost, http.MethodOptions)
-
-	var imgServer = http.FileServer(http.Dir("C:\\Users\\mikha\\go\\src\\videohost\\bin\\videoserver\\content"))
-	router.PathPrefix("/content/").Handler(http.StripPrefix("/content/", imgServer))
 
 	return middleware.LogMiddleware(profile.BuildHandlers(router))
 }
