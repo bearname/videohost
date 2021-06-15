@@ -151,12 +151,17 @@ func (r *VideoRepository) Find(videoId string) (*model.Video, error) {
 		SUM(IF(isLike = 1, 1, 0)) AS video_likes
 		FROM video_like
 		WHERE id_video = ?`
-	row = r.connector.GetDb().QueryRow(q, videoId)
+	rows, err := r.connector.GetDb().Query(q, videoId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 	var countLikes sql.NullInt64
 	var countDisLikes sql.NullInt64
 	err = row.Scan(
 		&countDisLikes,
 		&countLikes)
+
 	video.CountLikes = int(countLikes.Int64)
 	video.CountDisLikes = int(countDisLikes.Int64)
 	return &video, err
@@ -282,9 +287,9 @@ func (r *VideoRepository) Like(like model.Like) (model.Action, error) {
 	rows, err := r.connector.GetDb().Query(query, like.IdVideo, like.OwnerId)
 
 	if err == nil {
+		defer rows.Close()
 		var isLike bool
 		if rows.Next() {
-			defer rows.Close()
 			err = rows.Scan(&isLike)
 			if err != nil {
 				return 0, domain.ErrInternal
@@ -307,15 +312,15 @@ func (r *VideoRepository) Like(like model.Like) (model.Action, error) {
 				}
 			}
 		}
-
 	}
 	query = `INSERT INTO video_like (id_video, owner_id, isLike)
 	VALUES (?, ?, ?)
 	ON DUPLICATE KEY UPDATE isLike=?;`
-	_, err = r.connector.GetDb().Query(query, like.IdVideo, like.OwnerId, like.IsLike, like.IsLike)
+	rows, err = r.connector.GetDb().Query(query, like.IdVideo, like.OwnerId, like.IsLike, like.IsLike)
 	if err != nil {
 		return 0, domain.ErrFailedAddLike
 	}
+	defer rows.Close()
 	if like.IsLike {
 		return model.AddLike, nil
 	} else {
