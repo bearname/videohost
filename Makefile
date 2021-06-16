@@ -5,6 +5,10 @@ build: lint build-video build-user build-streaming-server build-thumbgenerator b
 lint:
 	golangci-lint run
 
+.PHONY: build-api-gateway
+build-api-gateway:
+	go build  -o .\bin\web-api-gateway\web-gateway.exe .\cmd\web-api-gateway\main.go
+
 .PHONY: build-videos
 build-videos:
 	go build  -o .\bin\videoserver\videoserver.exe .\cmd\videoserver\main.go
@@ -41,6 +45,10 @@ build-video-scaler:
 
 .PHONY: run
 run: run.bat
+
+.PHONY: run-api-gateway
+run-api-gateway:
+	.\bin\web-api-gateway\web-gateway.exe
 
 .PHONY: run-videoserver
 run-videoserver:

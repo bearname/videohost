@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/bearname/videohost/internal/web-api-gateway/domain"
 	"github.com/bearname/videohost/internal/web-api-gateway/infrastructure/transport/controller"
-	"github.com/gorilla/mux"
+	"github.com/bearname/videohost/internal/web-api-gateway/infrastructure/transport/router"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -28,12 +28,8 @@ func main() {
 	}
 
 	gatewayController := controller.NewGatewayController(mapping)
-	r := mux.NewRouter()
-	appRouter := r.PathPrefix("/api").Subrouter()
-	appRouter.Methods(http.MethodGet, http.MethodPost, http.MethodPut, http.MethodOptions, http.MethodDelete).
-		HandlerFunc(gatewayController.Handle)
 
 	fmt.Println("start at :" + port)
-	err := http.ListenAndServe(":"+port, r)
+	err := http.ListenAndServe(":"+port, router.Router(gatewayController))
 	log.Fatal(err)
 }
