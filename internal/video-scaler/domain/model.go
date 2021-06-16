@@ -51,15 +51,3 @@ func QualityToResolution(quality Quality) Resolution {
 
 	return m[quality]
 }
-
-type Token struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
-}
-
-func NewToken(accessToken string, refreshToken string) *Token {
-	t := new(Token)
-	t.AccessToken = accessToken
-	t.RefreshToken = refreshToken
-	return t
-}
