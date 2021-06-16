@@ -4,11 +4,22 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/bearname/videohost/internal/common/dto"
-	"github.com/bearname/videohost/internal/video-scaler/domain"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 )
+
+type Token struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+func NewToken(accessToken string, refreshToken string) *Token {
+	t := new(Token)
+	t.AccessToken = accessToken
+	t.RefreshToken = refreshToken
+	return t
+}
 
 func ValidateToken(authorization string, authServerUrl string) (dto.UserDto, bool) {
 	if len(authorization) == 0 {
@@ -28,7 +39,7 @@ func ValidateToken(authorization string, authServerUrl string) (dto.UserDto, boo
 	return userDto, true
 }
 
-func InitAccessToken(client *http.Client, authServerAddress string) (*domain.Token, bool) {
+func InitAccessToken(client *http.Client, authServerAddress string) (*Token, bool) {
 	token, err := GetAdminAccessToken(client, authServerAddress)
 	if err != nil {
 		log.Error(err)
@@ -37,26 +48,26 @@ func InitAccessToken(client *http.Client, authServerAddress string) (*domain.Tok
 	return token, true
 }
 
-func GetAdminAccessToken(client *http.Client, authServerUrl string) (*domain.Token, error) {
+func GetAdminAccessToken(client *http.Client, authServerUrl string) (*Token, error) {
 	bodyStr, err := json.Marshal(struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}{"admin", "admin"})
 	if err != nil {
 		log.Error(err.Error())
-		return &domain.Token{}, err
+		return &Token{}, err
 	}
 	req, err := http.NewRequest("POST", authServerUrl+"/api/v1/auth/login", bytes.NewBuffer(bodyStr))
 	if err != nil {
 		log.Error(err.Error())
-		return &domain.Token{}, err
+		return &Token{}, err
 	}
 
 	resp, err := client.Do(req)
 
 	if err != nil {
 		log.Error("failed get id of owner of the video ")
-		return &domain.Token{}, err
+		return &Token{}, err
 	}
 
 	defer resp.Body.Close()
@@ -64,11 +75,11 @@ func GetAdminAccessToken(client *http.Client, authServerUrl string) (*domain.Tok
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("failed read response")
-		return &domain.Token{}, err
+		return &Token{}, err
 	}
 	token, err := unmarshalToken(respBody)
 	if err != nil {
-		return &domain.Token{}, err
+		return &Token{}, err
 	}
 	_, ok := ValidateToken("Bearer "+token.AccessToken, authServerUrl)
 	if !ok {
@@ -78,7 +89,7 @@ func GetAdminAccessToken(client *http.Client, authServerUrl string) (*domain.Tok
 	return token, nil
 }
 
-func updateToken(token *domain.Token, authServerUrl string) (*domain.Token, error) {
+func updateToken(token *Token, authServerUrl string) (*Token, error) {
 	respBody, err := GetRequest(&http.Client{}, authServerUrl+"/api/v1/auth/token", "Bearer "+token.RefreshToken)
 	if err != nil {
 		return nil, err
@@ -86,8 +97,8 @@ func updateToken(token *domain.Token, authServerUrl string) (*domain.Token, erro
 	return unmarshalToken(respBody)
 }
 
-func unmarshalToken(respBody []byte) (*domain.Token, error) {
-	var token domain.Token
+func unmarshalToken(respBody []byte) (*Token, error) {
+	var token Token
 	err := json.Unmarshal(respBody, &token)
 	if err != nil {
 		return &token, err

@@ -2,14 +2,13 @@ package domain
 
 import (
 	commonDto "github.com/bearname/videohost/internal/common/dto"
-	"github.com/bearname/videohost/internal/video-scaler/domain"
-	"io"
-	"net/http"
+	"github.com/bearname/videohost/internal/common/util"
+	"github.com/bearname/videohost/internal/user/app/dto"
 )
 
 type AuthService interface {
-	CreateUser(requestBody io.ReadCloser) (domain.Token, error, int)
-	Login(requestBody io.ReadCloser) (domain.Token, error, int)
-	ValidateToken(authorizationHeader string) (commonDto.UserDto, int)
-	RefreshToken(request *http.Request) (domain.Token, error, int)
+	CreateUser(newUserDto dto.SignupUserDto) (util.Token, error)
+	Login(loginUserDto dto.LoginUserDto) (util.Token, error)
+	ValidateToken(authorizationHeader string) (commonDto.UserDto, error)
+	RefreshToken(refreshTokenDto dto.RefreshTokenDto) (util.Token, error)
 }

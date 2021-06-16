@@ -1,23 +1,16 @@
 package service
 
 import (
-	"encoding/json"
-	"errors"
 	commonDto "github.com/bearname/videohost/internal/common/dto"
+	"github.com/bearname/videohost/internal/common/util"
 	"github.com/bearname/videohost/internal/user/app/dto"
+	"github.com/bearname/videohost/internal/user/domain"
 	"github.com/bearname/videohost/internal/user/domain/model"
 	"github.com/bearname/videohost/internal/user/domain/repository"
-	"github.com/bearname/videohost/internal/video-scaler/domain"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
-	"github.com/gorilla/context"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
-	"io"
-	"net"
-	"net/http"
-	"regexp"
-	"strings"
 	"time"
 )
 
@@ -31,29 +24,19 @@ func NewAuthService(userRepository repository.UserRepo) *AuthServiceImpl {
 	return v
 }
 
-func (a *AuthServiceImpl) CreateUser(requestBody io.ReadCloser) (domain.Token, error, int) {
-	var newUser dto.SignupUserDto
-	err := json.NewDecoder(requestBody).Decode(&newUser)
-	if err != nil {
-		log.Error(err.Error())
-		return domain.Token{}, errors.New("cannot decode request"), http.StatusBadRequest
-	}
-
-	if !a.isEmailValid(newUser.Email) {
-		return domain.Token{}, errors.New("user email not valid"), http.StatusBadRequest
-	}
+func (a *AuthServiceImpl) CreateUser(newUser dto.SignupUserDto) (util.Token, error) {
 
 	userFromDb, err := a.userRepo.FindByUserName(newUser.Username)
 	if (err == nil && userFromDb.Username == newUser.Username) || (err != nil && err.Error() != "sql: no rows in result set") {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("user already exists"), http.StatusBadRequest
+		return util.Token{}, domain.ErrDuplicateUser
 	}
 	log.Println(userFromDb.Username == newUser.Username)
 
 	userKey, err := uuid.NewUUID()
 	if err != nil {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("failed generate id"), http.StatusInternalServerError
+		return util.Token{}, domain.ErrFailedCreateUserID
 	}
 
 	passwordHash, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
@@ -61,139 +44,106 @@ func (a *AuthServiceImpl) CreateUser(requestBody io.ReadCloser) (domain.Token, e
 	accessToken, err := CreateToken(userKey.String(), newUser.Username, role)
 	if err != nil {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("cannot create accessToken"), http.StatusInternalServerError
+		return util.Token{}, domain.ErrFailedCreateAccessToken
 	}
 
 	refreshToken, err := CreateTokenWithDuration(userKey.String(), newUser.Username, role, time.Hour*24*365*10)
 	if err != nil {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("cannot create refreshToken"), http.StatusInternalServerError
+		return util.Token{}, domain.ErrFailedUpdateAccessToken
 	}
 
 	err = a.userRepo.CreateUser(userKey.String(), newUser.Username, passwordHash, newUser.Email, newUser.IsSubscribed, role, accessToken, refreshToken)
 	if err != nil {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("failed save user"), http.StatusInternalServerError
+		return util.Token{}, domain.ErrFailedSaveUser
 	}
 
-	return domain.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}, nil, http.StatusOK
+	return util.Token{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
 
-func (a *AuthServiceImpl) Login(requestBody io.ReadCloser) (domain.Token, error, int) {
-	var userDto dto.LoginUserDto
-	err := json.NewDecoder(requestBody).Decode(&userDto)
-	if err != nil {
-		log.Error(err.Error())
-		return domain.Token{}, errors.New("cannot decode username/password struct"), http.StatusBadRequest
-	}
+func (a *AuthServiceImpl) Login(userDto dto.LoginUserDto) (util.Token, error) {
+
 	userFromDb, err := a.userRepo.FindByUserName(userDto.Username)
 	if (err == nil && userFromDb.Username != userDto.Username) || err != nil {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("user not exist"), http.StatusBadRequest
+		return util.Token{}, domain.ErrUserNotExist
 	}
 
 	err = bcrypt.CompareHashAndPassword(userFromDb.Password, []byte(userDto.Password))
 	if err != nil {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("wrong password"), http.StatusUnauthorized
+		return util.Token{}, domain.ErrWrongPassword
 	}
 
 	role := model.General
 	accessToken, err := CreateToken(userFromDb.Key, userFromDb.Username, role)
 	if err != nil {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("cannot create accessToken"), http.StatusInternalServerError
+		return util.Token{}, domain.ErrFailedCreateAccessToken
 	}
 
 	refreshToken, err := CreateTokenWithDuration(userFromDb.Key, userFromDb.Username, role, time.Hour*24*365*10)
 	if err != nil {
 		log.Error(err.Error())
-		return domain.Token{}, errors.New("cannot create refreshToken"), http.StatusInternalServerError
+		return util.Token{}, domain.ErrFailedUpdateAccessToken
 	}
 
-	return domain.Token{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}, nil, http.StatusOK
+	return util.Token{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
 
-func (a *AuthServiceImpl) ValidateToken(authorizationHeader string) (commonDto.UserDto, int) {
+func (a *AuthServiceImpl) ValidateToken(authorizationHeader string) (commonDto.UserDto, error) {
 	tokenString, ok := ParseToken(authorizationHeader)
 	if !ok {
-		return commonDto.UserDto{}, http.StatusBadRequest
+		return commonDto.UserDto{}, domain.ErrInvalidAuthorizationHeader
 	}
 
 	token, ok := CheckToken(tokenString)
 	log.Println("bearerToken " + tokenString)
 
 	if !ok {
-		return commonDto.UserDto{}, http.StatusUnauthorized
+		return commonDto.UserDto{}, domain.ErrInvalidAccessToken
 	}
 
 	username, userId, ok := a.parsePayload(token)
 	if !ok {
-		return commonDto.UserDto{}, http.StatusUnauthorized
+		return commonDto.UserDto{}, domain.ErrInvalidAccessToken
 	}
 
 	user, err := a.userRepo.FindById(userId)
 	if err != nil {
-		return commonDto.UserDto{}, http.StatusUnauthorized
+		return commonDto.UserDto{}, domain.ErrUserNotExist
 	}
 
 	return commonDto.UserDto{Username: username,
 		UserId: userId,
 		Ok:     true,
 		Role:   user.Role.Values(),
-		Token:  tokenString}, http.StatusOK
+		Token:  tokenString}, nil
 }
 
-func (a *AuthServiceImpl) RefreshToken(request *http.Request) (domain.Token, error, int) {
-	username, ok := context.Get(request, "username").(string)
-	if !ok {
-		context.Clear(request)
-		return domain.Token{}, errors.New("cannot check username"), http.StatusInternalServerError
-	}
-	userKey, ok := context.Get(request, "userId").(string)
-	if !ok {
-		context.Clear(request)
-		return domain.Token{}, errors.New("cannot check userId"), http.StatusInternalServerError
-	}
-	token, ok := context.Get(request, "token").(string)
-	if !ok {
-		context.Clear(request)
-		return domain.Token{}, errors.New("token to preset on context by token checker"), http.StatusInternalServerError
-	}
-	context.Clear(request)
+func (a *AuthServiceImpl) RefreshToken(refreshTokenDto dto.RefreshTokenDto) (util.Token, error) {
+	username := refreshTokenDto.Username
 	userFromDb, err := a.userRepo.FindByUserName(username)
 	if (err == nil && userFromDb.Username != username) || err != nil {
-		return domain.Token{}, errors.New("unauthorized, user not exists"), http.StatusUnauthorized
+		return util.Token{}, domain.ErrUserNotExist
 	}
 
-	if userFromDb.RefreshToken != token {
-		return domain.Token{}, errors.New("invalid Refresh token"), http.StatusInternalServerError
+	if userFromDb.RefreshToken != refreshTokenDto.Token {
+		return util.Token{}, domain.ErrInvalidRefreshToken
 	}
-	user, err := a.userRepo.FindByUserName(username)
+
+	accessToken, err := CreateToken(refreshTokenDto.UserId, username, userFromDb.Role)
 	if err != nil {
-		return domain.Token{}, errors.New("unknown user"), http.StatusBadRequest
+		return util.Token{}, domain.ErrFailedCreateAccessToken
 	}
 
-	accessToken, err := CreateToken(userKey, username, user.Role)
-	if err != nil {
-		return domain.Token{}, errors.New("cannot create accessToken"), http.StatusInternalServerError
-	}
-
-	ok = a.userRepo.UpdateAccessToken(username, accessToken)
+	ok := a.userRepo.UpdateAccessToken(username, accessToken)
 	if !ok {
-		return domain.Token{}, errors.New("failed update accessToken"), http.StatusInternalServerError
+		return util.Token{}, domain.ErrFailedUpdateAccessToken
 	}
 
-	return domain.Token{
-		AccessToken:  accessToken,
-		RefreshToken: userFromDb.RefreshToken,
-	}, nil, http.StatusOK
+	return util.Token{AccessToken: accessToken, RefreshToken: userFromDb.RefreshToken}, nil
 }
 
 func (a *AuthServiceImpl) parsePayload(token *jwt.Token) (string, string, bool) {
@@ -217,20 +167,4 @@ func (a *AuthServiceImpl) parsePayload(token *jwt.Token) (string, string, bool) 
 	}
 
 	return username, userId, true
-}
-
-func (a *AuthServiceImpl) isEmailValid(e string) bool {
-	if len(e) < 3 && len(e) > 254 {
-		return false
-	}
-	var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-	if !emailRegex.MatchString(e) {
-		return false
-	}
-	parts := strings.Split(e, "@")
-	mx, err := net.LookupMX(parts[1])
-	if err != nil || len(mx) == 0 {
-		return false
-	}
-	return true
 }
