@@ -23,7 +23,7 @@ func (r *SubtitleRepository) Create(subtitle dto.CreateSubtitleRequestDto) (int6
 		query := `INSERT INTO subtitle (video_id) VALUES (?);`
 
 		var result sql.Result
-		result, err := tx.Exec(`INSERT INTO subtitle (video_id) VALUES (?);`, subtitle.VideoId)
+		result, err := tx.Exec(query, subtitle.VideoId)
 		if err != nil {
 			return err
 		}
